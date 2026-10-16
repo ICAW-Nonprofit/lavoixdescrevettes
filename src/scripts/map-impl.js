@@ -109,7 +109,8 @@ export function initMap(el) {
     pin.className = 'map-pin' + (ev.past ? ' is-past' : '');
     pin.setAttribute('aria-label', `${ev.title}, ${ev.when}`);
     pin.innerHTML = PIN;
-    const popup = new maplibregl.Popup({ offset: [0, -40], maxWidth: '300px' }).setDOMContent(popupNode(ev, labels));
+    // focusAfterOpen: false — otherwise the first link gets a focus outline as soon as the popup opens
+    const popup = new maplibregl.Popup({ offset: [0, -40], maxWidth: '300px', focusAfterOpen: false }).setDOMContent(popupNode(ev, labels));
     new maplibregl.Marker({ element: pin, anchor: 'bottom' }).setLngLat([ev.lng, ev.lat]).setPopup(popup).addTo(map);
   }
 }

@@ -1213,8 +1213,8 @@ textarea {
   display: inline-block;
   background: var(--jaune);
   border: 2px solid var(--marine);
-  box-shadow: 3px 3px 0 var(--marine);
-  padding: 0.35em 0.7em 0.25em;
+  padding: 0.25em 0.55em 0.15em;
+  font-size: 0.85rem;
   text-decoration: none;
   margin: 4px 0 2px;
 }

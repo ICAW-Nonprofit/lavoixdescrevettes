@@ -25,7 +25,8 @@ description:
     We're asking Lidl to stop suffocating shrimp. After a first action at its headquarters, we're going back on 4 November.
 
     Come alone or bring friends, and please share the event. Send us a message on Instagram and we'll send you the link to our WhatsApp group.
-# Body of the text sent by the "Partager l'action" button (date, place and links are added automatically)
+# Body of the text sent by the "Partager l'action" button (date, place and links are added automatically).
+# Keep it in sync with this action's real information: update it whenever the target, demand, date, place or context changes.
 shareText:
   fr: |
     On retourne devant le siège de Lidl pour exiger que l'enseigne arrête d'asphyxier les crevettes. Sorties de l'eau, elles suffoquent et peuvent agoniser de longues minutes, parfois des heures : les crevettes ressentent la douleur.
