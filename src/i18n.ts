@@ -84,7 +84,7 @@ export const ui = {
     allPosts: 'Tous les articles',
     details: 'Voir les détails',
     addToCalendar: 'Ajouter au calendrier',
-    calGoogle: 'Google Agenda',
+    calGoogle: 'Google Calendar',
     calIcs: 'Apple / Outlook (.ics)',
     calOutlook: 'Outlook.com',
     share: 'Partager',
