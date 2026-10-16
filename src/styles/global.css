@@ -1225,6 +1225,21 @@ textarea {
 .popup a.popup-btn-alt {
   background: transparent;
 }
+/* small map on an event page: compact popup */
+.maplibregl-popup-content:has(.popup--compact) {
+  min-width: 0;
+  padding: 10px 12px 8px !important;
+  box-shadow: 3px 3px 0 var(--marine) !important;
+}
+.popup--compact p {
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+  padding-right: 18px;
+}
+.popup--compact a.popup-btn,
+.popup--compact a.popup-btn-alt {
+  font-size: 0.8rem;
+}
 .popup-cal {
   margin: 10px 0 0 !important;
   font-size: 0.9rem !important;

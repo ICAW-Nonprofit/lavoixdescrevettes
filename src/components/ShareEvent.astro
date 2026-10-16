@@ -45,8 +45,24 @@ const text = [
 const title = `${d.title[lang]} · ${when}`;
 
 const t = fr
-  ? { share: "Partager l'action", via: 'Partager via', copy: 'Copier le texte', copied: 'Texte copié, colle-le où tu veux !', flyer: "Télécharger l'affiche", thanks: 'Merci de faire tourner !' }
-  : { share: 'Share this action', via: 'Share via', copy: 'Copy the text', copied: 'Text copied, paste it anywhere!', flyer: 'Download the flyer', thanks: 'Thanks for spreading the word!' };
+  ? {
+      share: "Partager l'action",
+      via: 'Partager via',
+      copy: 'Copier le texte',
+      copied: 'Texte copié, colle-le où tu veux !',
+      flyer: "Télécharger l'affiche",
+      thanks: 'Merci de faire tourner !',
+      signalHint: "Texte copié ! Colle-le dans une conversation Signal (Ctrl+V), et ajoute l'affiche avec « Télécharger l'affiche ».",
+    }
+  : {
+      share: 'Share this action',
+      via: 'Share via',
+      copy: 'Copy the text',
+      copied: 'Text copied, paste it anywhere!',
+      flyer: 'Download the flyer',
+      thanks: 'Thanks for spreading the word!',
+      signalHint: 'Text copied! Paste it into a Signal chat (Ctrl+V), and add the flyer with "Download the flyer".',
+    };
 
 const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
 const tg = `https://t.me/share/url?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(text.replace(`\n\n👉`, '\n👉'))}`;
@@ -63,6 +79,7 @@ const panelId = `share-${event.id}-${small ? 's' : 'l'}`;
   data-flyer-name={flyerName}
   data-copied={t.copied}
   data-thanks={t.thanks}
+  data-signal-hint={t.signalHint}
 >
   <button type="button" class:list={['btn', 'btn-primary', { 'btn-small': small }]} data-share-go aria-controls={panelId} aria-expanded="false">
     {t.share} <span aria-hidden="true">↗</span>
@@ -71,6 +88,7 @@ const panelId = `share-${event.id}-${small ? 's' : 'l'}`;
     <p class="meta">{t.via}</p>
     <div class="share-links">
       <a class="btn btn-ghost btn-small" href={wa} target="_blank" rel="noopener">WhatsApp</a>
+      <button class="btn btn-ghost btn-small" type="button" data-share-signal>Signal</button>
       <a class="btn btn-ghost btn-small" href={tg} target="_blank" rel="noopener">Telegram</a>
       <a class="btn btn-ghost btn-small" href={mail}>Email</a>
       <button class="btn btn-ghost btn-small" type="button" data-share-copy>{t.copy}</button>

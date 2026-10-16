@@ -13,11 +13,18 @@ const C = { bleu: '#9cb3f7', pale: '#c9d6fb', marine: '#00192e', blanc: '#eef2ff
 
 const PIN = `<svg viewBox="0 0 34 44" aria-hidden="true"><path d="M17 2C8.7 2 2 8.6 2 16.8 2 28 17 42 17 42s15-14 15-25.2C32 8.6 25.3 2 17 2z" fill="${C.jaune}" stroke="${C.marine}" stroke-width="3"/><circle cx="17" cy="16" r="5.5" fill="${C.marine}"/></svg>`;
 
-// Mainland France + Corsica
-const FRANCE = [
-  [-5.3, 41.3],
-  [9.7, 51.2],
+// Default view: Paris and its suburbs (where almost all actions happen).
+// Upcoming actions outside this box widen the view automatically.
+const PARIS_AREA = [
+  [1.95, 48.62],
+  [2.75, 49.05],
 ];
+
+function startBounds(events) {
+  const b = new maplibregl.LngLatBounds(PARIS_AREA[0], PARIS_AREA[1]);
+  for (const ev of events) if (!ev.past) b.extend([ev.lng, ev.lat]);
+  return b;
+}
 
 function recolor(map, lang) {
   for (const layer of map.getStyle().layers) {
@@ -48,6 +55,20 @@ const link = (href, text, extra = {}) => {
   if (href.startsWith('https://')) Object.assign(a, { target: '_blank', rel: 'noopener' });
   return a;
 };
+
+// Compact popup for the small map on an event's own page: address + directions only.
+function compactPopupNode(ev, labels) {
+  const box = document.createElement('div');
+  box.className = 'popup popup--compact';
+  const where = document.createElement('p');
+  where.textContent = ev.where;
+  const go = document.createElement('div');
+  go.className = 'links';
+  go.append(link(directionsUrl(ev), `${labels.directions} ↗`, { className: 'popup-btn' }));
+  if (isIOS) go.append(link(googleMapsUrl(ev), 'Google Maps', { className: 'popup-btn-alt' }));
+  box.append(where, go);
+  return box;
+}
 
 function popupNode(ev, labels) {
   const box = document.createElement('div');
@@ -88,7 +109,7 @@ export function initMap(el) {
   const map = new maplibregl.Map({
     container: el,
     style: 'https://tiles.openfreemap.org/styles/positron',
-    ...(single ? { center: [events[0].lng, events[0].lat], zoom: 13 } : { bounds: FRANCE, fitBoundsOptions: { padding: 24 } }),
+    ...(single ? { center: [events[0].lng, events[0].lat], zoom: 13 } : { bounds: startBounds(events), fitBoundsOptions: { padding: 40 } }),
     minZoom: 3,
     maxZoom: 17,
     cooperativeGestures: true,
@@ -110,7 +131,9 @@ export function initMap(el) {
     pin.setAttribute('aria-label', `${ev.title}, ${ev.when}`);
     pin.innerHTML = PIN;
     // focusAfterOpen: false — otherwise the first link gets a focus outline as soon as the popup opens
-    const popup = new maplibregl.Popup({ offset: [0, -40], maxWidth: '300px', focusAfterOpen: false }).setDOMContent(popupNode(ev, labels));
+    const popup = single
+      ? new maplibregl.Popup({ offset: [0, -40], maxWidth: '230px', focusAfterOpen: false }).setDOMContent(compactPopupNode(ev, labels))
+      : new maplibregl.Popup({ offset: [0, -40], maxWidth: '300px', focusAfterOpen: false }).setDOMContent(popupNode(ev, labels));
     new maplibregl.Marker({ element: pin, anchor: 'bottom' }).setLngLat([ev.lng, ev.lat]).setPopup(popup).addTo(map);
   }
 }
