@@ -1198,6 +1198,7 @@ textarea {
 .popup .links {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px 14px;
 }
 .popup a {
@@ -1209,14 +1210,20 @@ textarea {
 .popup .links + .links {
   margin-top: 8px;
 }
-.popup a.popup-btn {
+.popup a.popup-btn,
+.popup a.popup-btn-alt {
   display: inline-block;
   background: var(--jaune);
   border: 2px solid var(--marine);
   padding: 0.25em 0.55em 0.15em;
   font-size: 0.85rem;
+  line-height: 1.2;
   text-decoration: none;
   margin: 4px 0 2px;
+}
+/* second choice next to "Itinéraire" (Google Maps on iPhone): same size, outlined */
+.popup a.popup-btn-alt {
+  background: transparent;
 }
 .popup-cal {
   margin: 10px 0 0 !important;

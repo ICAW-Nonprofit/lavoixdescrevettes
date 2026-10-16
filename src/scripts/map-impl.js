@@ -63,7 +63,7 @@ function popupNode(ev, labels) {
   const go = document.createElement('div');
   go.className = 'links';
   go.append(link(directionsUrl(ev), `${labels.directions} ↗`, { className: 'popup-btn' }));
-  if (isIOS) go.append(link(googleMapsUrl(ev), 'Google Maps'));
+  if (isIOS) go.append(link(googleMapsUrl(ev), 'Google Maps', { className: 'popup-btn-alt' }));
 
   const more = document.createElement('div');
   more.className = 'links';
