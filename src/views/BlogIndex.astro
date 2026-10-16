@@ -1,0 +1,44 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import PostCard from '../components/PostCard.astro';
+import Newsletter from '../components/Newsletter.astro';
+import { getPosts } from '../lib/content';
+import { route, ui, alternatesFor, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = ui[lang];
+const posts = await getPosts(lang);
+const c =
+  lang === 'fr'
+    ? {
+        title: 'Blog : science, campagnes et actualités sur les crevettes',
+        description: 'Articles sur la sensibilité des crevettes, les pratiques d’élevage et nos campagnes. Sources à l’appui.',
+        h1: 'Blog',
+        intro: 'Science, campagnes, coulisses des actions. Toujours sourcé, jamais tiède.',
+      }
+    : {
+        title: 'Blog: science, campaigns and news about shrimp',
+        description: 'Articles on shrimp sentience, farming practices and our campaigns. Sources included.',
+        h1: 'Blog',
+        intro: 'Science, campaigns, behind the scenes of our actions. Always sourced, never lukewarm.',
+      };
+const crumbs = [{ label: t.breadcrumbHome, href: route('home', lang) }, { label: c.h1 }];
+---
+
+<Base lang={lang} title={c.title} description={c.description} alternates={alternatesFor('blog')} crumbs={crumbs}>
+  <div class="container page-head">
+    <Breadcrumbs crumbs={crumbs} label={lang === 'fr' ? "Fil d'Ariane" : 'Breadcrumb'} />
+    <h1>{c.h1}</h1>
+    <p class="intro">{c.intro}</p>
+  </div>
+  <div class="container u-pb">
+    <div class="post-grid">
+      {posts.map((p) => <PostCard post={p} lang={lang} />)}
+    </div>
+  </div>
+  <Newsletter lang={lang} />
+</Base>

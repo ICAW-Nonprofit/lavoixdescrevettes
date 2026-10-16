@@ -1,0 +1,49 @@
+---
+/** Home-page teaser for the report. Brand-free on purpose: retailer names stay on the report page. */
+import { route, url, type Lang } from '../i18n';
+import { report, counts } from '../lib/report';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t =
+  lang === 'fr'
+    ? {
+        kicker: 'Nouveau rapport · octobre 2026',
+        title: 'Souffrance en rayon',
+        text: `On a passé au crible ${counts.total} enseignes françaises. Seules ${counts.engage} se sont engagées contre les deux pires pratiques infligées aux crevettes.`,
+        sub: "Le rapport de l'ICAW révèle ce que les supermarchés ne vous disent pas, de l'élevage à votre assiette.",
+        cta: 'Voir le classement',
+        pdf: 'Télécharger le PDF',
+        stat: 'enseignes engagées',
+      }
+    : {
+        kicker: 'New report · October 2026',
+        title: 'Souffrance en rayon',
+        text: `We screened ${counts.total} French retailers. Only ${counts.engage} have committed against the two worst practices inflicted on shrimp.`,
+        sub: "ICAW's report reveals what supermarkets don't tell you, from the farm to your plate.",
+        cta: 'See the ranking',
+        pdf: 'Download the PDF (French)',
+        stat: 'retailers committed',
+      };
+---
+
+<section class="section u-pt0" aria-labelledby="report-teaser">
+  <div class="container report-teaser">
+    <div>
+      <span class="kicker">{t.kicker}</span>
+      <h2 id="report-teaser">{t.title}</h2>
+      <p class="big-text"><strong>{t.text}</strong></p>
+      <p class="big-text">{t.sub}</p>
+      <div class="event-actions">
+        <a class="btn btn-primary" href={url(route('report', lang))}>{t.cta} <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="link-arrow" href={report.pdf} target="_blank" rel="noopener">{t.pdf} →</a>
+      </div>
+    </div>
+    <p class="big-stat" aria-hidden="true">
+      <span class="n">{counts.engage}<small>/{counts.total}</small></span>
+      <span class="l">{t.stat}</span>
+    </p>
+  </div>
+</section>

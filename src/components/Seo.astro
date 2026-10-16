@@ -1,0 +1,54 @@
+---
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { site } from '../config';
+import { url, locale, type Lang } from '../i18n';
+import ogDefault from '../assets/brand/og-default.png';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  alternates?: Partial<Record<Lang, string>>;
+  image?: ImageMetadata;
+  imageAlt?: string;
+  type?: 'website' | 'article';
+  jsonLd?: object[];
+  noindex?: boolean;
+  published?: Date;
+}
+
+const { lang, title, description, alternates = {}, image, imageAlt, type = 'website', jsonLd = [], noindex = false, published } = Astro.props;
+const fullTitle = title.includes(site.name) ? title : `${title} · ${site.name}`;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const abs = (p: string) => new URL(url(p), Astro.site).href;
+
+const og = image
+  ? await getImage({ src: image, width: 1200, format: 'jpg', quality: 82 })
+  : await getImage({ src: ogDefault, width: 1200, height: 630, format: 'png' });
+const ogUrl = new URL(og.src, Astro.site).href;
+---
+
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+{noindex && <meta name="robots" content="noindex, follow" />}
+{alternates.fr && <link rel="alternate" hreflang="fr" href={abs(alternates.fr)} />}
+{alternates.en && <link rel="alternate" hreflang="en" href={abs(alternates.en)} />}
+{alternates.fr && <link rel="alternate" hreflang="x-default" href={abs(alternates.fr)} />}
+
+<meta property="og:site_name" content={site.name} />
+<meta property="og:type" content={type} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogUrl} />
+<meta property="og:image:alt" content={imageAlt ?? site.name} />
+<meta property="og:locale" content={locale[lang].replace('-', '_')} />
+{published && <meta property="article:published_time" content={published.toISOString()} />}
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogUrl} />
+
+{jsonLd.map((d) => <script type="application/ld+json" set:html={JSON.stringify(d)} />)}

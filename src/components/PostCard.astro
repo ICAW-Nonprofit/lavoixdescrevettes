@@ -1,0 +1,24 @@
+---
+import { Image } from 'astro:assets';
+import { postSlug, readingTime, type PostEntry } from '../lib/content';
+import { url, ui, postPath, formatDate, type Lang } from '../i18n';
+
+interface Props {
+  post: PostEntry;
+  lang: Lang;
+}
+const { post, lang } = Astro.props;
+const d = post.data;
+const drawing = d.coverStyle === 'drawing';
+---
+
+<a class="post-card" href={url(postPath(postSlug(post), lang))}>
+  <div class:list={['thumb', drawing ? 'drawing' : 'duotone']}>
+    <Image src={d.cover} alt={d.coverAlt} widths={[400, 700]} sizes="(min-width: 900px) 380px, 100vw" />
+  </div>
+  <div class="body">
+    <p class="meta">{d.category} · {formatDate(d.date, lang)} · {readingTime(post.body)} {ui[lang].minRead}</p>
+    <h3>{d.title}</h3>
+    <p>{d.description}</p>
+  </div>
+</a>

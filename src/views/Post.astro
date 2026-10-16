@@ -1,0 +1,101 @@
+---
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import PostCard from '../components/PostCard.astro';
+import Share from '../components/Share.astro';
+import Newsletter from '../components/Newsletter.astro';
+import { site } from '../config';
+import { getPosts, postSlug, readingTime, translationOf, type PostEntry } from '../lib/content';
+import { route, url, ui, postPath, formatDate, type Lang } from '../i18n';
+
+interface Props {
+  post: PostEntry;
+}
+const { post } = Astro.props;
+const lang = post.data.lang as Lang;
+const t = ui[lang];
+const d = post.data;
+const { Content } = await render(post);
+const other = await translationOf(post);
+const alternates: Partial<Record<Lang, string>> = { [lang]: postPath(postSlug(post), lang) };
+if (other) alternates[other.data.lang as Lang] = postPath(postSlug(other), other.data.lang as Lang);
+const related = (await getPosts(lang)).filter((p) => p.id !== post.id).slice(0, 2);
+const crumbs = [
+  { label: t.breadcrumbHome, href: route('home', lang) },
+  { label: t.nav.blog, href: route('blog', lang) },
+  { label: d.title },
+];
+const pageAbs = new URL(url(postPath(postSlug(post), lang)), Astro.site).href;
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: d.title,
+    description: d.description,
+    datePublished: d.date.toISOString(),
+    dateModified: (d.updated ?? d.date).toISOString(),
+    inLanguage: lang,
+    mainEntityOfPage: pageAbs,
+    author: { '@type': 'Organization', name: d.author },
+    publisher: { '@type': 'Organization', name: site.name },
+  },
+];
+const drawing = d.coverStyle === 'drawing';
+---
+
+<Base
+  lang={lang}
+  title={d.title}
+  description={d.description}
+  alternates={alternates}
+  image={drawing ? undefined : d.cover}
+  imageAlt={d.coverAlt}
+  type="article"
+  published={d.date}
+  jsonLd={jsonLd}
+  crumbs={crumbs}
+>
+  <article>
+    <div class="narrow page-head">
+      <Breadcrumbs crumbs={crumbs} label={lang === 'fr' ? "Fil d'Ariane" : 'Breadcrumb'} />
+      <p class="meta u-mt20">
+        {d.category} · <time datetime={d.date.toISOString()}>{formatDate(d.date, lang)}</time> · {readingTime(post.body)}
+        {t.minRead}
+      </p>
+      <h1 class="h1-article">{d.title}</h1>
+      <p class="intro">{d.description}</p>
+      {other && (
+        <a class="link-arrow" href={url(postPath(postSlug(other), other.data.lang as Lang))} hreflang={other.data.lang} lang={other.data.lang}>
+          {t.otherLang} →
+        </a>
+      )}
+    </div>
+
+    <div class="narrow">
+      <figure class:list={['article-cover', drawing ? 'drawing' : 'duotone']}>
+        <Image src={d.cover} alt={d.coverAlt} widths={[700, 1100, 1500]} sizes="(min-width: 800px) 760px, 100vw" loading="eager" />
+      </figure>
+      <div class="prose">
+        <Content />
+      </div>
+      <div class="u-mt40">
+        <Share lang={lang} title={d.title} />
+      </div>
+    </div>
+  </article>
+
+  {related.length > 0 && (
+    <section class="section" aria-labelledby="related">
+      <div class="container">
+        <h2 id="related">{t.related}</h2>
+        <div class="post-grid">
+          {related.map((p) => <PostCard post={p} lang={lang} />)}
+        </div>
+      </div>
+    </section>
+  )}
+  {related.length === 0 && <div class="u-spacer"></div>}
+  <Newsletter lang={lang} />
+</Base>

@@ -1,0 +1,302 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import PressClippings from '../components/PressClippings.astro';
+import Newsletter from '../components/Newsletter.astro';
+import { site } from '../config';
+import { report, retailers, statusOf, counts, type Status } from '../lib/report';
+import { route, url, ui, alternatesFor, formatDate, locale, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = ui[lang];
+const fr = lang === 'fr';
+const num = (n: number) => new Intl.NumberFormat(locale[lang], { maximumFractionDigits: 1 }).format(n);
+const maxShare = Math.max(...retailers.map((r) => r.share ?? 0));
+const order: Status[] = ['engage', 'partiel', 'non'];
+const rows = order.flatMap((s) => retailers.filter((r) => statusOf(r) === s).sort((a, b) => (b.share ?? 0) - (a.share ?? 0)));
+
+const c = fr
+  ? {
+      title: 'Souffrance en rayon : le rapport sur les crevettes et les supermarchés',
+      description: `Rapport de l'ICAW (octobre 2026) : ${counts.engage} enseignes françaises sur ${counts.total} se sont engagées contre l'épédonculation et la mort sans étourdissement des crevettes. Le classement.`,
+      kicker: 'Rapport · octobre 2026',
+      h1: 'Souffrance en rayon',
+      tagline: "De l'élevage à votre assiette, ce que les supermarchés français ne vous disent pas sur les crevettes.",
+      intro: `Un rapport de l'International Council for Animal Welfare (ICAW) sur les engagements de ${counts.total} enseignes françaises contre les deux pires pratiques infligées aux crevettes.`,
+      pdf: 'Télécharger le rapport (PDF)',
+      site: 'Le site du rapport',
+      figuresTitle: 'Les chiffres clés',
+      figures: [
+        { n: '440 milliards', l: 'de crevettes abattues chaque année dans le monde.' },
+        { n: '×6', l: "plus que les poulets abattus pour leur viande, et ×4 les poissons tués en aquaculture." },
+        { n: '9 milliards', l: 'de crevettes mangées chaque année en France : l’animal le plus consommé, en nombre.' },
+        { n: '70 %', l: 'des crevettes consommées en France viennent d’élevage, presque toutes importées.' },
+      ],
+      practicesKicker: 'Ce que vivent les crevettes',
+      practicesTitle: 'Deux pratiques d’une grande cruauté',
+      practices: [
+        {
+          h: 'L’épédonculation',
+          p: 'Dans les écloseries, on sectionne un ou deux pédoncules oculaires des femelles reproductrices, pleinement conscientes, à la lame de rasoir ou aux ciseaux chauffés, sans anesthésie, pour les faire pondre davantage. En plus, cette mutilation augmente la mortalité et fragilise les larves.',
+        },
+        {
+          h: 'La mort sans étourdissement',
+          p: 'La méthode la plus courante est l’immersion dans une bouillie de glace. Selon la température, les crevettes mettent de 4 à 28 minutes à perdre conscience. Parfois, il n’y a même pas d’étourdissement : elles meurent étouffées hors de l’eau. L’étourdissement électrique, lui, les rend inconscientes avant l’abattage.',
+        },
+      ],
+      demandsTitle: 'Nos 2 demandes',
+      demands: [
+        { h: 'Fin de l’épédonculation', p: 'Plus aucune crevette issue de reproductrices mutilées dans les rayons.' },
+        { h: 'Étourdissement électrique avant l’abattage', p: 'Fini l’asphyxie et le bain glacé : les crevettes doivent être inconscientes avant d’être tuées.' },
+      ],
+      rankKicker: 'Le classement',
+      rankTitle: 'Qui s’est engagé ?',
+      rankIntro: `Engagements publics des 8 principaux distributeurs et de 3 enseignes spécialisées, au ${formatDate(report.dataDate, lang)}.`,
+      summary: { engage: 'engagées', partiel: 'à moitié', non: 'aucun engagement' },
+      cols: ['Enseigne', 'Part de marché', 'Fin de l’épédonculation', 'Étourdissement électrique', 'Statut'],
+      status: { engage: 'Engagée', partiel: 'À moitié', non: 'Aucun engagement' },
+      yes: 'Oui',
+      no: 'Non',
+      approx: 'environ',
+      takeaways: [
+        'Les 4 enseignes engagées pèsent plus de 50 % du marché : c’est possible, et c’est déjà fait.',
+        'E.Leclerc, numéro 1 avec 24 % du marché, n’a pris aucun engagement.',
+        'Carrefour, Lidl et le groupe Casino n’ont agi que sur l’épédonculation, rien sur l’étourdissement.',
+      ],
+      actTitle: 'Fais bouger les enseignes',
+      actText: 'Les supermarchés bougent quand on les interpelle. Viens à la prochaine action, ou inscris-toi pour être prévenu·e.',
+      actAgenda: 'Voir l’agenda',
+      sourcesTitle: 'Sources',
+      sources: [
+        { label: 'ICAW, « Souffrance en rayon », rapport, octobre 2026', href: report.pdf },
+        { label: 'London School of Economics, revue des preuves de sentience des décapodes, 2021', href: 'https://www.lse.ac.uk/News/News-Assets/PDFs/2021/Sentience-in-Cephalopod-Molluscs-and-Decapod-Crustaceans-Final-Report-November-2021.pdf' },
+        { label: 'Université de Stirling, étourdissement électrique et choc thermique chez la crevette Penaeus vannamei, Aquaculture, 2026', href: '' },
+      ],
+    }
+  : {
+      title: 'Souffrance en rayon: the report on shrimp and French supermarkets',
+      description: `ICAW report (October 2026): ${counts.engage} of ${counts.total} French retailers have committed against eyestalk ablation and killing shrimp without stunning. The ranking.`,
+      kicker: 'Report · October 2026',
+      h1: 'Souffrance en rayon',
+      tagline: "“Suffering on the shelves”: from the farm to your plate, what French supermarkets don't tell you about shrimp.",
+      intro: `A report by the International Council for Animal Welfare (ICAW) on the commitments of ${counts.total} French retailers against the two worst practices inflicted on shrimp.`,
+      pdf: 'Download the report (PDF, French)',
+      site: 'Report website',
+      figuresTitle: 'Key figures',
+      figures: [
+        { n: '440 billion', l: 'shrimp killed every year worldwide.' },
+        { n: '×6', l: 'more than chickens slaughtered for meat, and ×4 the fish killed in aquaculture.' },
+        { n: '9 billion', l: 'shrimp eaten every year in France: the most consumed animal, by number.' },
+        { n: '70%', l: 'of shrimp eaten in France are farmed, almost all imported.' },
+      ],
+      practicesKicker: 'What shrimp go through',
+      practicesTitle: 'Two deeply cruel practices',
+      practices: [
+        {
+          h: 'Eyestalk ablation',
+          p: 'In hatcheries, one or both eyestalks of breeding females are cut off while they are fully conscious, with a razor blade or heated scissors, without anaesthesia, to make them lay more eggs. On top of that, this mutilation increases mortality and weakens the larvae.',
+        },
+        {
+          h: 'Death without stunning',
+          p: 'The most common method is immersion in ice slurry. Depending on the temperature, shrimp take 4 to 28 minutes to lose consciousness. Sometimes there is no stunning at all: they suffocate out of the water. Electrical stunning makes them unconscious before slaughter.',
+        },
+      ],
+      demandsTitle: 'Our 2 demands',
+      demands: [
+        { h: 'End eyestalk ablation', p: 'No more shrimp from mutilated breeding females on the shelves.' },
+        { h: 'Electrical stunning before slaughter', p: 'No more suffocation or ice baths: shrimp must be unconscious before they are killed.' },
+      ],
+      rankKicker: 'The ranking',
+      rankTitle: 'Who has committed?',
+      rankIntro: `Public commitments of the 8 main retailers and 3 specialist chains, as of ${formatDate(report.dataDate, lang)}.`,
+      summary: { engage: 'committed', partiel: 'partly', non: 'no commitment' },
+      cols: ['Retailer', 'Market share', 'End eyestalk ablation', 'Electrical stunning', 'Status'],
+      status: { engage: 'Committed', partiel: 'Partial', non: 'No commitment' },
+      yes: 'Yes',
+      no: 'No',
+      approx: 'about',
+      takeaways: [
+        'The 4 committed retailers make up more than 50% of the market: it is possible, and it has been done.',
+        'E.Leclerc, number one with 24% of the market, has made no commitment.',
+        'Carrefour, Lidl and Groupe Casino only acted on eyestalk ablation, not on stunning.',
+      ],
+      actTitle: 'Make retailers move',
+      actText: 'Supermarkets move when they are called out. Join the next action, or sign up to hear about it.',
+      actAgenda: 'See events',
+      sourcesTitle: 'Sources',
+      sources: [
+        { label: 'ICAW, “Souffrance en rayon”, report, October 2026 (French)', href: report.pdf },
+        { label: 'London School of Economics, review of the evidence of sentience in decapods, 2021', href: 'https://www.lse.ac.uk/News/News-Assets/PDFs/2021/Sentience-in-Cephalopod-Molluscs-and-Decapod-Crustaceans-Final-Report-November-2021.pdf' },
+        { label: 'University of Stirling, electrical stunning and cold shock in Pacific whiteleg shrimp, Aquaculture, 2026', href: '' },
+      ],
+    };
+
+const crumbs = [{ label: t.breadcrumbHome, href: route('home', lang) }, { label: c.h1 }];
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Report',
+    name: 'Souffrance en rayon',
+    description: c.description,
+    datePublished: report.published.toISOString().slice(0, 10),
+    inLanguage: 'fr',
+    url: report.url,
+    publisher: { '@type': 'NGO', name: site.icaw.name, url: site.icaw.url },
+  },
+];
+---
+
+<Base lang={lang} title={c.title} description={c.description} alternates={alternatesFor('report')} crumbs={crumbs} jsonLd={jsonLd}>
+  <div class="container page-head">
+    <Breadcrumbs crumbs={crumbs} label={fr ? "Fil d'Ariane" : 'Breadcrumb'} />
+    <span class="kicker u-mt20">{c.kicker}</span>
+    <h1>{c.h1}</h1>
+    <p class="intro">{c.tagline}</p>
+    <p class="big-text">{c.intro}</p>
+    <div class="event-actions">
+      <a class="btn btn-primary" href={report.pdf} target="_blank" rel="noopener">{c.pdf} <span class="arrow" aria-hidden="true">↓</span></a>
+      <a class="btn btn-ghost" href={report.url} target="_blank" rel="noopener">{c.site}</a>
+    </div>
+  </div>
+
+  <section class="section dark" aria-labelledby="figures">
+    <div class="container">
+      <h2 id="figures" class="u-blanc">{c.figuresTitle}</h2>
+      <ul class="figures">
+        {c.figures.map((f) => (
+          <li>
+            <span class="n">{f.n}</span>
+            <span class="l">{f.l}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="practices">
+    <div class="container">
+      <span class="kicker">{c.practicesKicker}</span>
+      <h2 id="practices">{c.practicesTitle}</h2>
+      <div class="practices">
+        {c.practices.map((p) => (
+          <article class="paper">
+            <h3>{p.h}</h3>
+            <p class="big-text">{p.p}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section u-pt0" aria-labelledby="demands">
+    <div class="container">
+      <h2 id="demands">{c.demandsTitle}</h2>
+      <ol class="demands">
+        {c.demands.map((d) => (
+          <li>
+            <h3>{d.h}</h3>
+            <p>{d.p}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section u-pt0" id="classement" aria-labelledby="rank">
+    <div class="container">
+      <span class="kicker">{c.rankKicker}</span>
+      <h2 id="rank">{c.rankTitle}</h2>
+      <p class="big-text">{c.rankIntro}</p>
+
+      <ul class="score-summary">
+        {order.map((s) => (
+          <li class={`is-${s}`}>
+            <span class="n">{counts[s]}</span>
+            <span class="l">{c.summary[s]}</span>
+          </li>
+        ))}
+      </ul>
+
+      <div class="score-wrap">
+        <table class="score">
+          <caption class="visually-hidden">{c.rankTitle} {c.rankIntro}</caption>
+          <thead>
+            <tr>
+              {c.cols.map((h) => <th scope="col">{h}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const s = statusOf(r);
+              return (
+                <tr class={`is-${s}`}>
+                  <th scope="row">{r.name}</th>
+                  <td data-label={c.cols[1]}>
+                    {r.share ? (
+                      <span class="share">
+                        <svg viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true">
+                          <rect width={(r.share / maxShare) * 100} height="12" />
+                        </svg>
+                        <span>{r.approx ? `${c.approx} ` : ''}{num(r.share)} %</span>
+                      </span>
+                    ) : (
+                      <span class="segment">{r.segment?.[lang]}</span>
+                    )}
+                  </td>
+                  <td data-label={c.cols[2]}>
+                    <span class:list={['tick', { yes: r.ablation }]}>
+                      <span aria-hidden="true">{r.ablation ? '✓' : '✗'}</span>
+                      <span class="visually-hidden">{r.ablation ? c.yes : c.no}</span>
+                    </span>
+                  </td>
+                  <td data-label={c.cols[3]}>
+                    <span class:list={['tick', { yes: r.stunning }]}>
+                      <span aria-hidden="true">{r.stunning ? '✓' : '✗'}</span>
+                      <span class="visually-hidden">{r.stunning ? c.yes : c.no}</span>
+                    </span>
+                  </td>
+                  <td data-label={c.cols[4]}>
+                    <span class={`status is-${s}`}>{c.status[s]}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <ul class="takeaways">
+        {c.takeaways.map((x) => <li>{x}</li>)}
+      </ul>
+    </div>
+  </section>
+
+  <PressClippings lang={lang} id="presse-rapport" />
+
+  <section class="section u-pt0" aria-labelledby="act-report">
+    <div class="container">
+      <div class="demand">
+        <h2 id="act-report">{c.actTitle}</h2>
+        <p class="big-text">{c.actText}</p>
+        <div class="event-actions">
+          <a class="btn btn-primary" href={url(route('agenda', lang))}>{c.actAgenda} <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="#newsletter">{t.getNews}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section u-pt0" aria-labelledby="sources">
+    <div class="narrow prose">
+      <h2 id="sources">{c.sourcesTitle}</h2>
+      <ul>
+        {c.sources.map((s) => <li>{s.href ? <a href={s.href} target="_blank" rel="noopener">{s.label}</a> : s.label}</li>)}
+      </ul>
+    </div>
+  </section>
+
+  <Newsletter lang={lang} />
+</Base>

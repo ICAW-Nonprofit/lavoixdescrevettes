@@ -1,0 +1,114 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { site } from '../config';
+import { route, url, ui, alternatesFor, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = ui[lang];
+const ready = site.contactEndpoint.startsWith('https://');
+const c =
+  lang === 'fr'
+    ? {
+        title: 'Contact',
+        description: 'Presse, partenariats, envie d’organiser une action pour les crevettes dans ta ville : écris à La Voix des Crevettes.',
+        h1: 'Contact',
+        intro: 'Presse, partenariats, envie d’organiser une action dans ta ville : écris-nous.',
+        name: 'Nom ou pseudo',
+        email: 'Email',
+        subject: 'Sujet',
+        subjects: ['Rejoindre une action', 'Organiser une action dans ma ville', 'Presse', 'Autre'],
+        message: 'Message',
+        consent: 'J’accepte que mes données servent uniquement à répondre à ce message.',
+        privacy: 'Données personnelles',
+        send: 'Envoyer',
+        sending: 'Envoi…',
+        error: 'Le message n’est pas parti. Réessaie, ou écris-nous sur Instagram.',
+        notReady: 'Le formulaire sera actif très bientôt. En attendant, le plus rapide est de nous écrire sur Instagram.',
+        other: 'Le plus rapide : Instagram',
+      }
+    : {
+        title: 'Contact',
+        description: 'Press, partnerships, want to organise an action for shrimp in your city: write to La Voix des Crevettes.',
+        h1: 'Contact',
+        intro: 'Press, partnerships, want to organise an action in your city: write to us.',
+        name: 'Name or nickname',
+        email: 'Email',
+        subject: 'Subject',
+        subjects: ['Join an action', 'Organise an action in my city', 'Press', 'Other'],
+        message: 'Message',
+        consent: 'I agree that my data is only used to reply to this message.',
+        privacy: 'Personal data',
+        send: 'Send',
+        sending: 'Sending…',
+        error: "The message didn't go through. Try again, or message us on Instagram.",
+        notReady: 'The form will be live very soon. Meanwhile, the quickest way is to message us on Instagram.',
+        other: 'Quickest: Instagram',
+      };
+const crumbs = [{ label: t.breadcrumbHome, href: route('home', lang) }, { label: c.h1 }];
+---
+
+<Base lang={lang} title={c.title} description={c.description} alternates={alternatesFor('contact')} crumbs={crumbs}>
+  <div class="container page-head">
+    <Breadcrumbs crumbs={crumbs} label={lang === 'fr' ? "Fil d'Ariane" : 'Breadcrumb'} />
+    <h1>{c.h1}</h1>
+    <p class="intro">{c.intro}</p>
+  </div>
+
+  <div class="container two-col u-pb">
+    <form
+      class="paper"
+      action={ready ? site.contactEndpoint : '#'}
+      method="post"
+      data-contact
+      data-thanks={url(route('thanks', lang))}
+      data-sending={c.sending}
+      data-error={c.error}
+    >
+      {!ready && <p class="form-msg u-mb18">{c.notReady}</p>}
+      <fieldset disabled={!ready} class="bare-fieldset">
+        <div class="field">
+          <label for="c-name">{c.name}</label>
+          <input id="c-name" type="text" name="name" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label for="c-email">{c.email}</label>
+          <input id="c-email" type="email" name="email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="c-subject">{c.subject}</label>
+          <select id="c-subject" name="subject">
+            {c.subjects.map((s) => <option>{s}</option>)}
+          </select>
+        </div>
+        <div class="field">
+          <label for="c-message">{c.message}</label>
+          <textarea id="c-message" name="message" required></textarea>
+        </div>
+        <label class="check">
+          <input type="checkbox" name="consent" value="oui" required />
+          <span>{c.consent} <a href={url(route('privacy', lang))}>{c.privacy}</a></span>
+        </label>
+        <div class="hp" aria-hidden="true"><input type="text" name="_gotcha" tabindex="-1" value="" /></div>
+        <input type="hidden" name="_language" value={lang} />
+        <div class="form-foot u-mt0">
+          <button class="btn btn-primary" type="submit">{c.send}</button>
+          <p class="form-msg" role="status" data-msg></p>
+        </div>
+      </fieldset>
+    </form>
+
+    <div>
+      <h2>{c.other}</h2>
+      <p class="big-text">@lavoixdescrevettes</p>
+      <a class="btn btn-primary" href={site.instagram} target="_blank" rel="noopener">Instagram <span class="arrow" aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import '../scripts/contact.js';
+</script>

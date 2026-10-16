@@ -1,0 +1,126 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Newsletter from '../components/Newsletter.astro';
+import { site } from '../config';
+import { route, url, ui, alternatesFor, type Lang } from '../i18n';
+import team from '../assets/photos/action-groupe-allee.jpg';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = ui[lang];
+const c =
+  lang === 'fr'
+    ? {
+        title: 'Qui sommes-nous',
+        description:
+          "La Voix des Crevettes est un groupe local d'actions en France contre les pires pratiques d'élevage des crevettes, mené avec l'International Council for Animal Welfare.",
+        h1: 'Qui on est',
+        intro: 'Des gens ordinaires, des mégaphones, quelques costumes de crevette et une conviction : les crevettes comptent.',
+        caption: "L'équipe lors d'une action pour les crevettes",
+        teamAlt: 'Groupe de militantes et militants de La Voix des Crevettes posant avec une banderole dans une allée bordée d’arbres',
+        lvdcTitle: 'La Voix des Crevettes',
+        lvdc: "La Voix des Crevettes est un groupe local d'actions organisées en France pour lutter contre les pires pratiques d'élevage des crevettes, notamment l'épédonculation des crevettes reproductrices et l'abattage par bain d'eau glacée.",
+        lvdc2: 'Les crevettes sont les animaux d’élevage les plus nombreux de la planète, et parmi les moins protégés. Elles ne peuvent pas crier : on le fait pour elles.',
+        howTitle: 'Comment on agit',
+        how: [
+          'Des actions de rue visibles : rassemblements devant les sièges des enseignes, mégaphones, pancartes, costumes.',
+          'Des campagnes de pression auprès des supermarchés et des distributeurs, pour qu’ils s’engagent publiquement.',
+          'De l’information sourcée, pour que tout le monde sache ce que vivent les crevettes.',
+        ],
+        icawTitle: 'Avec l’ICAW',
+        icaw: "L'International Council for Animal Welfare est une association à but non lucratif luttant contre les pires pratiques d'élevage dans les chaînes d'approvisionnement des grandes entreprises, partout dans le monde.",
+        icawLink: 'Découvrir l’ICAW',
+        joinTitle: 'Nous rejoindre',
+        join: 'Inscris-toi à la newsletter pour connaître les prochaines actions, et écris-nous sur Instagram : on t’enverra le lien de notre groupe WhatsApp.',
+      }
+    : {
+        title: 'About us',
+        description:
+          'La Voix des Crevettes is a grassroots group in France fighting the worst shrimp farming practices, run with the International Council for Animal Welfare.',
+        h1: 'Who we are',
+        intro: 'Ordinary people, megaphones, a few shrimp costumes and one belief: shrimp matter.',
+        caption: 'The team during an action for shrimp',
+        teamAlt: 'Group of La Voix des Crevettes activists posing with a banner in a tree-lined avenue',
+        lvdcTitle: 'La Voix des Crevettes',
+        lvdc: 'La Voix des Crevettes ("the voice of shrimp") is a grassroots group organising actions across France against the worst practices in shrimp farming, including eyestalk ablation of breeding females and slaughter in ice-cold water.',
+        lvdc2: "Shrimp are the most numerous farmed animals on the planet, and among the least protected. They can't scream: we do it for them.",
+        howTitle: 'How we act',
+        how: [
+          'Visible street actions: gatherings outside retailers’ headquarters, megaphones, placards, costumes.',
+          'Pressure campaigns targeting supermarkets and retailers, so they commit publicly.',
+          'Sourced information, so everyone knows what shrimp go through.',
+        ],
+        icawTitle: 'With ICAW',
+        icaw: 'The International Council for Animal Welfare is a non-profit fighting the worst farming practices in corporate supply chains around the world.',
+        icawLink: 'Discover ICAW',
+        joinTitle: 'Join us',
+        join: "Sign up to the newsletter to hear about the next actions, and message us on Instagram: we'll send you the link to our WhatsApp group.",
+      };
+const crumbs = [{ label: t.breadcrumbHome, href: route('home', lang) }, { label: c.title }];
+---
+
+<Base lang={lang} title={c.title} description={c.description} alternates={alternatesFor('about')} crumbs={crumbs} image={team} imageAlt={c.teamAlt}>
+  <div class="container page-head">
+    <Breadcrumbs crumbs={crumbs} label={lang === 'fr' ? "Fil d'Ariane" : 'Breadcrumb'} />
+    <h1>{c.h1}</h1>
+    <p class="intro">{c.intro}</p>
+  </div>
+
+  <div class="container">
+    <figure class="team-photo tape">
+      <Image src={team} alt={c.teamAlt} widths={[700, 1100, 1500]} sizes="(min-width: 1200px) 1180px, 100vw" loading="eager" />
+      <figcaption>{c.caption}</figcaption>
+    </figure>
+  </div>
+
+  <section class="section" aria-labelledby="lvdc">
+    <div class="container two-col">
+      <div>
+        <h2 id="lvdc">{c.lvdcTitle}</h2>
+      </div>
+      <div class="big-text">
+        <p>{c.lvdc}</p>
+        <p>{c.lvdc2}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section dark" aria-labelledby="how">
+    <div class="container">
+      <h2 id="how" class="u-blanc">{c.howTitle}</h2>
+      <ol class="steps u-mt36">
+        {c.how.map((h) => (
+          <li class="u-bc-bleu">
+            <p class="big-text">{h}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="icaw">
+    <div class="container two-col">
+      <div class="paper tape">
+        <h2 id="icaw">{c.icawTitle}</h2>
+        <p class="big-text">{c.icaw}</p>
+        <a class="link-arrow" href={site.icaw.url} target="_blank" rel="noopener">{c.icawLink} →</a>
+      </div>
+      <div>
+        <h2>{c.joinTitle}</h2>
+        <p class="big-text">{c.join}</p>
+        <div class="event-actions">
+          <a class="btn btn-primary" href="#newsletter">Newsletter</a>
+          <a class="btn btn-ghost" href={site.instagram} target="_blank" rel="noopener">Instagram</a>
+          <a class="link-arrow" href={url(route('contact', lang))}>{t.nav.contact} →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Newsletter lang={lang} />
+</Base>
+

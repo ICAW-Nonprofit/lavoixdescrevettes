@@ -1,0 +1,19 @@
+# Media coverage ("Ils en parlent"). kind: radio | web | presse | tv
+- id: franceinter-2026-10-16
+  outlet: France Inter
+  kind: radio
+  date: 2026-10-16T13:00:00+02:00
+  title: "Maltraitance des crevettes d'élevage : la grande distribution française rappelée à l'ordre par une ONG"
+  url: https://www.radiofrance.fr/franceinter/podcasts/l-info-de-france-inter/maltraitance-des-crevettes-d-elevage-la-grande-distribution-francaise-rappelee-a-l-ordre-par-une-ong-3892918
+- id: franceinfo-2026-10-16
+  outlet: franceinfo
+  kind: web
+  date: 2026-10-16T08:46:00+02:00
+  title: "Une ONG appelle la grande distribution à s'engager contre la maltraitance des crevettes d'élevage"
+  url: https://www.franceinfo.fr/environnement/biodiversite/animaux/bien-etre-animal/une-ong-appelle-la-grande-distribution-a-s-engager-contre-la-maltraitance-des-crevettes-d-elevage_8239735.html
+- id: leparisien-2026-10-16
+  outlet: Le Parisien
+  kind: presse
+  date: 2026-10-16T08:05:00+02:00
+  title: "Des yeux arrachés à vif sans anesthésie : le calvaire des crevettes d’élevage de la grande distribution dénoncé par une ONG"
+  url: https://www.leparisien.fr/economie/consommation/des-yeux-arraches-a-vif-sans-anesthesie-le-calvaire-des-crevettes-delevage-de-la-grande-distribution-denonce-par-une-ong-16-10-2026-PG4PIRYSWZCNPBKV3M3B55VEFI.php

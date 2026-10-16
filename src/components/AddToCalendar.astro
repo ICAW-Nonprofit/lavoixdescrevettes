@@ -1,0 +1,24 @@
+---
+import { googleCalendarUrl, outlookCalendarUrl } from '../lib/calendar';
+import type { EventEntry } from '../lib/content';
+import { url, ui, eventPath, type Lang } from '../i18n';
+
+interface Props {
+  event: EventEntry;
+  lang: Lang;
+  small?: boolean;
+}
+const { event, lang, small = false } = Astro.props;
+const t = ui[lang];
+const page = new URL(url(eventPath(event.id, lang)), Astro.site).href;
+const ics = url(`${eventPath(event.id, lang).replace(/\/$/, '')}.ics`);
+---
+
+<details class="cal">
+  <summary class:list={['btn', 'btn-primary', { 'btn-small': small }]}>{t.addToCalendar} <span aria-hidden="true">＋</span></summary>
+  <ul class="cal-menu">
+    <li><a href={googleCalendarUrl(event, lang, page)} target="_blank" rel="noopener">{t.calGoogle}</a></li>
+    <li><a href={ics} download>{t.calIcs}</a></li>
+    <li><a href={outlookCalendarUrl(event, lang, page)} target="_blank" rel="noopener">{t.calOutlook}</a></li>
+  </ul>
+</details>

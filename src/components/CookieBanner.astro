@@ -1,0 +1,44 @@
+---
+import { Image } from 'astro:assets';
+import { site } from '../config';
+import { route, url, type Lang } from '../i18n';
+import shrimp from '../assets/brand/crevette-jaune-transparente.png';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t =
+  lang === 'fr'
+    ? {
+        title: 'Des cookies ?',
+        punch: "Les crevettes n'ont jamais le choix. Toi, oui.",
+        text: "On aimerait mesurer l'audience du site avec Google Analytics. Pas de pub, pas de revente. Tu peux changer d'avis quand tu veux (lien « Cookies » en bas de page).",
+        more: 'En savoir plus',
+        yes: "J'accepte",
+        no: 'Je refuse',
+      }
+    : {
+        title: 'Cookies?',
+        punch: 'Shrimp never get a choice. You do.',
+        text: 'We would like to measure traffic with Google Analytics. No ads, no data selling. You can change your mind anytime ("Cookies" link in the footer).',
+        more: 'Learn more',
+        yes: 'Accept',
+        no: 'Refuse',
+      };
+---
+
+<div class="cookie" data-cookie data-ga={site.gaId} role="dialog" aria-labelledby="cookie-title" hidden>
+  <Image src={shrimp} alt="" width={240} />
+  <h2 id="cookie-title">{t.title}</h2>
+  <p class="punch">{t.punch}</p>
+  <p>{t.text} <a href={url(route('privacy', lang))}>{t.more}</a></p>
+  <div class="row">
+    <button class="btn btn-ghost" type="button" data-refuse>{t.no}</button>
+    <button class="btn btn-primary" type="button" data-accept>{t.yes}</button>
+  </div>
+</div>
+
+<script>
+  import '../scripts/consent.js';
+</script>

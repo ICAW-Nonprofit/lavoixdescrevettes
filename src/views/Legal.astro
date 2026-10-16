@@ -1,0 +1,157 @@
+---
+/** Mentions légales + politique de confidentialité. Items marked [à compléter] need the team's details. */
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { site } from '../config';
+import { route, url, ui, alternatesFor, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  page: 'legal' | 'privacy';
+}
+const { lang, page } = Astro.props;
+const t = ui[lang];
+const contact = url(route('contact', lang));
+const meta = {
+  legal: {
+    fr: { title: 'Mentions légales', description: 'Mentions légales du site La Voix des Crevettes : éditeur, hébergeur, crédits.' },
+    en: { title: 'Legal notice', description: 'Legal notice for the La Voix des Crevettes website: publisher, host, credits.' },
+  },
+  privacy: {
+    fr: {
+      title: 'Confidentialité et cookies',
+      description: 'Quelles données le site La Voix des Crevettes collecte, pourquoi, combien de temps, et comment exercer tes droits.',
+    },
+    en: { title: 'Privacy and cookies', description: 'What data the La Voix des Crevettes website collects, why, for how long, and how to exercise your rights.' },
+  },
+}[page][lang];
+const crumbs = [{ label: t.breadcrumbHome, href: route('home', lang) }, { label: meta.title }];
+---
+
+<Base lang={lang} title={meta.title} description={meta.description} alternates={alternatesFor(page)} crumbs={crumbs}>
+  <div class="narrow page-head">
+    <Breadcrumbs crumbs={crumbs} label={lang === 'fr' ? "Fil d'Ariane" : 'Breadcrumb'} />
+    <h1 class="h1-article">{meta.title}</h1>
+  </div>
+
+  <div class="narrow prose u-pb">
+    {page === 'legal' && lang === 'fr' && (
+      <>
+        <h2>Éditeur</h2>
+        <p>
+          Ce site est édité par <strong>La Voix des Crevettes</strong>, initiative de sensibilisation et campagne collaborative menée en France avec
+          l’<a href={site.icaw.url} target="_blank" rel="noopener">International Council for Animal Welfare (ICAW)</a>.
+        </p>
+        <p>Adresse : [à compléter]<br />Directeur·rice de la publication : [à compléter]<br />Contact : <a href={contact}>formulaire de contact</a> ou <a href={site.instagram} target="_blank" rel="noopener">Instagram</a>.</p>
+        <h2>Hébergement</h2>
+        <p>GitHub Pages, service de GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.</p>
+        <h2>Contenus</h2>
+        <p>
+          Sauf mention contraire, les textes et visuels sont © La Voix des Crevettes. Les photos d’actions sont publiées avec l’accord des personnes présentes. Les
+          marques citées appartiennent à leurs propriétaires.
+        </p>
+        <h2>Crédits</h2>
+        <ul>
+          <li>Police : Bricolage Grotesque (SIL Open Font License), hébergée sur ce site.</li>
+          <li>Fond de carte : © contributeurs OpenStreetMap, OpenFreeMap.</li>
+        </ul>
+      </>
+    )}
+    {page === 'legal' && lang === 'en' && (
+      <>
+        <h2>Publisher</h2>
+        <p>
+          This site is published by <strong>La Voix des Crevettes</strong>, an awareness initiative and collaborative campaign run in France with the
+          <a href={site.icaw.url} target="_blank" rel="noopener">International Council for Animal Welfare (ICAW)</a>.
+        </p>
+        <p>Address: [to be completed]<br />Publication director: [to be completed]<br />Contact: <a href={contact}>contact form</a> or <a href={site.instagram} target="_blank" rel="noopener">Instagram</a>.</p>
+        <h2>Hosting</h2>
+        <p>GitHub Pages, a service of GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA.</p>
+        <h2>Content</h2>
+        <p>Unless stated otherwise, texts and visuals are © La Voix des Crevettes. Action photos are published with the consent of the people in them. Brands mentioned belong to their owners.</p>
+        <h2>Credits</h2>
+        <ul>
+          <li>Typeface: Bricolage Grotesque (SIL Open Font License), self-hosted.</li>
+          <li>Map data: © OpenStreetMap contributors, OpenFreeMap.</li>
+        </ul>
+      </>
+    )}
+
+    {page === 'privacy' && lang === 'fr' && (
+      <>
+        <p>On collecte le moins de données possible, uniquement pour faire avancer la cause des crevettes. Pas de publicité, pas de revente.</p>
+        <h2>Newsletter</h2>
+        <p>
+          <strong>Données :</strong> email, et si tu les donnes, prénom, ville et ton souhait de participer à des actions.<br />
+          <strong>Pourquoi :</strong> t’envoyer les prochaines actions et les nouvelles de la campagne.<br />
+          <strong>Base légale :</strong> ton consentement.<br />
+          <strong>Outil :</strong> Mailchimp (Intuit, États-Unis), liste gérée par l’ICAW. Les transferts hors de l’Union européenne sont encadrés (Data Privacy Framework et clauses contractuelles types).<br />
+          <strong>Durée :</strong> jusqu’à ta désinscription, possible en un clic depuis chaque email.
+        </p>
+        <h2>Formulaire de contact</h2>
+        <p>
+          <strong>Données :</strong> nom ou pseudo, email, message.<br />
+          <strong>Pourquoi :</strong> te répondre.<br />
+          <strong>Base légale :</strong> ton consentement.<br />
+          <strong>Outil :</strong> Formspree (États-Unis), une fois le formulaire activé.<br />
+          <strong>Durée :</strong> le temps de l’échange, 12 mois maximum.
+        </p>
+        <h2>Mesure d’audience et cookies</h2>
+        <p>
+          Le site ne dépose <strong>aucun cookie</strong> sans ton accord. Si la mesure d’audience est activée et que tu l’acceptes, Google Analytics dépose des
+          cookies (durée maximale 13 mois) pour compter les visites de façon statistique. Tu peux changer d’avis à tout moment avec le lien « Cookies » en bas
+          de chaque page. Ton choix est enregistré dans ton navigateur.
+        </p>
+        <h2>Carte et hébergement</h2>
+        <p>
+          Les fonds de carte de l’agenda sont chargés depuis OpenFreeMap : ton adresse IP leur est transmise pour afficher la carte, sans cookie. L’hébergeur
+          (GitHub Pages) peut conserver des journaux techniques, dont l’adresse IP, pour la sécurité du service.
+        </p>
+        <h2>Tes droits</h2>
+        <p>
+          Tu peux demander l’accès, la rectification ou l’effacement de tes données, t’opposer à leur traitement ou retirer ton consentement :
+          <a href={contact}>écris-nous</a>. Si tu estimes que tes droits ne sont pas respectés, tu peux saisir la
+          <a href="https://www.cnil.fr/fr/plaintes" target="_blank" rel="noopener">CNIL</a>.
+        </p>
+      </>
+    )}
+    {page === 'privacy' && lang === 'en' && (
+      <>
+        <p>We collect as little data as possible, only to move the shrimp cause forward. No ads, no data selling.</p>
+        <h2>Newsletter</h2>
+        <p>
+          <strong>Data:</strong> email and, if you provide them, first name, city and whether you'd like to take part in actions.<br />
+          <strong>Why:</strong> to send you upcoming actions and campaign news.<br />
+          <strong>Legal basis:</strong> your consent.<br />
+          <strong>Tool:</strong> Mailchimp (Intuit, USA), list managed by ICAW. Transfers outside the EU are covered (Data Privacy Framework and standard contractual clauses).<br />
+          <strong>Retention:</strong> until you unsubscribe, one click from any email.
+        </p>
+        <h2>Contact form</h2>
+        <p>
+          <strong>Data:</strong> name or nickname, email, message.<br />
+          <strong>Why:</strong> to reply to you.<br />
+          <strong>Legal basis:</strong> your consent.<br />
+          <strong>Tool:</strong> Formspree (USA), once the form is activated.<br />
+          <strong>Retention:</strong> for the duration of the conversation, 12 months at most.
+        </p>
+        <h2>Analytics and cookies</h2>
+        <p>
+          The site sets <strong>no cookies</strong> without your consent. If analytics are enabled and you accept, Google Analytics sets cookies (13 months
+          maximum) to count visits statistically. You can change your mind anytime with the "Cookies" link at the bottom of each page. Your choice is stored in
+          your browser.
+        </p>
+        <h2>Map and hosting</h2>
+        <p>
+          Map tiles on the events page are loaded from OpenFreeMap: your IP address is sent to them to display the map, without cookies. The host (GitHub Pages)
+          may keep technical logs, including IP addresses, for security.
+        </p>
+        <h2>Your rights</h2>
+        <p>
+          You can request access to, correction or deletion of your data, object to its processing or withdraw consent: <a href={contact}>write to us</a>. If
+          you believe your rights aren't respected, you can complain to the
+          <a href="https://www.cnil.fr/fr/plaintes" target="_blank" rel="noopener">CNIL</a> (French data protection authority).
+        </p>
+      </>
+    )}
+  </div>
+</Base>

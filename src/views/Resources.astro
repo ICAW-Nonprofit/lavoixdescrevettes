@@ -1,0 +1,157 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Newsletter from '../components/Newsletter.astro';
+import { site } from '../config';
+import { md, stripMd } from '../lib/md';
+import { route, url, ui, alternatesFor, type Lang } from '../i18n';
+import { report } from '../lib/report';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = ui[lang];
+const faq = (await getCollection('faq')).sort((a, b) => a.data.order - b.data.order);
+const resources = (await getCollection('resources')).sort((a, b) => a.data.order - b.data.order);
+
+const c =
+  lang === 'fr'
+    ? {
+        title: 'Ressources : FAQ et sources sur la sensibilité des crevettes',
+        description:
+          'Les crevettes ressentent-elles la douleur ? Combien sont concernées ? Nos réponses aux questions fréquentes, des sources scientifiques et des liens pour aller plus loin.',
+        h1: 'Ressources',
+        intro: 'Les réponses aux questions qu’on nous pose le plus, et des sources solides pour aller plus loin.',
+        featKicker: 'À la une',
+        featTitle: 'Rapport « Souffrance en rayon »',
+        featText: "Le rapport de l'ICAW (octobre 2026) : les chiffres, les pratiques, et le classement des enseignes françaises.",
+        featRead: 'Lire la synthèse',
+        featPdf: 'Télécharger le PDF',
+        faqTitle: 'Questions fréquentes',
+        moreTitle: 'Pour aller plus loin',
+        kitTitle: 'Kit militant',
+        kitText: 'Affiches, pancartes, visuels pour les réseaux : le kit arrive bientôt. En attendant, écris-nous sur Instagram si tu veux organiser une action dans ta ville.',
+        cats: {
+          science: 'Science et sentience',
+          elevage: 'Élevage et chiffres',
+          enquetes: 'Enquêtes et médias',
+          debats: 'Débats',
+          organisations: 'Organisations',
+        },
+        enTag: 'EN',
+      }
+    : {
+        title: 'Resources: FAQ and sources on shrimp sentience',
+        description:
+          'Do shrimp feel pain? How many are affected? Our answers to common questions, scientific sources and links to dig deeper.',
+        h1: 'Resources',
+        intro: 'Answers to the questions we hear most, and solid sources to dig deeper.',
+        featKicker: 'Featured',
+        featTitle: 'The “Souffrance en rayon” report',
+        featText: "ICAW's report (October 2026): the figures, the practices, and the ranking of French retailers.",
+        featRead: 'Read the summary',
+        featPdf: 'Download the PDF (French)',
+        faqTitle: 'Frequently asked questions',
+        moreTitle: 'Dig deeper',
+        kitTitle: 'Activist kit',
+        kitText: "Posters, placards, social media visuals: the kit is coming soon. In the meantime, message us on Instagram if you'd like to organise an action in your city.",
+        cats: {
+          science: 'Science and sentience',
+          elevage: 'Farming and numbers',
+          enquetes: 'Investigations and media',
+          debats: 'Debates',
+          organisations: 'Organisations',
+        },
+        enTag: 'EN',
+      };
+const order = ['science', 'elevage', 'enquetes', 'debats', 'organisations'] as const;
+const crumbs = [{ label: t.breadcrumbHome, href: route('home', lang) }, { label: c.h1 }];
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    inLanguage: lang,
+    mainEntity: faq.map((q) => ({
+      '@type': 'Question',
+      name: q.data.question[lang],
+      acceptedAnswer: { '@type': 'Answer', text: stripMd(q.data.answer[lang]) },
+    })),
+  },
+];
+---
+
+<Base lang={lang} title={c.title} description={c.description} alternates={alternatesFor('resources')} crumbs={crumbs} jsonLd={jsonLd}>
+  <div class="container page-head">
+    <Breadcrumbs crumbs={crumbs} label={lang === 'fr' ? "Fil d'Ariane" : 'Breadcrumb'} />
+    <h1>{c.h1}</h1>
+    <p class="intro">{c.intro}</p>
+  </div>
+
+  <section class="section u-pt0" aria-labelledby="featured">
+    <div class="narrow">
+      <div class="paper tape">
+        <span class="kicker">{c.featKicker}</span>
+        <h2 id="featured">{c.featTitle}</h2>
+        <p class="big-text">{c.featText}</p>
+        <div class="event-actions">
+          <a class="btn btn-primary btn-small" href={url(route('report', lang))}>{c.featRead}</a>
+          <a class="link-arrow" href={report.pdf} target="_blank" rel="noopener">{c.featPdf} →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section u-pt0" id="faq" aria-labelledby="faq-title">
+    <div class="narrow">
+      <h2 id="faq-title">{c.faqTitle}</h2>
+      <div class="faq">
+        {faq.map((q, i) => (
+          <details id={q.id} open={i === 0}>
+            <summary>{q.data.question[lang]}</summary>
+            <div class="answer" set:html={md(q.data.answer[lang])} />
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section dark" aria-labelledby="more">
+    <div class="container">
+      <h2 id="more" class="u-blanc">{c.moreTitle}</h2>
+      {order.map((cat) => (
+        <div class="res-group">
+          <h3 class="u-jaune">{c.cats[cat]}</h3>
+          <ul class="res-list">
+            {resources
+              .filter((r) => r.data.category === cat)
+              .map((r) => (
+                <li class="u-marine">
+                  <span class="src">
+                    {r.data.source}
+                    {r.data.year ? ` · ${r.data.year}` : ''}
+                    {r.data.lang !== lang && <span class="tag">{r.data.lang.toUpperCase()}</span>}
+                  </span>
+                  <a href={r.data.url} target="_blank" rel="noopener">{r.data.title}</a>
+                  <p>{r.data.description[lang]}</p>
+                </li>
+              ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="kit">
+    <div class="narrow">
+      <div class="paper tape">
+        <h2 id="kit">{c.kitTitle}</h2>
+        <p class="big-text">{c.kitText}</p>
+        <a class="btn btn-primary btn-small" href={site.instagram} target="_blank" rel="noopener">Instagram</a>
+      </div>
+    </div>
+  </section>
+
+  <Newsletter lang={lang} />
+</Base>

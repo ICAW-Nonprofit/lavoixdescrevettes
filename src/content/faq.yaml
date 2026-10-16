@@ -1,0 +1,87 @@
+# FAQ about shrimp as sentient beings. Answers support **bold**, [links](https://…) and "- " lists.
+- id: douleur
+  order: 1
+  question:
+    fr: Les crevettes ressentent-elles vraiment la douleur ?
+    en: Do shrimp really feel pain?
+  answer:
+    fr: |
+      Oui, selon l'état actuel de la science. En 2021, des chercheurs de la London School of Economics ont passé en revue plus de 300 études et conclu qu'il existe des **preuves solides** que les crustacés décapodes (la famille des crevettes, des crabes et des homards) sont des êtres sentients, capables de ressentir la douleur et la détresse. Ce travail a conduit le Royaume-Uni à les reconnaître comme tels dans sa loi en 2022.
+    en: |
+      Yes, according to current science. In 2021, researchers at the London School of Economics reviewed more than 300 studies and concluded there is **strong evidence** that decapod crustaceans (the family of shrimp, crabs and lobsters) are sentient beings, able to feel pain and distress. This work led the United Kingdom to recognise them as such in law in 2022.
+- id: sentience
+  order: 2
+  question:
+    fr: Ça veut dire quoi, « être sentient » ?
+    en: What does "sentient" mean?
+  answer:
+    fr: |
+      Être sentient, c'est avoir un vécu : ressentir la douleur, la peur, le stress, et sans doute aussi le bien-être. Ce n'est pas une question de taille ni d'intelligence, mais de capacité à ressentir ce qui nous arrive. Une crevette n'est pas un objet : c'est quelqu'un à qui il arrive quelque chose.
+    en: |
+      Being sentient means having experiences: feeling pain, fear, stress, and probably wellbeing too. It isn't about size or intelligence, but about being able to feel what happens to you. A shrimp isn't an object: it's someone something happens to.
+- id: preuves
+  order: 3
+  question:
+    fr: Comment sait-on qu'une crevette souffre ?
+    en: How do we know a shrimp suffers?
+  answer:
+    fr: |
+      On observe ce qu'elles font. Dans une étude de 2008 menée à l'université Queen's de Belfast, des crevettes dont une antenne avait été touchée par une substance irritante l'ont longuement frottée et nettoyée, et ce comportement diminuait quand on leur appliquait un anesthésiant local. Chez les décapodes, on observe aussi qu'ils **apprennent à éviter** ce qui leur a fait mal et qu'ils font des compromis pour s'en protéger. Ce sont des signes de douleur, pas de simples réflexes.
+    en: |
+      We watch what they do. In a 2008 study at Queen's University Belfast, prawns whose antenna had been touched with an irritant rubbed and groomed it for a long time, and this behaviour decreased when a local anaesthetic was applied. In decapods, we also see that they **learn to avoid** what hurt them and make trade-offs to protect themselves. These are signs of pain, not mere reflexes.
+- id: chiffres
+  order: 4
+  question:
+    fr: Combien de crevettes sont concernées ?
+    en: How many shrimp are affected?
+  answer:
+    fr: |
+      Des centaines de milliards chaque année. Selon l'ICAW, environ **440 milliards** de crevettes d'élevage sont tuées chaque année dans le monde, soit près de 14 000 par seconde. Rethink Priorities estime qu'environ 230 milliards de crevettes vivent dans les élevages à tout moment : c'est l'animal d'élevage le plus nombreux de la planète.
+    en: |
+      Hundreds of billions every year. According to ICAW, around **440 billion** farmed shrimp are killed worldwide each year, nearly 14,000 every second. Rethink Priorities estimates that around 230 billion shrimp are alive on farms at any given moment: the most numerous farmed animal on the planet.
+- id: invisibles
+  order: 5
+  question:
+    fr: Pourquoi personne n'en parle ?
+    en: Why does nobody talk about it?
+  answer:
+    fr: |
+      Parce qu'on ne les voit jamais vivre. Elles sont petites, silencieuses, élevées très loin d'ici (Équateur, Inde, Vietnam, Chine…), puis vendues surgelées ou décortiquées. Elles ne peuvent pas crier. C'est pour ça qu'on s'appelle **La Voix des Crevettes** : on parle pour celles qu'on n'entend pas.
+    en: |
+      Because we never see them alive. They are small, silent, farmed far away (Ecuador, India, Vietnam, China…), then sold frozen or peeled. They can't scream. That's why we're called **La Voix des Crevettes** ("the voice of shrimp"): we speak for those nobody hears.
+- id: loi
+  order: 6
+  question:
+    fr: La loi protège-t-elle les crevettes ?
+    en: Does the law protect shrimp?
+  answer:
+    fr: |
+      Presque pas. Le Royaume-Uni, la Suisse, l'Autriche et la Norvège reconnaissent la sensibilité des crustacés décapodes dans leur droit. En France, le Code civil dit que les animaux sont « des êtres vivants doués de sensibilité », mais les règles européennes sur la mise à mort des animaux d'élevage ne s'appliquent qu'aux vertébrés : les crevettes en sont exclues.
+    en: |
+      Hardly at all. The United Kingdom, Switzerland, Austria and Norway recognise the sentience of decapod crustaceans in their laws. In France, the Civil Code states that animals are "living beings endowed with sentience", but EU rules on killing farmed animals only apply to vertebrates: shrimp are left out.
+- id: supermarches
+  order: 7
+  question:
+    fr: Pourquoi viser les supermarchés ?
+    en: Why target supermarkets?
+  answer:
+    fr: |
+      Parce que les supermarchés et les distributeurs décident de ce qu'ils achètent et à quelles conditions. Une seule décision d'une grande enseigne peut changer le sort de millions de crevettes. Plusieurs distributeurs européens se sont déjà engagés à mettre fin aux pratiques les plus cruelles : on demande aux autres de suivre.
+    en: |
+      Because supermarkets and retailers decide what they buy and under which conditions. A single decision by a big retailer can change the fate of millions of shrimp. Several European retailers have already committed to ending the cruellest practices: we're asking the others to follow.
+- id: agir
+  order: 8
+  question:
+    fr: Qu'est-ce que je peux faire, concrètement ?
+    en: What can I actually do?
+  answer:
+    fr: |
+      - **Viens à une action** : toutes les dates sont dans l'agenda.
+      - **Inscris-toi à la newsletter** pour ne rien rater.
+      - **Partage** nos posts et ce site autour de toi.
+      - **Laisse les crevettes hors de ton assiette** : c'est le geste le plus simple et le plus direct.
+    en: |
+      - **Join an action**: all dates are in the events page.
+      - **Sign up to the newsletter** so you don't miss anything.
+      - **Share** our posts and this site.
+      - **Leave shrimp off your plate**: it's the simplest, most direct thing you can do.

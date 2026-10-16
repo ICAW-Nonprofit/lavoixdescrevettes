@@ -1,0 +1,87 @@
+---
+/** Full-screen page with the live shrimp: 404 and thank-you pages. */
+import Base from '../layouts/Base.astro';
+import ShrimpScene from '../components/ShrimpScene.astro';
+import { site } from '../config';
+import { route, url, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  kind: '404' | 'thanks' | 'thanksNewsletter';
+}
+const { lang, kind } = Astro.props;
+
+const copy = {
+  fr: {
+    '404': {
+      title: 'Page introuvable',
+      h1: '404',
+      say: ['Cette page s’est fait la malle.', 'La crevette, elle, va très bien.'],
+      text: 'Elle nage tranquillement. Toi, tu peux retourner à l’accueil ou voir les prochaines actions.',
+    },
+    thanks: {
+      title: 'Message envoyé',
+      h1: 'Merci !',
+      say: ['Message bien reçu.', 'On te répond vite.'],
+      text: 'En attendant, viens voir les prochaines actions ou suis-nous sur Instagram.',
+    },
+    thanksNewsletter: {
+      title: 'Inscription confirmée',
+      h1: 'Bienvenue !',
+      say: ['Tu fais maintenant partie', 'de la voix des crevettes.'],
+      text: 'Tu recevras les prochaines actions par email. Et pour rejoindre le groupe WhatsApp, écris-nous sur Instagram.',
+    },
+    home: 'Accueil',
+    agenda: 'Voir l’agenda',
+  },
+  en: {
+    '404': {
+      title: 'Page not found',
+      h1: '404',
+      say: ['This page swam away.', 'The shrimp is doing just fine.'],
+      text: "It's swimming happily. You can head back home or check the next actions.",
+    },
+    thanks: {
+      title: 'Message sent',
+      h1: 'Thank you!',
+      say: ['Message received.', "We'll get back to you soon."],
+      text: 'Meanwhile, check the next actions or follow us on Instagram.',
+    },
+    thanksNewsletter: {
+      title: 'Signed up',
+      h1: 'Welcome!',
+      say: ["You're now part of", 'the voice of shrimp.'],
+      text: "You'll get the next actions by email. To join the WhatsApp group, message us on Instagram.",
+    },
+    home: 'Home',
+    agenda: 'See events',
+  },
+}[lang];
+const c = copy[kind];
+---
+
+<Base
+  lang={lang}
+  title={c.title}
+  description={`${c.say.join(' ')} ${c.text}`}
+  noindex
+  sticky={false}
+  alternates={kind === '404' ? undefined : { fr: route(kind, 'fr'), en: route(kind, 'en') }}
+>
+  <ShrimpScene class="scene" labelledby="scene-title">
+    <div class="stage" data-crevette-stage></div>
+    <div>
+      <h1 id="scene-title">{c.h1}</h1>
+      <p class="say"><span>{c.say[0]}</span> <span>{c.say[1]}</span></p>
+      <p class="big-text u-center u-semibold">{c.text}</p>
+      <div class="ctas">
+        <a class="btn btn-primary" href={url(route('agenda', lang))}>{copy.agenda} <span class="arrow" aria-hidden="true">→</span></a>
+        {kind === '404' ? (
+          <a class="btn btn-ghost" href={url(route('home', lang))}>{copy.home}</a>
+        ) : (
+          <a class="btn btn-ghost" href={site.instagram} target="_blank" rel="noopener">Instagram</a>
+        )}
+      </div>
+    </div>
+  </ShrimpScene>
+</Base>

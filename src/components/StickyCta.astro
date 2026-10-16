@@ -1,0 +1,20 @@
+---
+import { url, ui, eventPath, formatShort, type Lang } from '../i18n';
+import { getEvents } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const { next } = await getEvents();
+const here = Astro.url.pathname;
+const href = next ? url(eventPath(next.id, lang)) : '';
+---
+
+{next && here !== href && (
+  <div class="sticky-cta" data-sticky-cta data-expires={next.data.end.toISOString()}>
+    <a class="btn btn-primary" href={href}>
+      {ui[lang].sticky} · {formatShort(next.data.start, lang)} <span class="arrow" aria-hidden="true">→</span>
+    </a>
+  </div>
+)}

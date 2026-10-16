@@ -1,0 +1,63 @@
+---
+import { route, url, ui, eventPath, type Lang } from '../i18n';
+import { getEvents } from '../lib/content';
+
+interface Props {
+  lang: Lang;
+  alternates?: Partial<Record<Lang, string>>;
+}
+const { lang, alternates = {} } = Astro.props;
+const t = ui[lang];
+const other: Lang = lang === 'fr' ? 'en' : 'fr';
+const { next } = await getEvents();
+const ctaHref = url(next ? eventPath(next.id, lang) : route('agenda', lang));
+const ctaText = next ? t.ctaNext : t.ctaAgenda;
+const here = Astro.url.pathname;
+
+const links = [
+  { href: url(route('agenda', lang)), label: t.nav.agenda, desktop: true },
+  { href: url(route('report', lang)), label: t.nav.report, desktop: true },
+  { href: url(route('blog', lang)), label: t.nav.blog, desktop: true },
+  { href: url(route('resources', lang)), label: t.nav.resources, desktop: true },
+  { href: url(route('about', lang)), label: t.nav.about, desktop: true },
+  // Contact lives in the footer and the mobile menu
+  { href: url(route('contact', lang)), label: t.nav.contact, desktop: false },
+];
+const isCurrent = (href: string) => here === href || (href !== url(route('home', lang)) && here.startsWith(href));
+const switchHref = url(alternates[other] ?? route('home', other));
+---
+
+<header class="site-header">
+  <a class="wordmark" href={url(route('home', lang))} aria-label={t.homeLabel}>
+    <span>La voix des</span>
+    <span>crevettes</span>
+  </a>
+  <nav class="nav" aria-label={t.navLabel}>
+    <ul class="nav-links">
+      {links.filter((l) => l.desktop).map((l) => (
+        <li>
+          <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
+        </li>
+      ))}
+    </ul>
+    <a class="lang-switch" href={switchHref} hreflang={other} lang={other} aria-label={t.switchLabel}>{other.toUpperCase()}</a>
+    <a class="btn btn-primary" href={ctaHref}>{ctaText}</a>
+    <button class="btn btn-ghost menu-btn" type="button" aria-expanded="false" aria-controls="menu-panel" data-menu-open>{t.menu}</button>
+  </nav>
+
+  <div class="menu-panel" id="menu-panel" data-menu-panel role="dialog" aria-modal="true" aria-label={t.navLabel}>
+    <div class="menu-top">
+      <span class="wordmark" aria-hidden="true"><span>La voix des</span><span>crevettes</span></span>
+      <button class="btn btn-ghost" type="button" data-menu-close>{t.close}</button>
+    </div>
+    <ul>
+      {links.map((l) => (
+        <li>
+          <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
+        </li>
+      ))}
+    </ul>
+    <a class="btn btn-primary" href={ctaHref}>{ctaText} <span class="arrow" aria-hidden="true">→</span></a>
+    <a class="lang-switch" href={switchHref} hreflang={other} lang={other}>{t.switchTo}</a>
+  </div>
+</header>

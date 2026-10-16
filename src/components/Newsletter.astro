@@ -1,0 +1,70 @@
+---
+import { site } from '../config';
+import { route, url, ui, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = ui[lang].newsletter;
+const n = site.newsletter;
+const action = `${n.host}/subscribe/post?u=${n.u}&id=${n.id}&f_id=${n.fId}`;
+const id = `nl-${lang}`;
+---
+
+<section class="section dark newsletter" id="newsletter" aria-labelledby={`${id}-title`}>
+  <div class="container two-col">
+    <div>
+      <span class="kicker">Newsletter</span>
+      <h2 id={`${id}-title`}>{t.title}</h2>
+      <p class="big-text">{t.text}</p>
+    </div>
+    <form
+      action={action}
+      method="post"
+      target="_blank"
+      data-newsletter
+      data-thanks={url(route('thanksNewsletter', lang))}
+      data-hosted={n.hostedPage}
+      data-sending={t.sending}
+      data-error={t.error}
+      data-error-link={t.errorLink}
+    >
+      <div class="form-grid">
+        <div class="field">
+          <label for={`${id}-email`}>{t.email}</label>
+          <input id={`${id}-email`} type="email" name="EMAIL" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for={`${id}-fname`}>{t.firstName} <span class="opt">({t.optional})</span></label>
+          <input id={`${id}-fname`} type="text" name="FNAME" autocomplete="given-name" />
+        </div>
+        <div class="field">
+          <label for={`${id}-city`}>{t.city} <span class="opt">({t.optional})</span></label>
+          <input id={`${id}-city`} type="text" name="CITY" autocomplete="address-level2" />
+        </div>
+        <div class="field">
+          <label for={`${id}-part`}>{t.participate}</label>
+          <select id={`${id}-part`} name="MMERGE5" required>
+            {n.choices.map((value, i) => <option value={value}>{t.choices[i]}</option>)}
+          </select>
+        </div>
+      </div>
+      <label class="check u-mt18">
+        <input type="checkbox" name={`gdpr[${n.gdprId}]`} value="Y" required />
+        <span>{t.consent} <a href={url(route('privacy', lang))}>{t.privacyLink}</a></span>
+      </label>
+      <div class="hp" aria-hidden="true">
+        <input type="text" name={`b_${n.u}_${n.id}`} tabindex="-1" value="" />
+      </div>
+      <div class="form-foot">
+        <button class="btn btn-primary" type="submit">{t.submit}</button>
+        <p class="form-msg" role="status" data-msg></p>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script>
+  import '../scripts/newsletter.js';
+</script>

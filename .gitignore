@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.astro/
+.env
+.env.*
+.DS_Store
+Thumbs.db
+
+# Original uploads (unblurred photos, raw brand files) stay local, never public.
+# The site uses the processed copies in src/assets/.
+/assets/
+
+
+# Internal planning notes (strategy, legal notes) stay local
+/PLAN.md

@@ -1,0 +1,20 @@
+---
+/**
+ * A section with the live shrimp drawn behind its content.
+ * Put a `<div class="stage" data-crevette-stage>` somewhere inside: it sets where the body is drawn.
+ */
+interface Props {
+  class?: string;
+  labelledby?: string;
+}
+const { class: cls = '', labelledby } = Astro.props;
+---
+
+<section class={cls} data-crevette-scene aria-labelledby={labelledby}>
+  <canvas class="scene-canvas" data-crevette aria-hidden="true"></canvas>
+  <slot />
+</section>
+
+<script>
+  import '../scripts/shrimp.js';
+</script>

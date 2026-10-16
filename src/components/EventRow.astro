@@ -1,0 +1,42 @@
+---
+import AddToCalendar from './AddToCalendar.astro';
+import type { EventEntry } from '../lib/content';
+import { url, ui, eventPath, dayParts, formatTime, type Lang } from '../i18n';
+
+interface Props {
+  event: EventEntry;
+  lang: Lang;
+  past?: boolean;
+  /** use the neutral teaser title (home page) */
+  teaser?: boolean;
+  headingLevel?: 'h2' | 'h3';
+}
+const { event, lang, past = false, teaser = false } = Astro.props;
+const t = ui[lang];
+const d = event.data;
+const p = dayParts(d.start, lang);
+const href = url(eventPath(event.id, lang));
+const title = teaser ? d.teaser[lang] : d.title[lang];
+---
+
+<li class:list={['event-row', { 'is-past': past }]}>
+  <div class="event-date">
+    <span class="w">{p.weekday}</span>
+    <span class="d">{p.day}</span>
+    <span class="m">{p.month}</span>
+  </div>
+  <div class="event-body">
+    <h3>
+      <a href={href}>{title}</a>
+      {d.status === 'annule' && <span class="badge">{t.statusCancelled}</span>}
+      {d.status === 'reporte' && <span class="badge">{t.statusPostponed}</span>}
+    </h3>
+    <p class="event-meta">{formatTime(d.start, lang)} · {d.venue.city}{d.access ? ` · ${d.access[lang]}` : ''}</p>
+    {!past && (
+      <div class="event-actions">
+        <a class="link-arrow" href={href}>{t.details} →</a>
+        <AddToCalendar event={event} lang={lang} small />
+      </div>
+    )}
+  </div>
+</li>

@@ -1,0 +1,187 @@
+# "Pour aller plus loin" links. category: science | elevage | enquetes | debats | organisations
+- id: lse-2021
+  order: 1
+  category: science
+  title: Review of the Evidence of Sentience in Cephalopod Molluscs and Decapod Crustaceans
+  url: https://www.lse.ac.uk/News/News-Assets/PDFs/2021/Sentience-in-Cephalopod-Molluscs-and-Decapod-Crustaceans-Final-Report-November-2021.pdf
+  source: London School of Economics (Birch et al.)
+  year: 2021
+  lang: en
+  description:
+    fr: Le rapport scientifique qui a conduit le Royaume-Uni à reconnaître les crustacés décapodes comme sentients.
+    en: The scientific report that led the UK to recognise decapod crustaceans as sentient.
+- id: swp-pain
+  order: 2
+  category: science
+  title: Do shrimps feel pain?
+  url: https://www.shrimpwelfareproject.org/blog/do-shrimps-feel-pain
+  source: Shrimp Welfare Project
+  lang: en
+  description:
+    fr: Un tour d'horizon accessible des indices de douleur chez les crevettes (nocicepteurs, comportements de protection, apprentissage d'évitement).
+    en: An accessible overview of the evidence for pain in shrimp (nociceptors, protective behaviour, avoidance learning).
+- id: wiki-pain
+  order: 3
+  category: science
+  title: Pain in crustaceans
+  url: https://en.wikipedia.org/wiki/Pain_in_crustaceans
+  source: Wikipedia
+  lang: en
+  description:
+    fr: La synthèse des études sur la douleur chez les crustacés, avec les débats et la reconnaissance légale par pays.
+    en: A summary of studies on pain in crustaceans, with the debates and legal recognition by country.
+- id: barr-2008
+  order: 4
+  category: science
+  title: Nociception or pain in a decapod crustacean?
+  url: https://doi.org/10.1016/j.anbehav.2007.07.004
+  source: Barr, Laming, Dick & Elwood, Animal Behaviour
+  year: 2008
+  lang: en
+  description:
+    fr: L'étude de Queen's University Belfast sur des crevettes qui frottent longuement leur antenne irritée, un comportement réduit par un anesthésiant.
+    en: The Queen's University Belfast study of prawns persistently rubbing an irritated antenna, a behaviour reduced by an anaesthetic.
+- id: icaw-silence
+  order: 5
+  category: elevage
+  title: 'Suffering in Silence: Four Facts About the World''s Most Farmed Animal'
+  url: https://www.i-caw.org/blog/suffering-in-silence
+  source: ICAW
+  lang: en
+  description:
+    fr: "Quatre faits sur l'animal le plus élevé au monde : l'échelle, la sentience, les pratiques et ce que peuvent faire les distributeurs."
+    en: 'Four facts about the world''s most farmed animal: scale, sentience, practices, and what retailers can do.'
+- id: ea-numbers
+  order: 6
+  category: elevage
+  title: 'Shrimp: The animals most commonly used and killed for food production'
+  url: https://forum.effectivealtruism.org/posts/Fhoq7tP9LYPqaJDxx/shrimp-the-animals-most-commonly-used-and-killed-for-food
+  source: Rethink Priorities, sur l'EA Forum
+  lang: en
+  description:
+    fr: Les estimations de Rethink Priorities sur le nombre de crevettes élevées et pêchées chaque année.
+    en: Rethink Priorities' estimates of how many shrimp are farmed and caught every year.
+- id: wiki-farming
+  order: 7
+  category: elevage
+  title: Prawn farming
+  url: https://en.wikipedia.org/wiki/Prawn_farming
+  source: Wikipedia
+  lang: en
+  description:
+    fr: Comment fonctionne l'élevage de crevettes dans le monde, ses principaux pays producteurs et ses impacts.
+    en: How shrimp farming works around the world, its main producing countries and its impacts.
+- id: wiki-ablation
+  order: 8
+  category: elevage
+  title: Eyestalk ablation
+  url: https://en.wikipedia.org/wiki/Eyestalk_ablation
+  source: Wikipedia
+  lang: en
+  description:
+    fr: "L'épédonculation : l'ablation des pédoncules oculaires des crevettes reproductrices, pratiquée dans de nombreux élevages."
+    en: 'The removal of eyestalks from breeding female shrimp, a common practice in hatcheries.'
+- id: ra-ai
+  order: 9
+  category: elevage
+  title: How AI is affecting farmed aquatic animals
+  url: https://rethinkpriorities.org/research-area/how-ai-is-affecting-farmed-aquatic-animals-1/
+  source: Rethink Priorities
+  year: 2025
+  lang: en
+  description:
+    fr: L'intelligence artificielle arrive dans l'aquaculture, et les crevettes figurent parmi les espèces les plus ciblées.
+    en: AI is arriving in aquaculture, and shrimp are among the most targeted species.
+- id: ap-slavery
+  order: 10
+  category: enquetes
+  title: 'AP Investigation: Is the fish you buy caught by slaves?'
+  url: https://apnews.com/article/f73b30aacb8f4659ac337da17941a226
+  source: Associated Press
+  year: 2015
+  lang: en
+  description:
+    fr: L'enquête de l'AP sur le travail forcé dans la pêche en Asie du Sud-Est, qui alimente les chaînes d'approvisionnement mondiales des produits de la mer.
+    en: AP's investigation into forced labour in South-East Asian fishing, which feeds global seafood supply chains.
+- id: fastcompany
+  order: 11
+  category: enquetes
+  title: You don't want to know where your shrimp comes from
+  url: https://www.fastcompany.com/90833406/shrimp-farming-unethical-vegan-alternative
+  source: Fast Company
+  year: 2023
+  lang: en
+  description:
+    fr: Les problèmes éthiques de l'élevage de crevettes et l'essor des alternatives végétales.
+    en: The ethical problems of shrimp farming and the rise of plant-based alternatives.
+- id: kernel-who-cares
+  order: 12
+  category: enquetes
+  title: Who cares about the shrimp?
+  url: https://forum.effectivealtruism.org/posts/NGLCHHogG4op4b8rG/who-cares-about-the-shrimp
+  source: Alex Wennerberg, Kernel Magazine
+  lang: en
+  description:
+    fr: Un long portrait du Shrimp Welfare Project et des personnes qui se battent pour les crevettes.
+    en: A long-form portrait of the Shrimp Welfare Project and the people fighting for shrimp.
+- id: daily-show
+  order: 13
+  category: enquetes
+  title: The Daily Show did a segment on EA and shrimp welfare
+  url: https://forum.effectivealtruism.org/posts/LeCJqzdHZZB3uBhZg/the-daily-show-did-a-segment-on-ea-and-shrimp-welfare
+  source: EA Forum
+  year: 2025
+  lang: en
+  description:
+    fr: Quand le bien-être des crevettes passe au Daily Show, avec le Shrimp Welfare Project.
+    en: Shrimp welfare makes it onto The Daily Show, featuring the Shrimp Welfare Project.
+- id: ea-asphyxiation
+  order: 14
+  category: debats
+  title: How do we know shrimp suffer more from asphyxiation than stunning?
+  url: https://forum.effectivealtruism.org/posts/4wG6wXCA6nKRc8nnn/how-do-we-know-shrimp-suffer-more-from-asphyxiation-than
+  source: EA Forum
+  lang: en
+  description:
+    fr: Un débat entre chercheurs sur ce que vivent les crevettes lors de l'asphyxie, et sur ce qu'on sait encore mal.
+    en: A debate among researchers about what shrimp go through during asphyxiation, and what we still don't know.
+- id: ea-soil
+  order: 15
+  category: debats
+  title: Soil arthropod-years affected per electrically stunned shrimp
+  url: https://forum.effectivealtruism.org/posts/Ln8eSQ22x9n836P53/soil-arthropod-years-affected-per-electrically-stunned
+  source: Vasco Grilo, EA Forum
+  lang: en
+  description:
+    fr: Une analyse chiffrée (et discutée) des effets indirects des améliorations du bien-être des crevettes.
+    en: A quantitative (and debated) analysis of the indirect effects of shrimp welfare improvements.
+- id: org-icaw
+  order: 16
+  category: organisations
+  title: International Council for Animal Welfare
+  url: https://www.i-caw.org/
+  source: ICAW
+  lang: en
+  description:
+    fr: L'association avec laquelle on mène nos actions, contre les pires pratiques d'élevage dans les chaînes d'approvisionnement.
+    en: The organisation we run our actions with, fighting the worst farming practices in corporate supply chains.
+- id: org-swp
+  order: 17
+  category: organisations
+  title: Shrimp Welfare Project
+  url: https://www.shrimpwelfareproject.org/
+  source: Shrimp Welfare Project
+  lang: en
+  description:
+    fr: L'organisation internationale qui travaille avec les producteurs et les distributeurs pour réduire la souffrance des crevettes.
+    en: The international organisation working with producers and retailers to reduce shrimp suffering.
+- id: org-rp
+  order: 18
+  category: organisations
+  title: Rethink Priorities
+  url: https://rethinkpriorities.org/
+  source: Rethink Priorities
+  lang: en
+  description:
+    fr: Le centre de recherche à l'origine de nombreuses estimations sur les animaux aquatiques d'élevage.
+    en: The research centre behind many estimates on farmed aquatic animals.

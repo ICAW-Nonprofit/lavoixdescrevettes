@@ -1,0 +1,78 @@
+---
+import type { ImageMetadata } from 'astro';
+import Seo from '../components/Seo.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import StickyCta from '../components/StickyCta.astro';
+import CookieBanner from '../components/CookieBanner.astro';
+import { url, ui, type Lang } from '../i18n';
+import fontLatin from '../assets/fonts/bricolage-grotesque-latin.woff2?url';
+import '../styles/global.css';
+import '../styles/report.css';
+
+export interface Crumb {
+  label: string;
+  href?: string;
+}
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  alternates?: Partial<Record<Lang, string>>;
+  image?: ImageMetadata;
+  imageAlt?: string;
+  type?: 'website' | 'article';
+  jsonLd?: object[];
+  noindex?: boolean;
+  published?: Date;
+  /** breadcrumb trail → BreadcrumbList JSON-LD (the visible trail is rendered by the page) */
+  crumbs?: Crumb[];
+  sticky?: boolean;
+}
+
+const { lang, crumbs, sticky = true, jsonLd = [], ...seo } = Astro.props;
+const t = ui[lang];
+const ld = [...jsonLd];
+if (crumbs?.length) {
+  ld.push({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: crumbs.map((c, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: c.label,
+      ...(c.href ? { item: new URL(url(c.href), Astro.site).href } : {}),
+    })),
+  });
+}
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <Seo lang={lang} jsonLd={ld} {...seo} />
+    <meta name="theme-color" content="#9cb3f7" />
+    <link rel="icon" href={url('/favicon.ico')} sizes="48x48" />
+    <link rel="icon" href={url('/favicon-32.png')} sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href={url('/apple-touch-icon.png')} />
+    <link rel="alternate" type="application/rss+xml" title="La Voix des Crevettes" href={url(lang === 'fr' ? '/rss.xml' : '/en/rss.xml')} />
+    <link rel="sitemap" href={url('/sitemap-index.xml')} />
+    <link rel="preload" href={fontLatin} as="font" type="font/woff2" crossorigin />
+  </head>
+  <body>
+    <a class="skip" href="#contenu">{t.skip}</a>
+    <Header lang={lang} alternates={seo.alternates} />
+    <main id="contenu">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+    {sticky && <StickyCta lang={lang} />}
+    <CookieBanner lang={lang} />
+    <script>
+      import '../scripts/site.js';
+    </script>
+  </body>
+</html>

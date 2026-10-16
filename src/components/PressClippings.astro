@@ -1,0 +1,42 @@
+---
+import { getCollection } from 'astro:content';
+import { formatDate, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  /** heading level/id for the section title */
+  id?: string;
+  limit?: number;
+}
+const { lang, id = 'presse', limit } = Astro.props;
+const items = (await getCollection('press')).sort((a, b) => b.data.date.getTime() - a.data.date.getTime()).slice(0, limit);
+const t =
+  lang === 'fr'
+    ? { title: 'Ils en parlent', kicker: 'Dans les médias', listen: 'Écouter', read: 'Lire', watch: 'Regarder', inFrench: '' }
+    : { title: 'In the media', kicker: 'Press', listen: 'Listen', read: 'Read', watch: 'Watch', inFrench: 'In French' };
+const cta = (k: string) => (k === 'radio' ? t.listen : k === 'tv' ? t.watch : t.read);
+---
+
+{items.length > 0 && (
+  <section class="section u-pt0" aria-labelledby={id}>
+    <div class="container">
+      <span class="kicker">{t.kicker}</span>
+      <h2 id={id}>{t.title}</h2>
+      <ul class="clippings">
+        {items.map((p) => (
+          <li class="clip tape">
+            <p class="outlet">{p.data.outlet}</p>
+            <p class="meta">
+              <time datetime={p.data.date.toISOString().slice(0, 10)}>{formatDate(p.data.date, lang)}</time>
+              {t.inFrench && <span class="tag">{t.inFrench}</span>}
+            </p>
+            <blockquote lang="fr">« {p.data.title} »</blockquote>
+            <a class="link-arrow" href={p.data.url} target="_blank" rel="noopener">
+              {cta(p.data.kind)} →<span class="visually-hidden"> ({p.data.outlet})</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+)}

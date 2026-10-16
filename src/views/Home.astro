@@ -1,0 +1,292 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import ShrimpScene from '../components/ShrimpScene.astro';
+import EventRow from '../components/EventRow.astro';
+import PostCard from '../components/PostCard.astro';
+import Newsletter from '../components/Newsletter.astro';
+import ReportTeaser from '../components/ReportTeaser.astro';
+import PressClippings from '../components/PressClippings.astro';
+import { site } from '../config';
+import { getEvents, getPosts, postSlug } from '../lib/content';
+import { route, url, ui, eventPath, postPath, formatDay, formatTime, alternatesFor, type Lang } from '../i18n';
+import crowd from '../assets/photos/action-megaphones.jpg';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = ui[lang];
+const { next, upcoming } = await getEvents();
+const posts = await getPosts(lang);
+const bySlug = (key: string) => posts.find((p) => p.data.translationKey === key);
+const painPost = bySlug('douleur');
+const whyPost = bySlug('pourquoi');
+const faqHref = url(route('resources', lang)) + '#faq';
+
+const c =
+  lang === 'fr'
+    ? {
+        title: 'La Voix des Crevettes · Les crevettes ressentent la douleur',
+        description:
+          "Groupe d'actions en France pour les crevettes, êtres sensibles. Actions de rue, campagnes de pression et infos pour mettre fin aux pires pratiques d'élevage.",
+        lockup: ['Une voix', 'pour les', 'crevettes'],
+        lede: "Les crevettes ressentent la douleur. Des centaines de milliards d'entre elles subissent chaque année les pires pratiques d'élevage.",
+        ledeStrong: 'On agit pour que ça change.',
+        crowdAlt: 'Militantes et militants de La Voix des Crevettes avec mégaphones et pancartes',
+        whoKicker: 'Qui on est',
+        manifesto: ['Les crevettes ne peuvent pas crier.', 'Alors on le fait pour elles.'],
+        who: "La Voix des Crevettes est un groupe local d'actions organisées en France pour lutter contre les pires pratiques d'élevage des crevettes, notamment l'épédonculation des crevettes reproductrices et l'abattage par bain d'eau glacée.",
+        who2: "On mène ces actions avec l'International Council for Animal Welfare (ICAW), une association à but non lucratif qui lutte contre les pires pratiques d'élevage dans les chaînes d'approvisionnement des grandes entreprises, partout dans le monde.",
+        whoLink: 'Qui sommes-nous',
+        whyKicker: 'Pourquoi les crevettes',
+        whyTitle: 'Petites, nombreuses, invisibles',
+        facts: [
+          {
+            h: 'Elles ressentent.',
+            p: 'La science reconnaît les crustacés décapodes, dont les crevettes, comme des êtres sentients : capables de ressentir la douleur et la détresse.',
+            link: 'Ce que dit la science',
+          },
+          {
+            h: 'Des centaines de milliards.',
+            p: "Les crevettes sont les animaux d'élevage les plus nombreux de la planète. Selon l'ICAW, environ 440 milliards sont tuées chaque année.",
+            link: 'Les chiffres',
+          },
+          {
+            h: 'Invisibles.',
+            p: "Élevées loin d'ici, vendues surgelées ou décortiquées, elles n'ont ni visage ni voix dans nos rayons. Personne ne les entend.",
+            link: 'Nos réponses à vos questions',
+          },
+        ],
+        demandKicker: "Ce qu'on demande",
+        demand: 'Que les supermarchés mettent fin aux pratiques les plus cruelles infligées aux crevettes.',
+        demand2:
+          "Plusieurs enseignes européennes ont déjà pris des engagements. Les autres doivent suivre. On les interpelle, devant leurs sièges et sur les réseaux, jusqu'à ce qu'elles bougent.",
+        demandLink: 'Comprendre le sujet',
+        actKicker: 'Comment agir',
+        actTitle: 'Toi aussi, fais du bruit',
+        steps: [
+          { h: 'Viens à une action', p: 'Seul·e ou à plusieurs : chaque personne compte devant les sièges et les magasins.', link: "Voir l'agenda" },
+          {
+            h: 'Rejoins le mouvement',
+            p: 'Inscris-toi à la newsletter, et écris-nous sur Instagram pour rejoindre notre groupe WhatsApp.',
+            link: 'Newsletter',
+          },
+          { h: 'Parle des crevettes', p: 'Partage nos posts, parle-en autour de toi, et laisse les crevettes hors de ton assiette.', link: 'Instagram' },
+        ],
+        eventsTitle: 'Prochaines actions',
+        postsTitle: 'À lire',
+        nextLabel: 'Prochaine action',
+        noNext: "Pas d'action prévue pour l'instant",
+      }
+    : {
+        title: 'La Voix des Crevettes · Shrimp feel pain',
+        description:
+          'A grassroots group in France standing up for shrimp, sentient beings. Street actions, pressure campaigns and facts to end the worst farming practices.',
+        lockup: ['A voice', 'for', 'shrimp'],
+        lede: 'Shrimp feel pain. Every year, hundreds of billions of them endure the worst farming practices.',
+        ledeStrong: "We're acting to change that.",
+        crowdAlt: 'La Voix des Crevettes activists with megaphones and placards',
+        whoKicker: 'Who we are',
+        manifesto: ["Shrimp can't scream.", 'So we do it for them.'],
+        who: 'La Voix des Crevettes ("the voice of shrimp") is a grassroots group organising actions across France against the worst practices in shrimp farming, including eyestalk ablation of breeding females and slaughter in ice-cold water.',
+        who2: 'We run these actions with the International Council for Animal Welfare (ICAW), a non-profit fighting the worst farming practices in corporate supply chains around the world.',
+        whoLink: 'About us',
+        whyKicker: 'Why shrimp',
+        whyTitle: 'Small, countless, invisible',
+        facts: [
+          {
+            h: 'They feel.',
+            p: 'Science recognises decapod crustaceans, shrimp included, as sentient beings: able to feel pain and distress.',
+            link: 'What the science says',
+          },
+          {
+            h: 'Hundreds of billions.',
+            p: 'Shrimp are the most numerous farmed animals on the planet. According to ICAW, around 440 billion are killed every year.',
+            link: 'The numbers',
+          },
+          {
+            h: 'Invisible.',
+            p: 'Farmed far away, sold frozen or peeled, they have no face and no voice on our shelves. Nobody hears them.',
+            link: 'Your questions answered',
+          },
+        ],
+        demandKicker: "What we're asking",
+        demand: 'Supermarkets must end the cruellest practices inflicted on shrimp.',
+        demand2:
+          "Several European retailers have already made commitments. The others must follow. We'll keep calling them out, at their headquarters and online, until they move.",
+        demandLink: 'Understand the issue',
+        actKicker: 'Take action',
+        actTitle: 'Make some noise',
+        steps: [
+          { h: 'Join an action', p: 'Alone or with friends: every person counts outside headquarters and stores.', link: 'See events' },
+          { h: 'Join the movement', p: 'Sign up to the newsletter, and message us on Instagram to join our WhatsApp group.', link: 'Newsletter' },
+          { h: 'Talk about shrimp', p: 'Share our posts, talk about it, and leave shrimp off your plate.', link: 'Instagram' },
+        ],
+        eventsTitle: 'Upcoming actions',
+        postsTitle: 'Read',
+        nextLabel: 'Next action',
+        noNext: 'No action planned right now',
+      };
+
+const nextHref = next ? url(eventPath(next.id, lang)) : '';
+const factLinks = [
+  painPost ? url(postPath(postSlug(painPost), lang)) : faqHref,
+  whyPost ? url(postPath(postSlug(whyPost), lang)) : faqHref,
+  faqHref,
+];
+const stepLinks = [url(route('agenda', lang)), '#newsletter', site.instagram];
+const homeUrl = new URL(url(route('home', lang)), Astro.site).href;
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'NGO',
+    name: site.name,
+    url: homeUrl,
+    description: c.who,
+    areaServed: { '@type': 'Country', name: 'France' },
+    sameAs: [site.instagram],
+  },
+  { '@context': 'https://schema.org', '@type': 'WebSite', name: site.name, url: homeUrl, inLanguage: lang },
+];
+---
+
+<Base lang={lang} title={c.title} description={c.description} alternates={alternatesFor('home')} jsonLd={jsonLd}>
+  <ShrimpScene class="hero" labelledby="titre">
+    <div class="hero-inner">
+      <div class="lockup-wrap">
+        <div class="stage" data-crevette-stage>
+          <noscript><img class="stage-fallback" src={url('/crevette-jaune.png')} alt="" /></noscript>
+        </div>
+        <h1 class="lockup" id="titre">
+          <span class="big">{c.lockup[0]}</span>
+          <span class="small">{c.lockup[1]}</span>
+          <span class="big">{c.lockup[2]}</span>
+        </h1>
+      </div>
+
+      <p class="lede">{c.lede} <strong>{c.ledeStrong}</strong></p>
+
+      {next ? (
+        <div class="ticket" data-expires={next.data.end.toISOString()} data-fallback="[data-no-next]">
+          <span class="ticket-label">{c.nextLabel}</span>
+          <p class="bar">
+            <time datetime={next.data.start.toISOString()}>
+              {formatDay(next.data.start, lang)}, {formatTime(next.data.start, lang)}
+            </time>
+          </p>
+          <p class="bar">{t.rdv} : {next.data.venue.street}, {next.data.venue.city}</p>
+        </div>
+      ) : null}
+      <div class="ticket" data-no-next hidden={!!next}>
+        <p class="bar">{c.noNext}</p>
+      </div>
+
+      <div class="ctas">
+        {next && (
+          <a class="btn btn-primary" href={nextHref} data-hero-cta>
+            {t.join} <span class="arrow" aria-hidden="true">→</span>
+          </a>
+        )}
+        <a class="btn btn-ghost" href="#newsletter" data-hero-cta={next ? undefined : true}>{t.getNews}</a>
+      </div>
+    </div>
+
+    <figure class="crowd duotone">
+      <Image src={crowd} alt={c.crowdAlt} widths={[800, 1400, 2000]} sizes="100vw" loading="eager" />
+    </figure>
+  </ShrimpScene>
+
+  <section class="section dark" aria-labelledby="who">
+    <div class="container two-col">
+      <div>
+        <span class="kicker">{c.whoKicker}</span>
+        <h2 class="manifesto" id="who">{c.manifesto[0]} <em>{c.manifesto[1]}</em></h2>
+      </div>
+      <div class="big-text">
+        <p>{c.who}</p>
+        <p>{c.who2}</p>
+        <a class="link-arrow" href={url(route('about', lang))}>{c.whoLink} →</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="why">
+    <div class="container">
+      <span class="kicker">{c.whyKicker}</span>
+      <h2 id="why">{c.whyTitle}</h2>
+      <div class="facts u-mt36">
+        {c.facts.map((f, i) => (
+          <article class="fact">
+            <h3>{f.h}</h3>
+            <p>{f.p}</p>
+            <a class="link-arrow" href={factLinks[i]}>{f.link} →</a>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section u-pt0" aria-labelledby="demand">
+    <div class="container">
+      <div class="demand">
+        <span class="kicker u-inverse">{c.demandKicker}</span>
+        <p class="say" id="demand">{c.demand}</p>
+        <p class="big-text">{c.demand2}</p>
+        <a class="link-arrow" href={url(route('resources', lang))}>{c.demandLink} →</a>
+      </div>
+    </div>
+  </section>
+
+  <ReportTeaser lang={lang} />
+  <PressClippings lang={lang} />
+
+  <section class="section dark" aria-labelledby="act">
+    <div class="container">
+      <span class="kicker">{c.actKicker}</span>
+      <h2 id="act" class="u-blanc">{c.actTitle}</h2>
+      <ol class="steps u-mt36">
+        {c.steps.map((s, i) => (
+          <li class="u-bc-bleu">
+            <h3 class="u-blanc">{s.h}</h3>
+            <p>{s.p}</p>
+            <a class="link-arrow" href={stepLinks[i]} {...(i === 2 ? { target: '_blank', rel: 'noopener' } : {})}>{s.link} →</a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="events">
+    <div class="container">
+      <div class="section-head">
+        <h2 id="events">{c.eventsTitle}</h2>
+        <a class="link-arrow" href={url(route('agenda', lang))}>{t.allEvents} →</a>
+      </div>
+      {upcoming.length ? (
+        <ul class="event-list">
+          {upcoming.slice(0, 3).map((e) => <EventRow event={e} lang={lang} teaser />)}
+        </ul>
+      ) : (
+        <p class="big-text">{t.noUpcoming}</p>
+      )}
+    </div>
+  </section>
+
+  {posts.length > 0 && (
+    <section class="section u-pt0" aria-labelledby="posts">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="posts">{c.postsTitle}</h2>
+          <a class="link-arrow" href={url(route('blog', lang))}>{t.allPosts} →</a>
+        </div>
+        <div class="post-grid">
+          {posts.slice(0, 3).map((p) => <PostCard post={p} lang={lang} />)}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <Newsletter lang={lang} />
+</Base>
+

@@ -1,0 +1,126 @@
+---
+import { Image, getImage } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import AddToCalendar from '../components/AddToCalendar.astro';
+import EventMap from '../components/EventMap.astro';
+import Share from '../components/Share.astro';
+import Newsletter from '../components/Newsletter.astro';
+import { site } from '../config';
+import { md } from '../lib/md';
+import type { EventEntry } from '../lib/content';
+import { route, url, ui, eventPath, formatDay, formatTime, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  event: EventEntry;
+}
+const { lang, event } = Astro.props;
+const t = ui[lang];
+const d = event.data;
+const past = d.end.getTime() < Date.now();
+const title = d.title[lang];
+const when = `${formatDay(d.start, lang)}, ${formatTime(d.start, lang)}`;
+const crumbs = [
+  { label: t.breadcrumbHome, href: route('home', lang) },
+  { label: t.nav.agenda, href: route('agenda', lang) },
+  { label: title },
+];
+const alternates = { fr: eventPath(event.id, 'fr'), en: eventPath(event.id, 'en') };
+const pageAbs = new URL(url(eventPath(event.id, lang)), Astro.site).href;
+const posterImg = d.poster ? await getImage({ src: d.poster, width: 1080, format: 'jpg' }) : undefined;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: title,
+    description: d.summary[lang],
+    startDate: d.start.toISOString(),
+    endDate: d.end.toISOString(),
+    eventStatus:
+      d.status === 'annule'
+        ? 'https://schema.org/EventCancelled'
+        : d.status === 'reporte'
+          ? 'https://schema.org/EventPostponed'
+          : 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    isAccessibleForFree: true,
+    inLanguage: 'fr',
+    url: pageAbs,
+    location: {
+      '@type': 'Place',
+      name: d.venue.city,
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: d.venue.street,
+        postalCode: d.venue.postalCode,
+        addressLocality: d.venue.city,
+        addressCountry: 'FR',
+      },
+      geo: { '@type': 'GeoCoordinates', latitude: d.lat, longitude: d.lng },
+    },
+    ...(posterImg ? { image: [new URL(posterImg.src, Astro.site).href] } : {}),
+    organizer: { '@type': 'Organization', name: site.name, url: new URL(url(route('home', lang)), Astro.site).href },
+  },
+];
+const description = `${when} · ${d.venue.city}. ${d.summary[lang]}`.slice(0, 160);
+---
+
+<Base
+  lang={lang}
+  title={`${title} · ${formatDay(d.start, lang)}`}
+  description={description}
+  alternates={alternates}
+  image={d.poster}
+  imageAlt={d.posterAlt?.[lang]}
+  jsonLd={jsonLd}
+  crumbs={crumbs}
+>
+  <div class="container page-head">
+    <Breadcrumbs crumbs={crumbs} label={lang === 'fr' ? "Fil d'Ariane" : 'Breadcrumb'} />
+    <span class="kicker u-mt20">{past ? t.past : t.nextAction}</span>
+    <h1 class="h1-article">{title}</h1>
+    <p class="intro">{d.summary[lang]}</p>
+  </div>
+
+  <div class="container event-layout">
+    {d.poster && (
+      <div class="poster">
+        <Image src={d.poster} alt={d.posterAlt?.[lang] ?? ''} widths={[500, 800, 1080]} sizes="(min-width: 900px) 480px, 100vw" />
+      </div>
+    )}
+    <div>
+      <div class="infobox">
+        <dl>
+          <div>
+            <dt>{t.when}</dt>
+            <dd><time datetime={d.start.toISOString()}>{when}</time></dd>
+          </div>
+          <div>
+            <dt>{t.where}</dt>
+            <dd>{d.venue.street}<br />{d.venue.postalCode} {d.venue.city}</dd>
+          </div>
+          {d.access && (
+            <div>
+              <dt>{t.access}</dt>
+              <dd>{d.access[lang]}</dd>
+            </div>
+          )}
+        </dl>
+        {!past && <AddToCalendar event={event} lang={lang} />}
+        <Share lang={lang} title={title} />
+      </div>
+
+      <div class="prose" set:html={md(d.description[lang])} />
+      <p>
+        <a class="btn btn-ghost btn-small" href={site.instagram} target="_blank" rel="noopener">Instagram</a>
+      </p>
+
+      <EventMap events={[event]} lang={lang} single class="minimap" />
+    </div>
+  </div>
+
+  <div class="u-spacer"></div>
+  <Newsletter lang={lang} />
+</Base>

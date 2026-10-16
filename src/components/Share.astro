@@ -1,0 +1,19 @@
+---
+import { ui, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+  title: string;
+}
+const { lang, title } = Astro.props;
+const t = ui[lang];
+const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
+const wa = `https://wa.me/?text=${encodeURIComponent(`${title} ${pageUrl}`)}`;
+---
+
+<div class="share" data-share data-url={pageUrl} data-title={title} data-copied={t.copied}>
+  <button class="btn btn-ghost btn-small" type="button" data-share-native hidden>{t.share}</button>
+  <a class="btn btn-ghost btn-small" href={wa} target="_blank" rel="noopener">{t.shareWhatsapp}</a>
+  <button class="btn btn-ghost btn-small" type="button" data-share-copy>{t.copyLink}</button>
+  <span class="share-status" role="status" data-share-status></span>
+</div>

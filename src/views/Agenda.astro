@@ -1,0 +1,88 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import EventRow from '../components/EventRow.astro';
+import EventMap from '../components/EventMap.astro';
+import Newsletter from '../components/Newsletter.astro';
+import { getEvents } from '../lib/content';
+import { route, url, ui, alternatesFor, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = ui[lang];
+const { all, upcoming, past } = await getEvents();
+const feed = lang === 'fr' ? '/agenda.ics' : '/en/events.ics';
+const feedAbs = new URL(url(feed), Astro.site);
+const webcal = `webcal://${feedAbs.host}${feedAbs.pathname}`;
+
+const c =
+  lang === 'fr'
+    ? {
+        title: 'Agenda des actions pour les crevettes en France',
+        description: "Toutes les actions de La Voix des Crevettes en France : carte interactive, dates, lieux, et ajout à ton calendrier en un clic.",
+        h1: 'Agenda',
+        intro: 'Toutes les actions pour les crevettes en France. Clique sur un repère pour voir les détails et ajouter l’action à ton calendrier.',
+        subTitle: 'Abonne-toi à l’agenda',
+        subText: 'Ajoute l’agenda à ton téléphone une seule fois : chaque nouvelle action y apparaîtra toute seule.',
+        subBtn: "S'abonner (webcal)",
+        subIcs: 'Télécharger le fichier .ics',
+      }
+    : {
+        title: 'Events: actions for shrimp in France',
+        description: 'Every La Voix des Crevettes action in France: interactive map, dates, places, and one-click add to your calendar.',
+        h1: 'Events',
+        intro: 'Every action for shrimp in France. Click a pin to see the details and add the action to your calendar.',
+        subTitle: 'Subscribe to the calendar',
+        subText: 'Add the calendar to your phone once: every new action will show up on its own.',
+        subBtn: 'Subscribe (webcal)',
+        subIcs: 'Download the .ics file',
+      };
+const crumbs = [{ label: t.breadcrumbHome, href: route('home', lang) }, { label: c.h1 }];
+---
+
+<Base lang={lang} title={c.title} description={c.description} alternates={alternatesFor('agenda')} crumbs={crumbs}>
+  <div class="container page-head">
+    <Breadcrumbs crumbs={crumbs} label={lang === 'fr' ? "Fil d'Ariane" : 'Breadcrumb'} />
+    <h1>{c.h1}</h1>
+    <p class="intro">{c.intro}</p>
+  </div>
+
+  <div class="container">
+    <EventMap events={all} lang={lang} />
+  </div>
+
+  <section class="section" aria-labelledby="upcoming">
+    <div class="container">
+      <h2 id="upcoming">{t.upcoming}</h2>
+      {upcoming.length ? (
+        <ul class="event-list">
+          {upcoming.map((e) => <EventRow event={e} lang={lang} />)}
+        </ul>
+      ) : (
+        <p class="big-text">{t.noUpcoming}</p>
+      )}
+
+      <div class="paper subscribe-box">
+        <h3>{c.subTitle}</h3>
+        <p>{c.subText}</p>
+        <div class="event-actions">
+          <a class="btn btn-primary btn-small" href={webcal}>{c.subBtn}</a>
+          <a class="link-arrow" href={url(feed)} download>{c.subIcs}</a>
+        </div>
+      </div>
+
+      {past.length > 0 && (
+        <>
+          <h2 class="u-mt72">{t.past}</h2>
+          <ul class="event-list">
+            {past.map((e) => <EventRow event={e} lang={lang} past />)}
+          </ul>
+        </>
+      )}
+    </div>
+  </section>
+
+  <Newsletter lang={lang} />
+</Base>
