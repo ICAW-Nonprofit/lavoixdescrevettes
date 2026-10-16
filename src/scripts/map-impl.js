@@ -5,6 +5,8 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 // MapLibre 6 runs in a separate worker file; ship it with the site and point the library at it.
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 
+import { directionsUrl, googleMapsUrl, isIOS } from './directions.js';
+
 maplibregl.setWorkerUrl(workerUrl);
 
 const C = { bleu: '#9cb3f7', pale: '#c9d6fb', marine: '#00192e', blanc: '#eef2ff', jaune: '#ffc907' };
@@ -41,6 +43,12 @@ function recolor(map, lang) {
   }
 }
 
+const link = (href, text, extra = {}) => {
+  const a = Object.assign(document.createElement('a'), { href, textContent: text, ...extra });
+  if (href.startsWith('https://')) Object.assign(a, { target: '_blank', rel: 'noopener' });
+  return a;
+};
+
 function popupNode(ev, labels) {
   const box = document.createElement('div');
   box.className = 'popup';
@@ -50,16 +58,24 @@ function popupNode(ev, labels) {
   when.textContent = ev.when;
   const where = document.createElement('p');
   where.textContent = ev.where;
-  const links = document.createElement('div');
-  links.className = 'links';
-  const more = Object.assign(document.createElement('a'), { href: ev.url, textContent: labels.details });
-  links.append(more);
+
+  // directions: maps app on phones, Google Maps on computers (+ Google Maps as a second choice on iPhone)
+  const go = document.createElement('div');
+  go.className = 'links';
+  go.append(link(directionsUrl(ev), `${labels.directions} ↗`, { className: 'popup-btn' }));
+  if (isIOS) go.append(link(googleMapsUrl(ev), 'Google Maps'));
+
+  const more = document.createElement('div');
+  more.className = 'links';
+  more.append(link(ev.url, `${labels.details} →`));
+
+  box.append(h, when, where, go, more);
   if (!ev.past) {
-    const cal = Object.assign(document.createElement('a'), { href: ev.ics, textContent: labels.ics, download: '' });
-    const g = Object.assign(document.createElement('a'), { href: ev.google, textContent: labels.google, target: '_blank', rel: 'noopener' });
-    links.append(cal, g);
+    const cal = document.createElement('p');
+    cal.className = 'popup-cal';
+    cal.append(`${labels.addCal} : `, link(ev.ics, labels.calIcs, { download: '' }), ' · ', link(ev.google, labels.calGoogle));
+    box.append(cal);
   }
-  box.append(h, when, where, links);
   return box;
 }
 

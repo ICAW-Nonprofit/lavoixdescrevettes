@@ -8,6 +8,7 @@ import ShareEvent from '../components/ShareEvent.astro';
 import Newsletter from '../components/Newsletter.astro';
 import { site } from '../config';
 import { md } from '../lib/md';
+import { addressOf } from '../lib/calendar';
 import type { EventEntry } from '../lib/content';
 import { route, url, ui, eventPath, formatDay, formatTime, type Lang } from '../i18n';
 
@@ -19,6 +20,7 @@ const { lang, event } = Astro.props;
 const t = ui[lang];
 const d = event.data;
 const past = d.end.getTime() < Date.now();
+const fr = lang === 'fr';
 const title = d.title[lang];
 const when = `${formatDay(d.start, lang)}, ${formatTime(d.start, lang)}`;
 const crumbs = [
@@ -99,7 +101,20 @@ const description = `${when} · ${d.venue.city}. ${d.summary[lang]}`.slice(0, 16
           </div>
           <div>
             <dt>{t.where}</dt>
-            <dd>{d.venue.street}<br />{d.venue.postalCode} {d.venue.city}</dd>
+            <dd>
+              {d.venue.street}<br />{d.venue.postalCode} {d.venue.city}
+              <br />
+              <a
+                class="link-arrow directions"
+                data-directions
+                data-lat={d.lat}
+                data-lng={d.lng}
+                data-address={addressOf(event)}
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressOf(event))}`}
+                target="_blank"
+                rel="noopener">{fr ? 'Itinéraire' : 'Directions'} ↗</a
+              >
+            </dd>
           </div>
           {d.access && (
             <div>
@@ -126,3 +141,7 @@ const description = `${when} · ${d.venue.city}. ${d.summary[lang]}`.slice(0, 16
   <div class="u-spacer"></div>
   <Newsletter lang={lang} />
 </Base>
+
+<script>
+  import '../scripts/directions.js';
+</script>

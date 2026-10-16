@@ -1,5 +1,5 @@
 ---
-import { googleCalendarUrl } from '../lib/calendar';
+import { addressOf, googleCalendarUrl } from '../lib/calendar';
 import type { EventEntry } from '../lib/content';
 import { url, ui, eventPath, formatDay, formatTime, type Lang } from '../i18n';
 
@@ -23,12 +23,19 @@ const data = events.map((e) => {
     url: url(path),
     ics: url(`${path.replace(/\/$/, '')}.ics`),
     google: googleCalendarUrl(e, lang, page),
+    address: addressOf(e),
     lat: e.data.lat,
     lng: e.data.lng,
     past: e.data.end.getTime() < now,
   };
 });
-const labels = { details: t.details, ics: '.ics', google: 'Google' };
+const labels = {
+  details: t.details,
+  directions: lang === 'fr' ? 'Itinéraire' : 'Directions',
+  addCal: lang === 'fr' ? 'Ajouter au calendrier' : 'Add to calendar',
+  calIcs: 'Apple / Outlook',
+  calGoogle: 'Google Calendar',
+};
 const fallback = lang === 'fr' ? 'Chargement de la carte…' : 'Loading map…';
 ---
 

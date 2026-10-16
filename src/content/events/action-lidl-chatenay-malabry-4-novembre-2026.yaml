@@ -25,9 +25,19 @@ description:
     We're asking Lidl to stop suffocating shrimp. After a first action at its headquarters, we're going back on 4 November.
 
     Come alone or bring friends, and please share the event. Send us a message on Instagram and we'll send you the link to our WhatsApp group.
+# Body of the text sent by the "Partager l'action" button (date, place and links are added automatically)
+shareText:
+  fr: |
+    On retourne devant le siège de Lidl pour exiger que l'enseigne arrête d'asphyxier les crevettes. Sorties de l'eau, elles suffoquent et peuvent agoniser de longues minutes, parfois des heures : les crevettes ressentent la douleur.
+
+    Manifester est l'un des moyens d'action les plus efficaces. Militant·e chevronné·e ou novice, tout le monde est bienvenu : viens, et fais tourner !
+  en: |
+    We're going back to Lidl's headquarters to demand that the retailer stops suffocating shrimp. Taken out of the water, they suffocate and can struggle for long minutes, sometimes hours: shrimp feel pain.
+
+    Demonstrating is one of the most effective ways to act. Seasoned activist or first-timer, everyone is welcome: come along, and spread the word!
 start: 2026-11-04T11:00:00+01:00
-# end time is an estimate (2 h)
-end: 2026-11-04T13:00:00+01:00
+# actions last 1 h 30
+end: 2026-11-04T12:30:00+01:00
 venue:
   street: 35 avenue Sully Prudhomme
   postalCode: '92290'

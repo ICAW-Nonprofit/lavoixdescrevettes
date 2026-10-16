@@ -1206,6 +1206,30 @@ textarea {
   text-transform: uppercase;
   font-size: 1rem;
 }
+.popup .links + .links {
+  margin-top: 8px;
+}
+.popup a.popup-btn {
+  display: inline-block;
+  background: var(--jaune);
+  border: 2px solid var(--marine);
+  box-shadow: 3px 3px 0 var(--marine);
+  padding: 0.35em 0.7em 0.25em;
+  text-decoration: none;
+  margin: 4px 0 2px;
+}
+.popup-cal {
+  margin: 10px 0 0 !important;
+  font-size: 0.9rem !important;
+}
+.popup-cal a {
+  font-size: 0.9rem;
+}
+.infobox .directions {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 1rem;
+}
 .subscribe-box {
   margin-top: 40px;
 }
