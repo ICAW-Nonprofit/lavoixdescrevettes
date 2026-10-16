@@ -4,7 +4,7 @@ import Base from '../layouts/Base.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import AddToCalendar from '../components/AddToCalendar.astro';
 import EventMap from '../components/EventMap.astro';
-import Share from '../components/Share.astro';
+import ShareEvent from '../components/ShareEvent.astro';
 import Newsletter from '../components/Newsletter.astro';
 import { site } from '../config';
 import { md } from '../lib/md';
@@ -108,8 +108,10 @@ const description = `${when} · ${d.venue.city}. ${d.summary[lang]}`.slice(0, 16
             </div>
           )}
         </dl>
-        {!past && <AddToCalendar event={event} lang={lang} />}
-        <Share lang={lang} title={title} />
+        <div class="event-actions">
+          {!past && <ShareEvent event={event} lang={lang} />}
+          {!past && <AddToCalendar event={event} lang={lang} />}
+        </div>
       </div>
 
       <div class="prose" set:html={md(d.description[lang])} />

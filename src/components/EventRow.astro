@@ -1,5 +1,6 @@
 ---
 import AddToCalendar from './AddToCalendar.astro';
+import ShareEvent from './ShareEvent.astro';
 import type { EventEntry } from '../lib/content';
 import { url, ui, eventPath, dayParts, formatTime, type Lang } from '../i18n';
 
@@ -35,6 +36,7 @@ const title = teaser ? d.teaser[lang] : d.title[lang];
     {!past && (
       <div class="event-actions">
         <a class="link-arrow" href={href}>{t.details} →</a>
+        <ShareEvent event={event} lang={lang} small />
         <AddToCalendar event={event} lang={lang} small />
       </div>
     )}

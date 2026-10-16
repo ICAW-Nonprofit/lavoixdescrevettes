@@ -29,6 +29,13 @@ export const site = {
   },
 
   /**
+   * WhatsApp group invite link (e.g. "https://chat.whatsapp.com/…"), used in the "share the action" text.
+   * An event can override it with its own `whatsapp:` field. Empty = the text points to Instagram instead.
+   * Tip: turn on "Approve new members" in the group settings, since this link will be public.
+   */
+  whatsappGroup: '',
+
+  /**
    * Contact form endpoint (Formspree, e.g. "https://formspree.io/f/abcdwxyz").
    * Empty = the form shows a notice and points to Instagram instead.
    */

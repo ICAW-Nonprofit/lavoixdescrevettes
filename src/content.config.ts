@@ -24,6 +24,10 @@ const events = defineCollection({
       status: z.enum(['prevu', 'annule', 'reporte']).default('prevu'),
       poster: image().optional(),
       posterAlt: l10n.optional(),
+      /** WhatsApp group for this action (overrides site.whatsappGroup) */
+      whatsapp: z.string().url().optional(),
+      /** custom text for the share button (otherwise built from title, date, place and summary) */
+      shareText: l10n.optional(),
     }),
 });
 

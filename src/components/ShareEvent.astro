@@ -1,0 +1,85 @@
+---
+/**
+ * "Partager l'action": on phones it opens the native share sheet (WhatsApp, Instagram, Messages…)
+ * with the flyer + a ready-made text. On computers it shows WhatsApp / Telegram / email / copy / download.
+ */
+import { getImage } from 'astro:assets';
+import { site } from '../config';
+import { stripMd } from '../lib/md';
+import type { EventEntry } from '../lib/content';
+import { url, eventPath, formatDay, formatTime, type Lang } from '../i18n';
+
+interface Props {
+  event: EventEntry;
+  lang: Lang;
+  small?: boolean;
+}
+const { event, lang, small = false } = Astro.props;
+const d = event.data;
+const fr = lang === 'fr';
+const pageUrl = new URL(url(eventPath(event.id, lang)), Astro.site).href;
+const whatsapp = d.whatsapp || site.whatsappGroup;
+const when = `${formatDay(d.start, lang)}, ${formatTime(d.start, lang)}`;
+const where = `${d.venue.street}, ${d.venue.postalCode} ${d.venue.city}${d.access ? ` · ${d.access[lang]}` : ''}`;
+
+// JPEG copy of the flyer: WebP isn't accepted everywhere (e.g. Instagram)
+const flyer = d.poster ? await getImage({ src: d.poster, format: 'jpg', width: 1080, quality: 88 }) : undefined;
+const flyerName = `${fr ? 'affiche' : 'flyer'}-${event.id}.jpg`;
+
+const join = whatsapp
+  ? `💬 ${fr ? 'Rejoins le groupe WhatsApp' : 'Join the WhatsApp group'} : ${whatsapp}`
+  : `💬 ${fr ? 'Pour rejoindre le groupe WhatsApp, écris-nous sur Instagram' : 'To join the WhatsApp group, message us on Instagram'} : ${site.instagram}`;
+const body = d.shareText
+  ? stripMd(d.shareText[lang])
+  : `${stripMd(d.summary[lang])} ${fr ? 'Viens seul·e ou à plusieurs, et fais tourner !' : 'Come alone or with friends, and spread the word!'}`;
+const text = [
+  `📣 ${d.title[lang].toUpperCase()}`,
+  `🗓️ ${when}`,
+  `📍 ${where}`,
+  '',
+  body,
+  '',
+  `👉 ${fr ? 'Toutes les infos' : 'All the details'} : ${pageUrl}`,
+  join,
+].join('\n');
+const title = `${d.title[lang]} · ${when}`;
+
+const t = fr
+  ? { share: "Partager l'action", via: 'Partager via', copy: 'Copier le texte', copied: 'Texte copié, colle-le où tu veux !', flyer: "Télécharger l'affiche", thanks: 'Merci de faire tourner !' }
+  : { share: 'Share this action', via: 'Share via', copy: 'Copy the text', copied: 'Text copied, paste it anywhere!', flyer: 'Download the flyer', thanks: 'Thanks for spreading the word!' };
+
+const wa = `https://wa.me/?text=${encodeURIComponent(text)}`;
+const tg = `https://t.me/share/url?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(text.replace(`\n\n👉`, '\n👉'))}`;
+const mail = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(text)}`;
+const panelId = `share-${event.id}-${small ? 's' : 'l'}`;
+---
+
+<div
+  class="share-event"
+  data-share-event
+  data-title={title}
+  data-text={text}
+  data-flyer={flyer?.src}
+  data-flyer-name={flyerName}
+  data-copied={t.copied}
+  data-thanks={t.thanks}
+>
+  <button type="button" class:list={['btn', 'btn-primary', { 'btn-small': small }]} data-share-go aria-controls={panelId} aria-expanded="false">
+    {t.share} <span aria-hidden="true">↗</span>
+  </button>
+  <div class="share-panel" id={panelId} data-share-panel hidden>
+    <p class="meta">{t.via}</p>
+    <div class="share-links">
+      <a class="btn btn-ghost btn-small" href={wa} target="_blank" rel="noopener">WhatsApp</a>
+      <a class="btn btn-ghost btn-small" href={tg} target="_blank" rel="noopener">Telegram</a>
+      <a class="btn btn-ghost btn-small" href={mail}>Email</a>
+      <button class="btn btn-ghost btn-small" type="button" data-share-copy>{t.copy}</button>
+      {flyer && <a class="btn btn-ghost btn-small" href={flyer.src} download={flyerName}>{t.flyer}</a>}
+    </div>
+  </div>
+  <p class="share-status" role="status" data-share-status></p>
+</div>
+
+<script>
+  import '../scripts/share-event.js';
+</script>

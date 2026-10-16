@@ -1577,3 +1577,33 @@ textarea {
 .dark .steps li { border-color: var(--bleu); }
 .dark .steps li::before { -webkit-text-stroke-color: var(--jaune); }
 .dark .steps h3 { color: var(--blanc); }
+
+/* ---------- Share-the-action button ---------- */
+/* inside a row of actions, the button sits inline and its panel drops to a full-width line */
+.event-actions .share-event {
+  display: contents;
+}
+.share-panel {
+  flex-basis: 100%;
+  width: 100%;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border: 2px dashed var(--marine);
+  background: var(--blanc);
+}
+.share-panel .meta {
+  margin: 0 0 8px;
+}
+.share-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.share-event .share-status {
+  flex-basis: 100%;
+  margin: 0;
+  font-weight: 700;
+}
+.share-event .share-status:empty {
+  display: none;
+}
