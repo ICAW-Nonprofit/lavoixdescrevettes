@@ -10,7 +10,7 @@ export default defineConfig({
   trailingSlash: 'always',
   integrations: [
     sitemap({
-      filter: (page) => !/\/(merci|merci-newsletter|thanks|thanks-newsletter)\/$/.test(page),
+      filter: (page) => !/\/(merci|merci-newsletter|thanks|thanks-newsletter|404)\/$/.test(page),
     }),
   ],
   security: {

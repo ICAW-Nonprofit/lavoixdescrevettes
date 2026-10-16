@@ -15,7 +15,9 @@ const t = ui[lang];
 const { all, upcoming, past } = await getEvents();
 const feed = lang === 'fr' ? '/agenda.ics' : '/en/events.ics';
 const feedAbs = new URL(url(feed), Astro.site);
+// webcal:// = "subscribe" (the calendar app re-checks the feed and picks up new actions by itself)
 const webcal = `webcal://${feedAbs.host}${feedAbs.pathname}`;
+const googleSubscribe = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcal)}`;
 
 const c =
   lang === 'fr'
@@ -24,20 +26,22 @@ const c =
         description: "Toutes les actions de La Voix des Crevettes en France : carte interactive, dates, lieux, et ajout à ton calendrier en un clic.",
         h1: 'Agenda',
         intro: 'Toutes les actions pour les crevettes en France. Clique sur un repère pour voir les détails et ajouter l’action à ton calendrier.',
-        subTitle: 'Abonne-toi à l’agenda',
-        subText: 'Ajoute l’agenda à ton téléphone une seule fois : chaque nouvelle action y apparaîtra toute seule.',
-        subBtn: "S'abonner (webcal)",
-        subIcs: 'Télécharger le fichier .ics',
+        subTitle: 'Toutes les actions dans ton agenda',
+        subText: 'Abonne-toi une seule fois : chaque nouvelle action apparaîtra toute seule dans le calendrier de ton téléphone ou de ton ordi.',
+        subBtn: 'iPhone, Mac, Outlook',
+        subGoogle: 'Google Agenda',
+        subIcs: 'Ou télécharger les dates (sans mise à jour)',
       }
     : {
         title: 'Events: actions for shrimp in France',
         description: 'Every La Voix des Crevettes action in France: interactive map, dates, places, and one-click add to your calendar.',
         h1: 'Events',
         intro: 'Every action for shrimp in France. Click a pin to see the details and add the action to your calendar.',
-        subTitle: 'Subscribe to the calendar',
-        subText: 'Add the calendar to your phone once: every new action will show up on its own.',
-        subBtn: 'Subscribe (webcal)',
-        subIcs: 'Download the .ics file',
+        subTitle: 'Every action in your calendar',
+        subText: 'Subscribe once: every new action will show up on its own in the calendar on your phone or computer.',
+        subBtn: 'iPhone, Mac, Outlook',
+        subGoogle: 'Google Calendar',
+        subIcs: 'Or download the dates (no updates)',
       };
 const crumbs = [{ label: t.breadcrumbHome, href: route('home', lang) }, { label: c.h1 }];
 ---
@@ -69,6 +73,7 @@ const crumbs = [{ label: t.breadcrumbHome, href: route('home', lang) }, { label:
         <p>{c.subText}</p>
         <div class="event-actions">
           <a class="btn btn-primary btn-small" href={webcal}>{c.subBtn}</a>
+          <a class="btn btn-primary btn-small" href={googleSubscribe} target="_blank" rel="noopener">{c.subGoogle}</a>
           <a class="link-arrow" href={url(feed)} download>{c.subIcs}</a>
         </div>
       </div>

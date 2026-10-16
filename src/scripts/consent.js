@@ -37,21 +37,23 @@ if (banner) {
   if (choice === 'granted') loadGA();
   else if (!choice && gaId) banner.hidden = false;
 
-  banner.querySelector('[data-accept]').addEventListener('click', () => {
+  banner.querySelector('[data-accept]')?.addEventListener('click', () => {
     write('granted');
     banner.hidden = true;
     loadGA();
   });
-  banner.querySelector('[data-refuse]').addEventListener('click', () => {
+  banner.querySelector('[data-refuse]')?.addEventListener('click', () => {
     const wasGranted = read() === 'granted';
     write('denied');
     banner.hidden = true;
     if (wasGranted) location.reload(); // unload GA
   });
+  // no analytics yet: the note just closes, nothing is stored
+  banner.querySelector('[data-close]')?.addEventListener('click', () => (banner.hidden = true));
   for (const b of document.querySelectorAll('[data-cookie-open]')) {
     b.addEventListener('click', () => {
       banner.hidden = false;
-      banner.querySelector('[data-accept]').focus();
+      banner.querySelector('[data-accept], [data-close]')?.focus();
     });
   }
 }

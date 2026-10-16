@@ -80,7 +80,7 @@ const description = `${when} · ${d.venue.city}. ${d.summary[lang]}`.slice(0, 16
   <div class="container page-head">
     <Breadcrumbs crumbs={crumbs} label={lang === 'fr' ? "Fil d'Ariane" : 'Breadcrumb'} />
     <span class="kicker u-mt20">{past ? t.past : t.nextAction}</span>
-    <h1 class="h1-article">{title}</h1>
+    <h1 class="h1-event">{title}</h1>
     <p class="intro">{d.summary[lang]}</p>
   </div>
 

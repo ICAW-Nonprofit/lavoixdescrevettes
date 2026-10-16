@@ -1,4 +1,8 @@
 ---
+/**
+ * Cookie banner. It opens by itself on a first visit only when there is something to consent to
+ * (a GA ID in src/config.ts). Until then the footer "Cookies" link opens an honest "no cookies" note.
+ */
 import { Image } from 'astro:assets';
 import { site } from '../config';
 import { route, url, type Lang } from '../i18n';
@@ -8,23 +12,30 @@ interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
+const active = Boolean(site.gaId);
 const t =
   lang === 'fr'
     ? {
         title: 'Des cookies ?',
         punch: "Les crevettes n'ont jamais le choix. Toi, oui.",
-        text: "On aimerait mesurer l'audience du site avec Google Analytics. Pas de pub, pas de revente. Tu peux changer d'avis quand tu veux (lien « Cookies » en bas de page).",
+        text: active
+          ? "On aimerait mesurer l'audience du site avec Google Analytics. Pas de pub, pas de revente. Tu peux changer d'avis quand tu veux (lien « Cookies » en bas de page)."
+          : "Bonne nouvelle : ce site ne dépose aucun cookie pour l'instant. Si un jour on mesure l'audience, on te demandera ton accord avant.",
         more: 'En savoir plus',
         yes: "J'accepte",
         no: 'Je refuse',
+        ok: 'Compris',
       }
     : {
         title: 'Cookies?',
         punch: 'Shrimp never get a choice. You do.',
-        text: 'We would like to measure traffic with Google Analytics. No ads, no data selling. You can change your mind anytime ("Cookies" link in the footer).',
+        text: active
+          ? 'We would like to measure traffic with Google Analytics. No ads, no data selling. You can change your mind anytime ("Cookies" link in the footer).'
+          : "Good news: this site sets no cookies for now. If we ever measure traffic, we'll ask for your consent first.",
         more: 'Learn more',
         yes: 'Accept',
         no: 'Refuse',
+        ok: 'Got it',
       };
 ---
 
@@ -34,8 +45,14 @@ const t =
   <p class="punch">{t.punch}</p>
   <p>{t.text} <a href={url(route('privacy', lang))}>{t.more}</a></p>
   <div class="row">
-    <button class="btn btn-ghost" type="button" data-refuse>{t.no}</button>
-    <button class="btn btn-primary" type="button" data-accept>{t.yes}</button>
+    {active ? (
+      <>
+        <button class="btn btn-ghost" type="button" data-refuse>{t.no}</button>
+        <button class="btn btn-primary" type="button" data-accept>{t.yes}</button>
+      </>
+    ) : (
+      <button class="btn btn-primary" type="button" data-close>{t.ok}</button>
+    )}
   </div>
 </div>
 

@@ -84,4 +84,9 @@ const c = copy[kind];
       </div>
     </div>
   </ShrimpScene>
+  {kind === '404' && <div data-404={lang} data-base={url('/').replace(/\/$/, '')} hidden></div>}
 </Base>
+
+<script>
+  import '../scripts/not-found.js';
+</script>
