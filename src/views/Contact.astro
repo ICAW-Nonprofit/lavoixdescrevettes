@@ -27,7 +27,6 @@ const c =
         send: 'Envoyer',
         sending: 'Envoi…',
         error: 'Le message n’est pas parti. Réessaie, ou écris-nous sur Instagram.',
-        notReady: 'Le formulaire sera actif très bientôt. En attendant, le plus rapide est de nous écrire sur Instagram.',
         other: 'Le plus rapide : Instagram',
       }
     : {
@@ -45,7 +44,6 @@ const c =
         send: 'Send',
         sending: 'Sending…',
         error: "The message didn't go through. Try again, or message us on Instagram.",
-        notReady: 'The form will be live very soon. Meanwhile, the quickest way is to message us on Instagram.',
         other: 'Quickest: Instagram',
       };
 const crumbs = [{ label: t.breadcrumbHome, href: route('home', lang) }, { label: c.h1 }];
@@ -64,12 +62,12 @@ const crumbs = [{ label: t.breadcrumbHome, href: route('home', lang) }, { label:
       action={ready ? site.contactEndpoint : '#'}
       method="post"
       data-contact
+      data-preview={ready ? undefined : 'true'}
       data-thanks={url(route('thanks', lang))}
       data-sending={c.sending}
       data-error={c.error}
     >
-      {!ready && <p class="form-msg u-mb18">{c.notReady}</p>}
-      <fieldset disabled={!ready} class="bare-fieldset">
+      <fieldset class="bare-fieldset">
         <div class="field">
           <label for="c-name">{c.name}</label>
           <input id="c-name" type="text" name="name" autocomplete="name" required />

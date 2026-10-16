@@ -109,13 +109,16 @@ export function initMap(el) {
   const map = new maplibregl.Map({
     container: el,
     style: 'https://tiles.openfreemap.org/styles/positron',
-    ...(single ? { center: [events[0].lng, events[0].lat], zoom: 13 } : { bounds: startBounds(events), fitBoundsOptions: { padding: 40 } }),
+    ...(single ? { center: [events[0].lng, events[0].lat], zoom: 12 } : { bounds: startBounds(events), fitBoundsOptions: { padding: 40 } }),
     minZoom: 3,
     maxZoom: 17,
     cooperativeGestures: true,
     attributionControl: { compact: true },
   });
   el.map = map; // handy for debugging from the console
+  // single action: the pin's point is the map centre, so shift the view down by half the pin (44 px)
+  // to have the whole pin in the middle
+  if (single) map.setPadding({ top: 44, bottom: 0, left: 0, right: 0 });
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
   map.on('style.load', () => recolor(map, lang));
   map.once('load', () => el.classList.add('is-ready'));

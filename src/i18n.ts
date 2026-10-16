@@ -123,7 +123,7 @@ export const ui = {
       email: 'Email',
       firstName: 'Prénom',
       city: 'Ville',
-      participate: 'Tu veux participer à des actions ?',
+      participate: 'Tu veux participer à des actions ?', // non-breaking space keeps « ? » on the line
       choices: ['Participer à des actions dans ma ville', 'Organiser des actions dans ma ville', 'Juste recevoir les infos'],
       consent: "J'accepte de recevoir les emails de La Voix des Crevettes et de l'ICAW.",
       privacyLink: 'Données personnelles',
