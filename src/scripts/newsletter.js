@@ -37,7 +37,10 @@ for (const form of document.querySelectorAll('[data-newsletter]')) {
       clearTimeout(timer);
       delete window[cb];
       script.remove();
-      if (res && res.result === 'success') location.href = form.dataset.thanks;
+      if (res && res.result === 'success') {
+        document.dispatchEvent(new Event('lvdc:newsletter')); // counted for the action page it came from
+        location.href = form.dataset.thanks;
+      }
       else if (res && /already subscribed/i.test(res.msg || '')) location.href = form.dataset.thanks;
       else fail(res && res.msg);
     };

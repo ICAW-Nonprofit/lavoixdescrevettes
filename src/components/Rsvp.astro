@@ -1,0 +1,88 @@
+---
+/** "J'y vais": first name (or nickname) + optional email for the reminder. Hidden when Supabase isn't set up. */
+import supabase from '../supabase.json';
+import { route, url, type Lang } from '../i18n';
+
+interface Props {
+  slug: string;
+  lang: Lang;
+}
+const { slug, lang } = Astro.props;
+const on = Boolean(supabase.url && supabase.anonKey);
+const t =
+  lang === 'fr'
+    ? {
+        title: "J'y vais !",
+        intro: 'Dis-nous que tu viens : ça aide à organiser (et ça motive tout le monde).',
+        name: 'Prénom ou pseudo',
+        email: 'Email',
+        emailHint: 'facultatif : pour recevoir un rappel la veille',
+        submit: "J'y vais",
+        sending: 'Envoi…',
+        done: "C'est noté, merci ! On t'attend.",
+        doneMail: 'Tu recevras un rappel la veille.',
+        again: 'Inscrire quelqu’un d’autre',
+        count: (n: string) => `${n} personnes y vont déjà`,
+        privacy: 'Ton prénom et ton email ne sont jamais publiés ; ton email est effacé 30 jours après l’action.',
+        privacyLink: 'Données personnelles',
+        errors: { closed: 'Les inscriptions sont fermées pour cette action.', 'too many': 'Trop d’inscriptions d’un coup, réessaie dans un moment.', name: 'Indique un prénom ou un pseudo.', email: 'Cet email ne semble pas valide.', other: 'Oups, ça n’a pas marché. Réessaie dans un instant.' },
+      }
+    : {
+        title: "I'll be there!",
+        intro: "Let us know you're coming: it helps us organise (and motivates everyone).",
+        name: 'First name or nickname',
+        email: 'Email',
+        emailHint: 'optional: to get a reminder the day before (in French)',
+        submit: "I'll be there",
+        sending: 'Sending…',
+        done: "Got it, thank you! See you there.",
+        doneMail: "You'll get a reminder the day before.",
+        again: 'Sign someone else up',
+        count: (n: string) => `${n} people are going`,
+        privacy: 'Your name and email are never published; your email is deleted 30 days after the action.',
+        privacyLink: 'Personal data',
+        errors: { closed: 'Sign-ups are closed for this action.', 'too many': 'Too many sign-ups at once, try again in a moment.', name: 'Please enter a first name or nickname.', email: "This email doesn't look valid.", other: "Oops, that didn't work. Try again in a moment." },
+      };
+---
+
+{on && (
+  <section
+    class="rsvp paper"
+    aria-labelledby="rsvp-title"
+    data-rsvp
+    data-slug={slug}
+    data-url={supabase.url}
+    data-key={supabase.anonKey}
+    data-i18n={JSON.stringify({ sending: t.sending, errors: t.errors, count: t.count('{n}') })}
+  >
+    <h2 id="rsvp-title">{t.title}</h2>
+    <p class="rsvp-count" data-rsvp-count hidden></p>
+    <form data-rsvp-form>
+      <p>{t.intro}</p>
+      <div class="form-grid">
+        <div class="field">
+          <label for="rsvp-name">{t.name}</label>
+          <input id="rsvp-name" name="name" type="text" maxlength="60" autocomplete="given-name" required />
+        </div>
+        <div class="field">
+          <label for="rsvp-email">{t.email} <span class="opt">({t.emailHint})</span></label>
+          <input id="rsvp-email" name="email" type="email" maxlength="200" autocomplete="email" />
+        </div>
+      </div>
+      <div class="hp" aria-hidden="true"><input type="text" name="website" tabindex="-1" value="" /></div>
+      <div class="form-foot">
+        <button class="btn btn-primary" type="submit">{t.submit} <span aria-hidden="true">✊</span></button>
+        <p class="form-msg" role="status" data-rsvp-msg></p>
+      </div>
+      <p class="small">{t.privacy} <a href={url(route('privacy', lang))}>{t.privacyLink}</a></p>
+    </form>
+    <div class="rsvp-done" data-rsvp-done hidden>
+      <p class="big-text"><strong>{t.done}</strong> <span data-rsvp-mail hidden>{t.doneMail}</span></p>
+      <button class="linkish" type="button" data-rsvp-again>{t.again}</button>
+    </div>
+  </section>
+)}
+
+<script>
+  import '../scripts/rsvp.js';
+</script>

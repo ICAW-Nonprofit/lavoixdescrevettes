@@ -3,7 +3,6 @@
  * "Partager l'action": on phones it opens the native share sheet (WhatsApp, Instagram, Messages…)
  * with the flyer + a ready-made text. On computers it shows WhatsApp / Telegram / email / copy / download.
  */
-import { getImage } from 'astro:assets';
 import { site } from '../config';
 import { stripMd } from '../lib/md';
 import type { EventEntry } from '../lib/content';
@@ -22,8 +21,8 @@ const whatsapp = d.whatsapp || site.whatsappGroup;
 const when = `${formatDay(d.start, lang)}, ${formatTime(d.start, lang)}`;
 const where = `${d.venue.street}, ${d.venue.postalCode} ${d.venue.city}${d.access ? ` · ${d.access[lang]}` : ''}`;
 
-// JPEG copy of the flyer: WebP isn't accepted everywhere (e.g. Instagram)
-const flyer = d.poster ? await getImage({ src: d.poster, format: 'jpg', width: 1080, quality: 88 }) : undefined;
+// the flyer is always a JPEG (WebP isn't accepted everywhere, e.g. Instagram)
+const flyer = d.poster ? { src: url(d.poster) } : undefined;
 const flyerName = `${fr ? 'affiche' : 'flyer'}-${event.id}.jpg`;
 
 const join = whatsapp

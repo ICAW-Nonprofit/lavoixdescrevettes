@@ -19,9 +19,9 @@ export default defineConfig({
       algorithm: 'SHA-256',
       directives: [
         "default-src 'self'",
-        "img-src 'self' data: blob: https://tiles.openfreemap.org https://*.google-analytics.com https://*.googletagmanager.com",
+        "img-src 'self' data: blob: https://*.supabase.co https://tiles.openfreemap.org https://*.google-analytics.com https://*.googletagmanager.com",
         "font-src 'self' data:",
-        "connect-src 'self' https://tiles.openfreemap.org https://formspree.io https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
+        "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://data.geopf.fr https://tiles.openfreemap.org https://formspree.io https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
         "worker-src 'self' blob:",
         "child-src blob:",
         "form-action 'self' https://*.list-manage.com https://formspree.io",
@@ -29,7 +29,8 @@ export default defineConfig({
         "object-src 'none'",
       ],
       scriptDirective: {
-        resources: ["'self'", 'https://*.list-manage.com', 'https://www.googletagmanager.com'],
+        // 'wasm-unsafe-eval': lets the organiser space run the flyer preview (WebAssembly), nothing else
+        resources: ["'self'", "'wasm-unsafe-eval'", 'https://*.list-manage.com', 'https://www.googletagmanager.com'],
       },
       styleDirective: {
         resources: ["'self'"],

@@ -4,7 +4,7 @@ Site of **La Voix des Crevettes**, a grassroots group organising actions in Fran
 
 Prototype online: https://nicolas-cozzarin.github.io/lavoixdescrevettes-prototype/
 
-Built with [Astro](https://astro.build) (static site, French + English). The full roadmap is in [PLAN.md](PLAN.md).
+Built with [Astro](https://astro.build) (static site, French + English). The roadmap (PLAN.md) is kept locally, outside the repo.
 
 ## Editing content
 
@@ -12,7 +12,7 @@ Everything lives in plain files under `src/content/`:
 
 | What | Where |
 |---|---|
-| Actions / events (map, agenda, "next action" on the home page) | `src/content/events/<slug>.yaml` (one file per action) |
+| Actions (map, agenda, "next action", flyers, "J'y vais") | the organiser space `/espace/` (Supabase, see [SETUP.md](SETUP.md)); backup copy in `src/content/events.json` |
 | Blog posts | `src/content/blog/fr/*.md` and `src/content/blog/en/*.md` (same `translationKey` links the two languages) |
 | FAQ | `src/content/faq.yaml` |
 | Links on the Resources page | `src/content/resources.yaml` |
@@ -23,6 +23,10 @@ Everything lives in plain files under `src/content/`:
 Campaign rule: retailer names (Lidl, etc.) only appear on event pages and on the report page.
 
 The home page always shows the soonest upcoming action. The site rebuilds every morning (GitHub Actions) so it moves on by itself once an action is over.
+
+## Organiser space
+
+`/espace/`: organisers log in with an email link, create and edit actions (with a live flyer preview) and see their numbers; admins also invite organisers and see attendees and the dashboard. Until Supabase is set up it runs in demo mode (`/espace/?demo`). Setup: [SETUP.md](SETUP.md).
 
 ## Running it locally
 

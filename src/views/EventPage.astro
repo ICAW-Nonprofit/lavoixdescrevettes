@@ -1,11 +1,12 @@
 ---
-import { Image, getImage } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import AddToCalendar from '../components/AddToCalendar.astro';
 import EventMap from '../components/EventMap.astro';
 import ShareEvent from '../components/ShareEvent.astro';
 import Newsletter from '../components/Newsletter.astro';
+import Rsvp from '../components/Rsvp.astro';
+import supabase from '../supabase.json';
 import { site } from '../config';
 import { md } from '../lib/md';
 import { addressOf } from '../lib/calendar';
@@ -30,7 +31,7 @@ const crumbs = [
 ];
 const alternates = { fr: eventPath(event.id, 'fr'), en: eventPath(event.id, 'en') };
 const pageAbs = new URL(url(eventPath(event.id, lang)), Astro.site).href;
-const posterImg = d.poster ? await getImage({ src: d.poster, width: 1080, format: 'jpg' }) : undefined;
+const posterAbs = new URL(url(d.poster), Astro.site).href;
 
 const jsonLd = [
   {
@@ -62,7 +63,7 @@ const jsonLd = [
       },
       geo: { '@type': 'GeoCoordinates', latitude: d.lat, longitude: d.lng },
     },
-    ...(posterImg ? { image: [new URL(posterImg.src, Astro.site).href] } : {}),
+    image: [posterAbs],
     organizer: { '@type': 'Organization', name: site.name, url: new URL(url(route('home', lang)), Astro.site).href },
   },
 ];
@@ -74,8 +75,8 @@ const description = `${when} · ${d.venue.city}. ${d.summary[lang]}`.slice(0, 16
   title={`${title} · ${formatDay(d.start, lang)}`}
   description={description}
   alternates={alternates}
-  image={d.poster}
-  imageAlt={d.posterAlt?.[lang]}
+  imageUrl={posterAbs}
+  imageAlt={d.posterAlt[lang]}
   jsonLd={jsonLd}
   crumbs={crumbs}
 >
@@ -89,7 +90,7 @@ const description = `${when} · ${d.venue.city}. ${d.summary[lang]}`.slice(0, 16
   <div class="container event-layout">
     {d.poster && (
       <div class="poster">
-        <Image src={d.poster} alt={d.posterAlt?.[lang] ?? ''} widths={[500, 800, 1080]} sizes="(min-width: 900px) 480px, 100vw" />
+        <img src={url(d.poster)} alt={d.posterAlt[lang]} width="1080" height="1350" decoding="async" />
       </div>
     )}
     <div>
@@ -116,6 +117,12 @@ const description = `${when} · ${d.venue.city}. ${d.summary[lang]}`.slice(0, 16
               >
             </dd>
           </div>
+          {d.meetingPoint && (
+            <div>
+              <dt>{fr ? 'Point de rendez-vous' : 'Meeting point'}</dt>
+              <dd>{d.meetingPoint[lang]}</dd>
+            </div>
+          )}
           {d.access && (
             <div>
               <dt>{t.access}</dt>
@@ -129,6 +136,29 @@ const description = `${when} · ${d.venue.city}. ${d.summary[lang]}`.slice(0, 16
         </div>
       </div>
 
+      {!past && d.status !== 'annule' && <Rsvp slug={event.id} lang={lang} />}
+
+      {past && d.recap && (
+        <section class="recap paper" aria-labelledby="recap-title">
+          <span class="kicker">{fr ? 'Bilan' : 'Recap'}</span>
+          <h2 id="recap-title">{fr ? 'Comment ça s’est passé' : 'How it went'}</h2>
+          {d.recap.participants && (
+            <p class="recap-n"><strong>{d.recap.participants}</strong> {fr ? 'personnes présentes' : 'people took part'}</p>
+          )}
+          {d.recap.text && <div class="prose" set:html={md(d.recap.text)} />}
+          {d.recap.links && (
+            <ul class="recap-links">
+              {d.recap.links
+                .split(/\s+/)
+                .filter((l) => /^https:\/\//.test(l))
+                .map((l) => (
+                  <li><a href={l} target="_blank" rel="noopener">{l.replace(/^https:\/\/(www\.)?/, '').slice(0, 60)}</a></li>
+                ))}
+            </ul>
+          )}
+        </section>
+      )}
+
       <div class="prose" set:html={md(d.description[lang])} />
       <p>
         <a class="btn btn-ghost btn-small" href={site.instagram} target="_blank" rel="noopener">Instagram</a>
@@ -140,8 +170,10 @@ const description = `${when} · ${d.venue.city}. ${d.summary[lang]}`.slice(0, 16
 
   <div class="u-spacer"></div>
   <Newsletter lang={lang} />
+  {supabase.url && <div hidden data-track-slug={event.id} data-track-url={supabase.url} data-track-key={supabase.anonKey}></div>}
 </Base>
 
 <script>
   import '../scripts/directions.js';
+  import '../scripts/rsvp.js';
 </script>

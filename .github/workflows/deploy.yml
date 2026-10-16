@@ -3,16 +3,18 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-  # rebuild every morning so the "next action" rolls over by itself
+  # every morning: the "next action" rolls over, and the backup copy of the actions is refreshed
   schedule:
     - cron: '0 4 * * *'
+  # also called by Supabase whenever an organiser saves an action (see supabase/migrations/*_automation.sql)
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # to commit the backup copy of the actions (src/content/events.json)
   pages: write
   id-token: write
 
+# a burst of saves queues at most one extra build
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -22,9 +24,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # `npm run build` first copies the actions from Supabase into src/content/events.json
       - uses: withastro/action@v4
         with:
           node-version: 24
+      - name: Keep the backup copy of the actions
+        if: github.event_name != 'push'
+        run: |
+          if git diff --quiet -- src/content/events.json; then echo "No change."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/content/events.json
+          git commit -m "Backup copy of the actions from Supabase"
+          git pull --rebase --autostash && git push || echo "::warning::Could not push the backup copy (will retry next build)."
 
   deploy:
     needs: build

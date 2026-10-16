@@ -1,34 +1,87 @@
+import { readFileSync } from 'node:fs';
 import { defineCollection } from 'astro:content';
 import { file, glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
 const l10n = z.object({ fr: z.string(), en: z.string() });
 
-/** One YAML file per action. The file name is the URL slug. */
+/**
+ * Actions come from Supabase (organiser space). Before each build, scripts/snapshot-events.mjs copies them
+ * into src/content/events.json, which is read here and turned into the shape the pages use.
+ * English fields fall back to the French text when an organiser didn't translate.
+ */
+const DATES_FR = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', timeZone: 'Europe/Paris' });
+const DATES_EN = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', timeZone: 'Europe/Paris' });
+const both = (fr: string | null | undefined, en?: string | null) => (fr ? { fr, en: en || fr } : undefined);
+const STATUS = { published: 'prevu', cancelled: 'annule', postponed: 'reporte' } as const;
+
 const events = defineCollection({
-  loader: glob({ pattern: '*.yaml', base: './src/content/events' }),
-  schema: ({ image }) =>
-    z.object({
-      title: l10n,
-      /** Neutral short title used on the home page (no brand names there). */
-      teaser: l10n,
-      summary: l10n,
-      description: l10n,
-      start: z.coerce.date(),
-      end: z.coerce.date(),
-      venue: z.object({ street: z.string(), postalCode: z.string(), city: z.string() }),
-      lat: z.number(),
-      lng: z.number(),
-      access: l10n.optional(),
-      type: z.enum(['manif', 'tractage', 'en-ligne', 'autre']),
-      status: z.enum(['prevu', 'annule', 'reporte']).default('prevu'),
-      poster: image().optional(),
-      posterAlt: l10n.optional(),
-      /** WhatsApp group for this action (overrides site.whatsappGroup) */
-      whatsapp: z.string().url().optional(),
-      /** custom text for the share button (otherwise built from title, date, place and summary) */
-      shareText: l10n.optional(),
-    }),
+  loader: async () => {
+    const rows = JSON.parse(readFileSync('src/content/events.json', 'utf8')) as any[];
+    return rows.map((r) => {
+      const day = new Date(r.starts_at);
+      return {
+        id: r.slug,
+        title: both(r.title, r.title_en),
+        teaser: { fr: `Action pour les crevettes à ${r.city}`, en: `Action for shrimp in ${r.city}` },
+        summary: both(r.summary, r.summary_en),
+        description: both(r.description || r.summary, r.description_en),
+        start: r.starts_at,
+        end: r.ends_at,
+        venue: { street: r.street || '', postalCode: r.postal_code || '', city: r.city },
+        lat: r.lat ?? undefined,
+        lng: r.lng ?? undefined,
+        meetingPoint: both(r.meeting_point),
+        access: both(r.access, r.access_en),
+        type: r.kind,
+        status: STATUS[r.status as keyof typeof STATUS] ?? 'prevu',
+        target: r.target || undefined,
+        poster: `/flyers/${r.slug}.jpg`,
+        customPoster: r.custom_poster || undefined,
+        flyerTagline: r.flyer_tagline || undefined,
+        flyerPlace: r.flyer_place || undefined,
+        posterAlt: {
+          fr: r.poster_alt || `Affiche de l'action pour les crevettes du ${DATES_FR.format(day)} à ${r.city}`,
+          en: `Flyer for the action for shrimp on ${DATES_EN.format(day)} in ${r.city}`,
+        },
+        whatsapp: r.whatsapp_url || undefined,
+        shareText: both(r.share_text, r.share_text_en),
+        recap: r.recap_participants || r.recap_text || r.recap_links
+          ? { participants: r.recap_participants ?? undefined, text: r.recap_text || undefined, links: r.recap_links || undefined }
+          : undefined,
+        updated: r.updated_at,
+      };
+    });
+  },
+  schema: z.object({
+    title: l10n,
+    /** Neutral short title used on the home page (no brand names there). */
+    teaser: l10n,
+    summary: l10n,
+    description: l10n,
+    start: z.coerce.date(),
+    end: z.coerce.date(),
+    venue: z.object({ street: z.string(), postalCode: z.string(), city: z.string() }),
+    lat: z.number().optional(),
+    lng: z.number().optional(),
+    meetingPoint: l10n.optional(),
+    access: l10n.optional(),
+    type: z.enum(['rassemblement', 'tractage', 'en-ligne', 'autre']),
+    status: z.enum(['prevu', 'annule', 'reporte']).default('prevu'),
+    target: z.string().optional(),
+    /** site path of the flyer (generated from the template, or the custom one, see pages/flyers) */
+    poster: z.string(),
+    customPoster: z.string().optional(),
+    flyerTagline: z.string().optional(),
+    flyerPlace: z.string().optional(),
+    posterAlt: l10n,
+    /** WhatsApp group for this action (overrides site.whatsappGroup) */
+    whatsapp: z.string().url().optional(),
+    /** body of the share message (date, place and links are added automatically) */
+    shareText: l10n.optional(),
+    recap: z.object({ participants: z.number().optional(), text: z.string().optional(), links: z.string().optional() }).optional(),
+    updated: z.coerce.date().optional(),
+  }),
 });
 
 /** Blog posts live in blog/fr and blog/en; translations share a translationKey. */

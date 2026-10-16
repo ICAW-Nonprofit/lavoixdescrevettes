@@ -11,6 +11,8 @@ interface Props {
   description: string;
   alternates?: Partial<Record<Lang, string>>;
   image?: ImageMetadata;
+  /** absolute URL of a ready-made share image (e.g. an action's flyer) */
+  imageUrl?: string;
   imageAlt?: string;
   type?: 'website' | 'article';
   jsonLd?: object[];
@@ -18,7 +20,7 @@ interface Props {
   published?: Date;
 }
 
-const { lang, title, description, alternates = {}, image, imageAlt, type = 'website', jsonLd = [], noindex = false, published } = Astro.props;
+const { lang, title, description, alternates = {}, image, imageUrl, imageAlt, type = 'website', jsonLd = [], noindex = false, published } = Astro.props;
 const fullTitle = title.includes(site.name) ? title : `${title} · ${site.name}`;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const abs = (p: string) => new URL(url(p), Astro.site).href;
@@ -26,7 +28,7 @@ const abs = (p: string) => new URL(url(p), Astro.site).href;
 const og = image
   ? await getImage({ src: image, width: 1200, format: 'jpg', quality: 82 })
   : await getImage({ src: ogDefault, width: 1200, height: 630, format: 'png' });
-const ogUrl = new URL(og.src, Astro.site).href;
+const ogUrl = imageUrl ?? new URL(og.src, Astro.site).href;
 ---
 
 <title>{fullTitle}</title>
@@ -51,4 +53,5 @@ const ogUrl = new URL(og.src, Astro.site).href;
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={ogUrl} />
 
-{jsonLd.map((d) => <script type="application/ld+json" set:html={JSON.stringify(d)} />)}
+{/* "<" escaped so text typed by organisers can never close the script tag */}
+{jsonLd.map((d) => <script type="application/ld+json" set:html={JSON.stringify(d).replace(/</g, '\\u003c')} />)}

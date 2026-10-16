@@ -13,7 +13,7 @@ interface Props {
 const { events, lang, single = false, class: cls = 'map' } = Astro.props;
 const t = ui[lang];
 const now = Date.now();
-const data = events.map((e) => {
+const data = events.filter((e) => e.data.lat != null && e.data.lng != null).map((e) => {
   const path = eventPath(e.id, lang);
   const page = new URL(url(path), Astro.site).href;
   return {

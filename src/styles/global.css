@@ -1653,3 +1653,44 @@ textarea {
 .share-event .share-status:empty {
   display: none;
 }
+
+/* ---------- "J'y vais" & recap on action pages ---------- */
+.rsvp,
+.recap {
+  margin-bottom: 32px;
+}
+.rsvp h2,
+.recap h2 {
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  margin-bottom: 0.2em;
+}
+.rsvp-count {
+  display: inline-block;
+  background: var(--jaune);
+  border: 2px solid var(--marine);
+  font-stretch: 75%;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 1.15rem;
+  padding: 0.2em 0.6em 0.1em;
+  margin: 0 0 12px;
+}
+.rsvp .form-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.rsvp .form-foot {
+  margin-top: 14px;
+}
+.recap-n {
+  font-size: 1.3rem;
+}
+.recap-n strong {
+  font-stretch: 75%;
+  font-size: 2.6rem;
+  font-weight: 800;
+}
+.recap-links {
+  padding-left: 1.2em;
+}

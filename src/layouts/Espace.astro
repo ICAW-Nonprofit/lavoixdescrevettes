@@ -1,0 +1,31 @@
+---
+/** Organiser space: French only, hidden from search engines, no site menu or sticky CTA. */
+import Seo from '../components/Seo.astro';
+import { url } from '../i18n';
+import '../styles/global.css';
+import '../styles/espace.css';
+
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <Seo lang="fr" title={title} description="Espace réservé à l’équipe de La Voix des Crevettes." noindex />
+    <meta name="theme-color" content="#00192e" />
+    <link rel="icon" href={url('/favicon.ico')} sizes="48x48" />
+    <link rel="apple-touch-icon" href={url('/apple-touch-icon.png')} />
+  </head>
+  <body class="espace">
+    <div id="app">
+      <noscript><p class="paper">L’espace organisation a besoin de JavaScript.</p></noscript>
+    </div>
+    <slot />
+  </body>
+</html>
