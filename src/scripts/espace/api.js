@@ -62,6 +62,7 @@ function realApi() {
       if (error) {
         if (/database error|not been invited|signups not allowed/i.test(error.message)) throw new ApiError('not_invited');
         if (error.status === 429 || /rate|seconds/i.test(error.message)) throw new ApiError('rate');
+        if (/sending .*email|smtp/i.test(error.message)) throw new ApiError('email_send', error.message);
         throw new ApiError('error', error.message);
       }
     },

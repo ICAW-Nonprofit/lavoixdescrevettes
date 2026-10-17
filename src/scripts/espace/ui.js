@@ -86,6 +86,7 @@ export const errorText = (err) =>
     duplicate: 'Cette action existe déjà.',
     not_invited: "Cette adresse n'a pas été invitée. Demande une invitation à l'équipe.",
     rate: 'Trop de demandes : attends une minute avant de réessayer.',
+    email_send: 'L’email de connexion n’a pas pu partir (souci du côté de l’envoi des emails). Réessaie dans quelques minutes, et préviens l’équipe si ça continue.',
   })[err?.code] || `Oups, ça n'a pas marché. ${err?.message ? `(${err.message})` : ''}`;
 
 /** Header of every organiser page. */
