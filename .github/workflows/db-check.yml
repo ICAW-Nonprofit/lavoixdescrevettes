@@ -1,0 +1,45 @@
+name: Database check
+
+# Manual health check of the live database. Prints counts and settings only: never names, emails or IDs
+# (logs of a public repository are public).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Counts and access rules
+        run: |
+          sudo apt-get install -y -qq postgresql-client >/dev/null
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          \echo '== actions: sign-ups and counters =='
+          select e.slug,
+                 (select count(*) from public.rsvps r where r.event_id = e.id) as rsvps,
+                 (select count(*) from public.rsvps r where r.event_id = e.id and r.email is not null) as with_email,
+                 coalesce((select sum(views) from public.event_stats s where s.event_id = e.id), 0) as views,
+                 coalesce((select sum(shares) from public.event_stats s where s.event_id = e.id), 0) as shares
+          from public.events e order by e.starts_at;
+          \echo '== accounts by role =='
+          select role, count(*) from public.profiles group by role;
+          \echo '== table owners and row security =='
+          select c.relname, c.relowner::regrole as owner, c.relrowsecurity as rls, c.relforcerowsecurity as forced
+          from pg_class c where c.relnamespace = 'public'::regnamespace and c.relname in ('events', 'rsvps', 'event_stats', 'profiles');
+          \echo '== dashboard functions =='
+          select p.proname, p.proowner::regrole as owner, p.prosecdef as security_definer
+          from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname in ('event_overview', 'attendees', 'is_admin', 'is_staff', 'rsvp', 'track');
+          \echo '== as the admin account: what the organiser space would get =='
+          begin;
+          select set_config('request.jwt.claims', json_build_object('sub', (select id from public.profiles where role = 'admin' limit 1), 'role', 'authenticated')::text, true);
+          set local role authenticated;
+          select auth.uid() is not null as has_uid, public.is_admin() as is_admin, public.is_staff() as is_staff;
+          select slug, rsvps, views, shares from public.event_overview();
+          select (select slug from public.events where id = a.event) as slug, a.n as attendees_visible
+          from (select e.id as event, (select count(*) from public.attendees(e.id)) as n from public.events e) a;
+          rollback;
+          SQL
