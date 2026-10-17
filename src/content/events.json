@@ -63,10 +63,10 @@
     "flyer_place": null,
     "custom_poster": null,
     "poster_alt": null,
-    "recap_participants": null,
-    "recap_text": null,
+    "recap_participants": 20,
+    "recap_text": "comment on the action",
     "recap_links": null,
     "created_at": "2026-10-17T17:38:22.995392+00:00",
-    "updated_at": "2026-10-17T17:38:22.995392+00:00"
+    "updated_at": "2026-10-17T17:40:58.728434+00:00"
   }
 ]
