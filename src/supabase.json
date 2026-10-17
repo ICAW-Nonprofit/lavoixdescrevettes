@@ -1,5 +1,5 @@
 {
   "//": "Public Supabase settings (safe to publish: the anon key only allows what the database rules permit). Empty = organiser space and 'J'y vais' are off, the site uses src/content/events.json.",
-  "url": "",
-  "anonKey": ""
+  "url": "https://ifhsohgisjbnuxljsesj.supabase.co",
+  "anonKey": "sb_publishable_HXxwowP0lH0OCdxe75VaAg_zlpuVtsR"
 }
