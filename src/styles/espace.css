@@ -501,3 +501,18 @@
 .esp-main .paper h3 {
   font-size: clamp(1.5rem, 4vw, 2.1rem);
 }
+.page-link {
+  display: inline-flex;
+}
+.btn.is-pending {
+  border-style: dashed;
+  cursor: progress;
+  opacity: 0.8;
+}
+.ev-stats {
+  align-items: center;
+  margin: -4px 0 18px;
+}
+.refresh {
+  margin-top: -6px;
+}

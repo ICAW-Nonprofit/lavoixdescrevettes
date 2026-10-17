@@ -21,7 +21,44 @@ export function el(tag, attrs = {}, ...children) {
 }
 
 export const $ = (sel, root = document) => root.querySelector(sel);
+
+/** Replace a node's content, skipping empty parts (`cond && el(...)` would otherwise print "false"). */
+export function fill(node, ...children) {
+  node.replaceChildren(...children.flat(Infinity).filter((c) => c != null && c !== false && c !== ''));
+  return node;
+}
 export const link = (path) => `${BASE}${path}`;
+
+/**
+ * "Voir la page" for an action. A new action's page only exists 2–3 minutes after saving (the site rebuilds),
+ * so until it answers we show "Publication en cours…" and check again every 15 s.
+ */
+export function pageLink(url, { label = 'Voir la page ↗', cls = 'btn btn-ghost btn-small' } = {}) {
+  const a = el('a', { class: cls, href: url, target: '_blank', rel: 'noopener' }, label);
+  if (api.demo) return a;
+  const wrap = el('span', { class: 'page-link' }, a);
+  const pending = el('span', { class: `${cls} is-pending`, role: 'status', title: 'La page apparaît 2 à 3 minutes après l’enregistrement.' }, 'Publication en cours…');
+  let tries = 0;
+  const check = async () => {
+    try {
+      const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+      if (res.ok) return fill(wrap, a);
+    } catch {
+      /* offline: try again */
+    }
+    fill(wrap, pending);
+    if (++tries < 40) setTimeout(check, 15000);
+  };
+  check();
+  return wrap;
+}
+
+/** Re-run `fn` when the tab comes back into view (numbers stay fresh without reloading). */
+export function onReturn(fn) {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) fn();
+  });
+}
 
 const TZ = 'Europe/Paris';
 export const fmtDay = (d) => new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ }).format(new Date(d));
@@ -140,7 +177,7 @@ export async function requireSession() {
 
 export function mount(...nodes) {
   const app = $('#app');
-  app.replaceChildren(...nodes);
+  fill(app, ...nodes);
 }
 
 export function loading(text = 'Chargement…') {

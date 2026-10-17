@@ -1,6 +1,6 @@
 // /espace/admin/ — dashboard (numbers per action, city, organiser) and organiser accounts. Admins only.
 import { api } from './api.js';
-import { el, $, mount, header, link, toast, errorText, requireSession, fmtDate, fmtDateTime, isPast, loading } from './ui.js';
+import { el, fill, $, mount, header, link, toast, errorText, requireSession, fmtDate, fmtDateTime, isPast, loading } from './ui.js';
 
 const sum = (rows, k) => rows.reduce((a, r) => a + (r[k] || 0), 0);
 const kpi = (n, label, sub) => el('div', { class: 'kpi' }, el('strong', {}, String(n)), el('span', {}, label), sub && el('small', {}, sub));
@@ -107,10 +107,10 @@ async function organisers(box, me) {
   try {
     [staff, invites] = await Promise.all([api.staff(), api.invitations()]);
   } catch (err) {
-    return box.replaceChildren(el('p', {}, errorText(err)));
+    return fill(box, el('p', {}, errorText(err)));
   }
   const pending = invites.filter((i) => !staff.some((s) => s.email === i.email));
-  box.replaceChildren(
+  fill(box, 
     el('h2', { class: 'esp-h2' }, 'Organisateur·ices'),
     inviteForm(reload),
     table(
@@ -166,21 +166,22 @@ async function main() {
   if (!ctx) return;
   const mainEl = el('main', { class: 'esp-main' }, loading());
   mount(header(ctx, 'admin'), mainEl);
-  if (ctx.profile.role !== 'admin') return mainEl.replaceChildren(el('p', { class: 'paper' }, 'Réservé aux admins. ', el('a', { href: link('/espace/') }, 'Retour')));
+  if (ctx.profile.role !== 'admin') return fill(mainEl, el('p', { class: 'paper' }, 'Réservé aux admins. ', el('a', { href: link('/espace/') }, 'Retour')));
 
   let rows, perDay;
   try {
     [rows, perDay] = await Promise.all([api.overview(), api.rsvpsPerDay(60)]);
   } catch (err) {
-    return mainEl.replaceChildren(el('p', { class: 'paper' }, errorText(err)));
+    return fill(mainEl, el('p', { class: 'paper' }, errorText(err)));
   }
   const upcoming = rows.filter((r) => !isPast(r));
   const past = rows.filter(isPast);
   const orgBox = el('section', { 'aria-label': 'Organisateur·ices' }, loading());
 
-  mainEl.replaceChildren(
+  fill(mainEl, 
     el('div', { class: 'esp-head' },
       el('h1', {}, 'Tableau de bord'),
+      el('button', { class: 'btn btn-ghost btn-small', type: 'button', onclick: main }, 'Actualiser'),
       el('button', {
         class: 'btn btn-ghost btn-small',
         type: 'button',

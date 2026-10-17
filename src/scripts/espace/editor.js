@@ -1,6 +1,6 @@
 // /espace/action/ — create or edit an action, with a live flyer preview.
 import { api, SITE } from './api.js';
-import { el, $, mount, header, link, toast, errorText, requireSession, parisToISO, isoToParis, slugify, fmtDateTime, loading } from './ui.js';
+import { el, fill, $, mount, header, link, toast, errorText, requireSession, parisToISO, isoToParis, slugify, fmtDateTime, loading, pageLink, onReturn } from './ui.js';
 import { addressSearch } from './address.js';
 import { renderPreview, previewToJpeg } from './flyer-preview.js';
 import { defaultTagline, flyerDateLine, flyerPlaceLine } from '../../lib/flyer.js';
@@ -365,7 +365,7 @@ function published() {
     el('h2', {}, 'C’est enregistré !'),
     el('p', {}, api.demo ? 'Mode démo : rien n’est publié pour de vrai.' : 'Le site se met à jour tout seul : la page sera en ligne dans 2 à 3 minutes.'),
     el('div', { class: 'event-actions' },
-      el('a', { class: 'btn btn-primary btn-small', href: pageUrl, target: '_blank', rel: 'noopener' }, 'Voir la page ↗'),
+      pageLink(pageUrl, { cls: 'btn btn-primary btn-small' }),
       el('button', { class: 'btn btn-ghost btn-small', type: 'button', onclick: () => navigator.clipboard.writeText(pageUrl).then(() => toast('Lien copié')) }, 'Copier le lien'),
       el('a', { class: 'btn btn-ghost btn-small', href: link('/espace/') }, 'Retour aux actions')));
   $('.esp-published')?.remove();
@@ -384,6 +384,23 @@ async function remove() {
   }
 }
 
+/** This action's numbers (same as on the list), refreshed when coming back to the tab. */
+async function loadStats() {
+  const box = $('#ev-stats');
+  if (!box || !ev.id) return;
+  try {
+    const row = (await api.overview()).find((r) => r.id === ev.id);
+    if (!row) return;
+    const s = (n, label) => el('span', { class: 'stat' }, el('strong', {}, String(n ?? 0)), ' ', label);
+    fill(box,
+      s(row.rsvps, 'j’y vais'), ctx.profile.role === 'admin' && row.rsvps_with_email ? el('span', { class: 'stat' }, `(${row.rsvps_with_email} avec email)`) : null,
+      s(row.views, 'vues'), s(row.shares, 'partages'), s(row.newsletter, 'newsletter'), s(row.calendar, 'calendrier'),
+      pageLink(`${SITE}/agenda/${ev.slug}/`));
+  } catch {
+    /* numbers are a bonus: never block the form */
+  }
+}
+
 async function loadAttendees() {
   const box = $('#attendees');
   if (!box) return;
@@ -395,7 +412,7 @@ async function loadAttendees() {
       const a = el('a', { href: URL.createObjectURL(new Blob(['﻿' + text], { type: 'text/csv' })), download: `participants-${ev.slug}.csv` });
       a.click();
     };
-    box.replaceChildren(
+    fill(box, 
       el('h2', {}, `Participant·es (${rows.length})`),
       el('p', { class: 'small' }, 'Visible par les admins uniquement. Les emails sont effacés 30 jours après l’action.'),
       rows.length
@@ -406,7 +423,7 @@ async function loadAttendees() {
       rows.length > 0 && el('button', { class: 'btn btn-ghost btn-small', type: 'button', onclick: csv }, 'Exporter (CSV)'),
     );
   } catch (err) {
-    box.replaceChildren(el('h2', {}, 'Participant·es'), el('p', {}, errorText(err)));
+    fill(box, el('h2', {}, 'Participant·es'), el('p', {}, errorText(err)));
   }
 }
 
@@ -419,18 +436,24 @@ async function main() {
     try {
       ev = await api.getEvent(id);
     } catch (err) {
-      return main.replaceChildren(el('p', { class: 'paper' }, errorText(err)));
+      return fill(main, el('p', { class: 'paper' }, errorText(err)));
     }
-    if (!ev) return main.replaceChildren(el('p', { class: 'paper' }, 'Action introuvable. ', el('a', { href: link('/espace/') }, 'Retour')));
+    if (!ev) return fill(main, el('p', { class: 'paper' }, 'Action introuvable. ', el('a', { href: link('/espace/') }, 'Retour')));
   } else ev = {};
-  main.replaceChildren(
+  fill(main, 
     el('p', { class: 'small' }, el('a', { href: link('/espace/') }, '← Toutes les actions')),
     el('h1', {}, ev.id ? ev.title : 'Nouvelle action'),
+    ev.id && el('p', { class: 'stats ev-stats', id: 'ev-stats' }),
     buildForm(),
   );
   refreshSuggestions();
   updatePreview();
+  loadStats();
   loadAttendees();
+  onReturn(() => {
+    loadStats();
+    loadAttendees();
+  });
   addEventListener('beforeunload', (e) => {
     if (dirty) e.preventDefault();
   });

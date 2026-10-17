@@ -1,5 +1,5 @@
 // Address search with the French national address base (Géoplateforme, free, no key, no cookies).
-import { el } from './ui.js';
+import { el, fill } from './ui.js';
 
 const API = 'https://data.geopf.fr/geocodage/search';
 
@@ -58,7 +58,7 @@ export function addressSearch({ id, onPick, placeholder = 'ex. 35 avenue Sully P
           lng: f.geometry.coordinates[0],
         };
       });
-      list.replaceChildren(
+      fill(list, 
         ...results.map((r, i) =>
           el('li', { id: `${listId}-${i}`, role: 'option', 'aria-selected': 'false', onmousedown: (e) => (e.preventDefault(), pick(r)) }, r.label),
         ),

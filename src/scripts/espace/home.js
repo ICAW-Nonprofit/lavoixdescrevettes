@@ -1,6 +1,6 @@
 // /espace/ — login, then the list of actions with their numbers.
 import { api, DEMO, SITE } from './api.js';
-import { el, mount, header, link, toast, errorText, fmtDay, fmtTime, isPast, loading } from './ui.js';
+import { el, fill, mount, header, link, toast, errorText, fmtDay, fmtTime, isPast, loading, pageLink, onReturn } from './ui.js';
 
 function loginView() {
   const msg = el('p', { class: 'form-msg', role: 'status' });
@@ -17,7 +17,7 @@ function loginView() {
         try {
           await api.sendLoginLink(email.value);
           if (DEMO) return start();
-          form.replaceChildren(
+          fill(form, 
             el('h1', {}, 'Regarde tes emails'),
             el('p', { class: 'big-text' }, 'On vient d’envoyer un lien de connexion à ', el('strong', {}, email.value.trim()), '.'),
             el('p', {}, 'Ouvre-le sur cet appareil (ou n’importe lequel). Il est valable une heure. Pas reçu ? Regarde dans les spams, ou réessaie dans une minute.'),
@@ -80,11 +80,11 @@ function eventCard(e, admin) {
       el('p', { class: 'meta' }, e.city, e.creator_name && ` · par ${e.creator_name}`),
       el('p', { class: 'stats' },
         stat(e.rsvps, 'j’y vais'), admin && e.rsvps_with_email ? el('span', { class: 'stat' }, `(${e.rsvps_with_email} avec email)`) : null,
-        stat(e.views, 'vues'), stat(e.shares, 'partages'), stat(e.newsletter, 'newsletter'),
+        stat(e.views, 'vues'), stat(e.shares, 'partages'), stat(e.newsletter, 'newsletter'), stat(e.calendar, 'calendrier'),
         past && e.recap_participants ? stat(e.recap_participants, 'présent·es') : null),
       el('div', { class: 'esp-card-actions' },
         el('a', { class: 'btn btn-primary btn-small', href: `${link('/espace/action/')}?id=${e.id}` }, past && !e.recap_participants ? 'Ajouter le bilan' : 'Modifier'),
-        el('a', { class: 'btn btn-ghost btn-small', href: pageUrl, target: '_blank', rel: 'noopener' }, 'Voir la page ↗'),
+        pageLink(pageUrl),
         el('button', {
           class: 'btn btn-ghost btn-small',
           type: 'button',
@@ -100,28 +100,41 @@ function eventCard(e, admin) {
   );
 }
 
+let listening = false;
+
 async function dashboard(ctx) {
-  const admin = ctx.profile.role === 'admin';
   const main = el('main', { class: 'esp-main' }, loading());
   mount(header(ctx, 'home'), main);
   if (!ctx.profile.display_name) {
-    main.replaceChildren(profileForm(ctx, start));
+    fill(main, profileForm(ctx, start));
     return;
   }
+  await loadList(ctx, main);
+  if (!listening) {
+    listening = true;
+    onReturn(() => loadList(ctx, main)); // fresh numbers when coming back to this tab
+  }
+}
+
+async function loadList(ctx, main) {
+  const admin = ctx.profile.role === 'admin';
   let rows = [];
   try {
     rows = await api.overview();
   } catch (err) {
-    main.replaceChildren(el('p', { class: 'paper' }, errorText(err)));
+    fill(main, el('p', { class: 'paper' }, errorText(err)));
     return;
   }
   const upcoming = rows.filter((e) => !isPast(e)).sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   const past = rows.filter(isPast);
-  main.replaceChildren(
+  const now = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date());
+  fill(main,
     el('div', { class: 'esp-head' },
       el('h1', {}, 'Les actions'),
       el('a', { class: 'btn btn-primary', href: link('/espace/action/') }, '+ Nouvelle action')),
-    el('p', {}, 'Tout le monde dans l’équipe peut modifier toutes les actions. Chaque enregistrement met le site à jour en ~2 minutes.'),
+    el('p', {}, 'Tout le monde dans l’équipe peut modifier toutes les actions. Chaque enregistrement met le site à jour en 2 à 3 minutes.'),
+    el('p', { class: 'small refresh' }, `Chiffres à jour à ${now}. `,
+      el('button', { class: 'linkish', type: 'button', onclick: () => loadList(ctx, main) }, 'Actualiser')),
     el('h2', { class: 'esp-h2' }, `À venir (${upcoming.length})`),
     upcoming.length ? el('ul', { class: 'esp-cards' }, upcoming.map((e) => eventCard(e, admin))) : el('p', { class: 'paper' }, 'Aucune action prévue. Lance la prochaine !'),
     past.length > 0 && el('h2', { class: 'esp-h2' }, `Passées (${past.length})`),
