@@ -20,11 +20,13 @@ Until this is done, `/espace/` runs in demo mode and the site works as before.
 
 ## 2. Let GitHub update the database
 
-1. In Supabase, click **Connect** → **Session pooler** (not "Direct connection", which GitHub can't reach) and copy the URI.
-   It looks like `postgresql://postgres.xxxx:[YOUR-PASSWORD]@aws-0-eu-west-3.pooler.supabase.com:5432/postgres`.
-   Replace `[YOUR-PASSWORD]` with your database password.
-2. On GitHub: the repo → **Settings → Secrets and variables → Actions → New repository secret**.
-   Name: `SUPABASE_DB_URL`. Value: the URI. **Add secret**.
+1. In Supabase, click **Connect** (top of the project page) → **ORMs** tab (or **Session pooler**). Copy the line labelled **DIRECT_URL** / "session-mode pooler, used for migrations": the one with **port 5432**, not 6543.
+   It looks like `postgresql://postgres.xxxx:[YOUR-PASSWORD]@aws-0-eu-west-1.pooler.supabase.com:5432/postgres`.
+   Copy only what's between the quotes, and replace `[YOUR-PASSWORD]` (brackets included) with your database password.
+   - If the password contains symbols like `@ : / ? # & %`, the address breaks. Simplest fix: **Project Settings → Database → Reset database password**, click **Generate a password** until it has only letters and digits, save it in your password manager, and use that one.
+2. On GitHub: the repo → **Settings → Secrets and variables → Actions → New repository secret**
+   (direct link: `https://github.com/<owner>/<repo>/settings/secrets/actions/new`).
+   Name: `SUPABASE_DB_URL`. Value: the address from step 1. **Add secret**.
 
 → Then run the **Database (Supabase)** workflow (GitHub → Actions → Database (Supabase) → Run workflow): it creates the database tables.
 
@@ -49,7 +51,7 @@ In Supabase → **Authentication**:
    - Sender email: the address verified in Brevo · Sender name: `La Voix des Crevettes`
    - Host: `smtp-relay.brevo.com` · Port: `587`
    - Username: the Brevo SMTP login · Password: the Brevo SMTP key
-4. **Emails → Templates**: replace both **Confirm signup** and **Magic Link** with:
+4. **Emails → Templates** (in the left menu: Authentication → **Emails**, then the **Templates** tab). Open **Confirm signup**, replace the subject and the message body with the text below and **Save**; then do the same for **Magic Link**. ("Confirm signup" is what a new organiser receives the very first time; "Magic Link" is every login after that.)
    - Subject: `Ton lien de connexion · La Voix des Crevettes`
    - Body:
      ```html
@@ -69,13 +71,16 @@ In Supabase → **Authentication**:
 
 ## 6. Store the secrets in Supabase (once the tables exist)
 
-Supabase → **SQL Editor → New query**. Paste this, replace the four `<…>` values, and click **Run**:
+Only once the **Database (Supabase)** workflow has run successfully (otherwise you get "relation public.invitations does not exist").
+Supabase → **SQL Editor → New query**. Paste this, replace the five `<…>` values, and click **Run**. It's safe to run again if something went wrong.
 
 ```sql
+delete from vault.secrets where name in ('github_token', 'brevo_api_key', 'mail_from');
 select vault.create_secret('<GITHUB TOKEN FROM STEP 5>', 'github_token');
-select vault.create_secret('<BREVO API KEY FROM STEP 3>', 'brevo_api_key');
+select vault.create_secret('<BREVO API KEY FROM STEP 3, starts with xkeysib->', 'brevo_api_key');
 select vault.create_secret('<SENDER EMAIL VERIFIED IN BREVO>', 'mail_from');
-insert into public.invitations (email, role, display_name) values ('<YOUR EMAIL>', 'admin', '<YOUR NAME>');
+insert into public.invitations (email, role, display_name) values ('<YOUR EMAIL>', 'admin', '<YOUR NAME>')
+on conflict (email) do update set role = 'admin';
 ```
 
 The secrets are stored encrypted in Supabase Vault; the query history may keep the text, so you can delete the query afterwards.
