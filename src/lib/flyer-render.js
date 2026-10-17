@@ -1,12 +1,14 @@
 // Build-time flyer rendering (Node): satori → SVG → resvg → PNG → sharp → JPEG.
 import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
 import { FLYER, FLYER_FONTS, flyerTree, flyerTexts } from './flyer.js';
 
-const pub = (p) => fileURLToPath(new URL(`../../public/${p}`, import.meta.url));
+// Files are found from the project folder (the build runs there). A path relative to this file would
+// break once the build bundles it into dist/.prerender/.
+const pub = (p) => join(process.cwd(), 'public', p);
 
 let assets;
 async function loadAssets() {
