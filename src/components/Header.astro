@@ -29,8 +29,7 @@ const switchHref = url(alternates[other] ?? route('home', other));
 
 <header class="site-header">
   <a class="wordmark" href={url(route('home', lang))} aria-label={t.homeLabel}>
-    <span>La voix des</span>
-    <span>crevettes</span>
+    <img src={url('/logo-navy.svg')} alt="" width="875" height="655" />
   </a>
   <nav class="nav" aria-label={t.navLabel}>
     <ul class="nav-links">
@@ -47,7 +46,7 @@ const switchHref = url(alternates[other] ?? route('home', other));
 
   <div class="menu-panel" id="menu-panel" data-menu-panel role="dialog" aria-modal="true" aria-label={t.navLabel}>
     <div class="menu-top">
-      <span class="wordmark" aria-hidden="true"><span>La voix des</span><span>crevettes</span></span>
+      <span class="wordmark" aria-hidden="true"><img src={url('/logo-bleu.svg')} alt="" width="875" height="655" /></span>
       <button class="btn btn-ghost" type="button" data-menu-close>{t.close}</button>
     </div>
     <ul>

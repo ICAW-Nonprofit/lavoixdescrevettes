@@ -143,6 +143,7 @@ const jsonLd = [
     '@type': 'NGO',
     name: site.name,
     url: homeUrl,
+    logo: new URL(url('/logo.png'), Astro.site).href,
     description: c.who,
     areaServed: { '@type': 'Country', name: 'France' },
     sameAs: [site.instagram],

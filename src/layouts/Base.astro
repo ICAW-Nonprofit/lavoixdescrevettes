@@ -57,8 +57,9 @@ if (crumbs?.length) {
     <Seo lang={lang} jsonLd={ld} {...seo} />
     <meta name="theme-color" content="#9cb3f7" />
     <link rel="icon" href={url('/favicon.ico')} sizes="48x48" />
-    <link rel="icon" href={url('/favicon-32.png')} sizes="32x32" type="image/png" />
+    <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
     <link rel="apple-touch-icon" href={url('/apple-touch-icon.png')} />
+    <link rel="manifest" href={url('/site.webmanifest')} />
     <link rel="alternate" type="application/rss+xml" title="La Voix des Crevettes" href={url(lang === 'fr' ? '/rss.xml' : '/en/rss.xml')} />
     <link rel="sitemap" href={url('/sitemap-index.xml')} />
     <link rel="preload" href={fontLatin} as="font" type="font/woff2" crossorigin />

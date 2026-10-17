@@ -153,7 +153,7 @@ export function header(ctx, current) {
         api.resetDemo && el('button', { class: 'linkish', type: 'button', onclick: () => { api.resetDemo(); location.reload(); } }, 'Réinitialiser'),
         CONFIGURED && el('a', { href: `${link('/espace/')}?nodemo` }, ' Quitter la démo')),
     el('div', { class: 'esp-bar' },
-      el('a', { class: 'esp-brand', href: link('/espace/') }, el('span', {}, 'La voix des crevettes'), el('strong', {}, 'Espace orga')),
+      el('a', { class: 'esp-brand', href: link('/espace/') }, el('img', { src: link('/logo-bleu.svg'), alt: 'La Voix des Crevettes', width: 875, height: 655 }), el('strong', {}, 'Espace orga')),
       ctx && el('span', { class: 'esp-who' }, ctx.profile?.display_name || ctx.user.email, admin && el('span', { class: 'chip' }, 'admin')),
     ),
     ctx && nav,

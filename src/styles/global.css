@@ -308,19 +308,14 @@ p {
   padding: 0 var(--gutter);
 }
 .wordmark {
-  display: grid;
-  color: var(--marine);
-  text-decoration: none;
-  font-stretch: 75%;
-  font-weight: 800;
-  text-transform: uppercase;
-  line-height: 0.82;
-  font-size: 1.4rem;
-  letter-spacing: -0.01em;
+  display: block;
+  flex: none;
+  line-height: 0;
 }
-.wordmark span:first-child {
-  font-weight: 600;
-  font-size: 0.72em;
+.wordmark img {
+  display: block;
+  height: 58px;
+  width: auto;
 }
 .nav {
   display: flex;
@@ -408,8 +403,8 @@ p {
     justify-content: space-between;
     align-items: center;
   }
-  .menu-panel .wordmark {
-    color: var(--bleu);
+  .wordmark img {
+    height: 48px;
   }
   .menu-panel .btn-ghost {
     color: var(--bleu);
@@ -1416,18 +1411,13 @@ select {
   }
 }
 .footer-mark {
-  font-stretch: 75%;
-  font-weight: 800;
-  text-transform: uppercase;
-  font-size: clamp(2.6rem, 6vw, 4.2rem);
-  line-height: 0.82;
-  color: var(--blanc);
-  margin: 0 0 16px;
+  margin: 0 0 20px;
+  line-height: 0;
 }
-.footer-mark span {
+.footer-mark img {
   display: block;
-  font-size: 0.55em;
-  font-weight: 600;
+  width: clamp(170px, 22vw, 230px);
+  height: auto;
 }
 .site-footer h2 {
   font-size: 1.1rem;
