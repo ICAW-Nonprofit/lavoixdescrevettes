@@ -192,6 +192,7 @@ Rules:
 - **Organiser text is untrusted.**
   - Render descriptions only through `md()` from `src/lib/md.ts`: it escapes everything and allows only http(s), mailto and relative links.
   - JSON-LD escapes `<`.
+  - The build must never fail because of one action's text. For example, a WhatsApp link that isn't a valid URL is left out by the loader in `content.config.ts` (the editor refuses it first).
   - In `/espace/`, always build DOM with `el()` and `fill()` from `scripts/espace/ui.js`, never `innerHTML`.
 
 ### Adding a field to actions (the full chain: miss one and something silently breaks)

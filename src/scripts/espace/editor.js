@@ -282,7 +282,8 @@ function collect() {
   if (start && ends && Date.parse(ends) <= Date.parse(start)) ends = new Date(Date.parse(ends) + 86400000).toISOString(); // ends after midnight
   if (!city()) problems.push('la ville');
   if (f.summary.value.trim().length < 10) problems.push('un résumé (au moins 10 caractères)');
-  if (f.whatsapp_url.value && !/^https:\/\//.test(f.whatsapp_url.value.trim())) problems.push('un lien WhatsApp qui commence par https://');
+  const wa = f.whatsapp_url.value.trim();
+  if (wa && !(wa.startsWith('https://') && URL.canParse(wa))) problems.push('un lien WhatsApp valide (https://…)');
   if (problems.length) throw new Error(`Il manque ${problems.join(', ')}.`);
   const lat = f.lat.value ? Number(f.lat.value) : null;
   const n = f.recap_participants.value;
