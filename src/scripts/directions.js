@@ -8,6 +8,7 @@ export const isAndroid = /Android/.test(ua);
 export const googleMapsUrl = ({ address }) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 
 export function directionsUrl({ lat, lng, address }) {
+  if (!lat) return googleMapsUrl({ address }); // no coordinates: search the address
   const q = encodeURIComponent(address);
   if (isAndroid) return `geo:${lat},${lng}?q=${q}`;
   if (isIOS) return `https://maps.apple.com/?ll=${lat},${lng}&q=${q}`;
