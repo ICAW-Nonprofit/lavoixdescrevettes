@@ -1,0 +1,34 @@
+name: Checks
+
+# Safety net for every change: SQL tests, a full build and the site checks (scripts/verify.mjs).
+# Runs on every branch and pull request. Deploys nothing and uses no secret: merge into main only when it's green.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # verify compares migrations and flyer files with origin/main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: SQL tests (in-memory Postgres)
+        run: npm run test:db
+      - name: Build
+        run: npm run build
+      - name: Site checks
+        run: npm run verify

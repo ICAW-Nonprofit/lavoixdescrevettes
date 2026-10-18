@@ -6,6 +6,8 @@ Prototype online: https://nicolas-cozzarin.github.io/lavoixdescrevettes-prototyp
 
 Built with [Astro](https://astro.build) (static site, French + English). The roadmap (PLAN.md) is kept locally, outside the repo.
 
+**Changing the code (people or AI coding agents): read [AGENTS.md](AGENTS.md) first.** It describes how the whole site works and the rules for changing it without breaking it.
+
 ## Editing content
 
 Everything lives in plain files under `src/content/`:
@@ -39,9 +41,11 @@ npm run dev
 
 Then open http://localhost:4321/lavoixdescrevettes-prototype/
 
+Before pushing a change: `npm run test:db`, `npm run build`, then `npm run verify` (safety checks on the built site and the content rules).
+
 ## Deploying
 
-Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/deploy.yml`).
+Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/deploy.yml`). Work on a branch first: the **Checks** workflow (`.github/workflows/checks.yml`) runs the tests, the build and the safety checks on every branch, and nothing is deployed until it's merged into `main`.
 
 To move to the real domain later: in `astro.config.mjs` set `site` to `https://lavoixdescrevettes.org` and remove `base`.
 

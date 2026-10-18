@@ -9,6 +9,7 @@
     "preview": "astro preview",
     "check": "astro check",
     "test:db": "node supabase/tests/db.test.mjs",
+    "verify": "node scripts/verify.mjs",
     "snapshot": "node scripts/snapshot-events.mjs"
   },
   "dependencies": {
