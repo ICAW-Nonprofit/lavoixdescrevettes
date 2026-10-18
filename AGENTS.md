@@ -361,6 +361,11 @@ Project URL `https://ifhsohgisjbnuxljsesj.supabase.co`. The publishable key is i
 | `db-check.yml` (Database check) | manual, daily 16:30 UTC | Counts and access-rule sanity checks on the live DB (no personal data). Fails when a reminder email or publish request failed in the last 6 hours. |
 | `checks.yml` (Checks) | push to any branch, pull requests, manual | `npm run test:db`, `npm run build`, `npm run verify`. Deploys nothing and uses no secret. |
 
+**Dependabot** (`.github/dependabot.yml`) opens update pull requests every Monday for npm packages and actions. Each one runs Checks; merge when green.
+
+- The `flyer-renderer` group (satori, resvg, sharp) can change the flyer's pixels. Before merging it, compare a flyer from `npm run build` (`dist/flyers/<slug>.jpg`) with the live one.
+- Known `npm audit` result, accepted: satori pins fflate 0.7.3 (advisory on `unzipSync` with ZIP64 archives). satori only calls `inflateSync`, on our own font files, so the flaw can't be reached. Recheck when satori updates.
+
 Supabase dispatches `deploy.yml` on **`main`**: organiser saves always publish what is on `main`. A broken `main` means organisers can't publish, which is why changes go through a branch and the Checks workflow first.
 
 ---

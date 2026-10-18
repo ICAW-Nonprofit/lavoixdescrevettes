@@ -1,0 +1,27 @@
+# Weekly update pull requests. Each one runs the Checks workflow: merge only when it's green.
+# Security alerts and security fixes are switched on in GitHub → Settings → Code security.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    groups:
+      # the flyer renderer: its output must stay pixel-identical, so check a flyer by hand before merging
+      flyer-renderer:
+        patterns: ['satori', '@resvg/resvg-js', 'sharp']
+      everything-else:
+        patterns: ['*']
+        update-types: ['minor', 'patch']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Europe/Paris
+    groups:
+      actions:
+        patterns: ['*']
