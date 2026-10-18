@@ -88,7 +88,20 @@ The secrets are stored encrypted in Supabase Vault; the query history may keep t
 ## 7. First login
 
 Open `https://nicolas-cozzarin.github.io/lavoixdescrevettes-prototype/espace/`, enter your email, and click the link you receive.
-You're the admin: invite organisers from **Tableau de bord**.
+You're the admin. The first time, the space asks you to set up **two-factor login** (see below); then invite organisers from **Tableau de bord**.
+
+## 8. Two-factor login for admins
+
+Admins see attendees' names and emails, so their login needs two things: the email link, then a 6-digit code from an authenticator app (Google Authenticator, Microsoft Authenticator, 2FAS, Aegis…). The database refuses admin rights to a session without the code. Organisers only use the email link.
+
+- **Supabase setting**: Authentication → **Multi-Factor** → **TOTP (App Authenticator)** must be **Enabled** (it is by default).
+- **Set-up**: at the first login after this change, the space shows a QR code to scan, then asks for the code. After that it asks for the code at each new login.
+- **Why not a code by email?** The login link already arrives by email. A second code in the same inbox would not protect anything if that inbox were hacked; a phone app does.
+- **Lost or changed phone**: in Supabase → **SQL Editor**, run the line below (with the admin's email). At the next login, the space shows a new QR code.
+
+  ```sql
+  delete from auth.mfa_factors where user_id = (select id from auth.users where email = '<ADMIN EMAIL>');
+  ```
 
 ---
 

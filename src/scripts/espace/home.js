@@ -1,6 +1,6 @@
 // /espace/ — login, then the list of actions with their numbers.
 import { api, DEMO, SITE } from './api.js';
-import { el, fill, mount, header, link, toast, errorText, fmtDay, fmtTime, isPast, loading, pageLink, onReturn } from './ui.js';
+import { el, fill, mount, header, link, toast, errorText, fmtDay, fmtTime, isPast, loading, pageLink, onReturn, secondFactor } from './ui.js';
 
 function loginView() {
   const msg = el('p', { class: 'form-msg', role: 'status' });
@@ -152,6 +152,7 @@ async function start() {
     mount(header(ctx), el('main', { class: 'esp-main' }, el('div', { class: 'paper' }, el('h1', {}, 'Compte désactivé'), el('p', {}, 'Ton compte n’est pas (ou plus) actif. Contacte l’équipe si c’est une erreur.'))));
     return;
   }
+  if (!(await secondFactor(ctx))) return;
   const back = sessionStorage.getItem('lvdc-return');
   if (back) {
     sessionStorage.removeItem('lvdc-return');

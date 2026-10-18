@@ -124,6 +124,7 @@ export const errorText = (err) =>
     not_invited: "Cette adresse n'a pas été invitée. Demande une invitation à l'équipe.",
     rate: 'Trop de demandes : attends une minute avant de réessayer.',
     email_send: 'L’email de connexion n’a pas pu partir (souci du côté de l’envoi des emails). Réessaie dans quelques minutes, et préviens l’équipe si ça continue.',
+    mfa_code: 'Code incorrect ou expiré. Tape le code affiché en ce moment dans ton appli.',
   })[err?.code] || `Oups, ça n'a pas marché. ${err?.message ? `(${err.message})` : ''}`;
 
 /** Header of every organiser page. */
@@ -172,7 +173,73 @@ export async function requireSession() {
     mount(header(ctx), el('main', { class: 'esp-main' }, el('div', { class: 'paper' }, el('h1', {}, 'Compte désactivé'), el('p', {}, "Ton compte n'est pas (ou plus) actif. Contacte l'équipe si c'est une erreur."))));
     return null;
   }
+  if (!(await secondFactor(ctx))) return null;
   return ctx;
+}
+
+/** Form asking for the 6-digit code of the authenticator app. A correct code upgrades the session; then the page reloads. */
+function codeForm(title, factorId, ...intro) {
+  const code = el('input', { id: 'mfa-code', type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code', pattern: '[0-9 ]{6,7}', maxlength: 7, required: true });
+  const msg = el('p', { class: 'form-msg', role: 'status' });
+  const btn = el('button', { class: 'btn btn-primary', type: 'submit' }, 'Valider');
+  return el(
+    'form',
+    {
+      class: 'paper esp-login',
+      onsubmit: async (e) => {
+        e.preventDefault();
+        btn.disabled = true;
+        msg.textContent = 'Vérification…';
+        try {
+          await api.mfaVerify(code.value.replace(/\s/g, ''), factorId);
+          location.reload();
+        } catch (err) {
+          msg.textContent = errorText(err);
+          btn.disabled = false;
+          code.select();
+        }
+      },
+    },
+    el('h1', {}, title),
+    intro,
+    el('div', { class: 'field' }, el('label', { for: 'mfa-code' }, 'Code à 6 chiffres'), code),
+    el('div', { class: 'form-foot' }, btn, msg),
+    el('p', { class: 'small mfa-help' }, 'Téléphone perdu ou changé ? Écris à l’équipe : la personne qui gère Supabase peut réinitialiser ta double authentification.'),
+  );
+}
+
+/**
+ * Admins confirm each login with a code from an authenticator app (the database refuses admin rights without it).
+ * Returns true when the page can go on; otherwise shows the set-up or code screen and returns false.
+ */
+export async function secondFactor(ctx) {
+  if (ctx.profile?.role !== 'admin') return true;
+  const main = el('main', { class: 'esp-main' }, loading());
+  try {
+    const st = await api.mfaStatus();
+    if (st.level === 'aal2') return true;
+    mount(header(ctx), main);
+    if (st.hasFactor) {
+      fill(main, codeForm('Code de sécurité', null,
+        el('p', { class: 'big-text' }, 'Ouvre ton appli d’authentification et tape le code à 6 chiffres de « La Voix des Crevettes ».')));
+      return false;
+    }
+    const s = await api.mfaEnroll();
+    fill(main, codeForm('Active la double authentification', s.factorId,
+      el('p', { class: 'big-text' }, 'Ton compte admin voit les noms et emails des participant·es. Pour le protéger, chaque connexion demande en plus un code à 6 chiffres, donné par une appli sur ton téléphone.'),
+      el('ol', { class: 'mfa-steps' },
+        el('li', {}, 'Installe une appli d’authentification si tu n’en as pas : Google Authenticator, Microsoft Authenticator, 2FAS ou Aegis.'),
+        el('li', {}, 'Dans l’appli, ajoute un compte et scanne ce QR code.'),
+        el('li', {}, 'Tape ci-dessous le code à 6 chiffres que l’appli affiche.')),
+      s.qr
+        ? el('img', { class: 'mfa-qr', src: s.qr, alt: 'QR code à scanner avec l’appli d’authentification', width: 200, height: 200 })
+        : el('p', { class: 'small' }, 'Démo : pas de vrai QR code, tape n’importe quels 6 chiffres.'),
+      el('p', { class: 'small' }, 'Pas de caméra ? Saisis cette clé dans l’appli : ', el('code', { class: 'mfa-secret' }, s.secret))));
+  } catch (err) {
+    mount(header(ctx), main);
+    fill(main, el('p', { class: 'paper' }, errorText(err)));
+  }
+  return false;
 }
 
 export function mount(...nodes) {

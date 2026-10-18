@@ -107,6 +107,26 @@
 .esp-login h1 {
   margin-top: 0;
 }
+/* two-factor set-up: the QR code needs a white quiet zone to scan */
+.mfa-steps {
+  padding-left: 1.4em;
+}
+.mfa-qr {
+  display: block;
+  width: 200px;
+  height: 200px;
+  margin: 8px 0 16px;
+  padding: 10px;
+  background: var(--blanc);
+  border: var(--border);
+}
+.mfa-secret {
+  word-break: break-all;
+  font-weight: 700;
+}
+.mfa-help {
+  margin-top: 24px;
+}
 .chip {
   display: inline-block;
   background: var(--jaune);

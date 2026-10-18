@@ -20,6 +20,8 @@ grant usage on schema public, auth, extensions, storage to anon, authenticated;
 create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb default '{}', last_sign_in_at timestamptz);
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
 grant execute on function auth.uid() to anon, authenticated;
+create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
+grant execute on function auth.jwt() to anon, authenticated;
 create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
 create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text);
 alter table storage.objects enable row level security;
@@ -40,16 +42,14 @@ for (const p of migrations) {
   try { await db.exec(strip(readFileSync(p, 'utf8'))); ok(`migration applies: ${name}`, true); }
   catch (e) { ok(`migration applies: ${name}`, false, e.message); process.exit(1); }
 }
-await db.exec(`grant select, insert, update, delete on all tables in schema public to authenticated; grant select on all tables in schema public to anon;
-  grant select (id, slug, status, kind, title, title_en, target, starts_at, ends_at, street, postal_code, city, lat, lng, meeting_point, access, access_en, summary, summary_en, description, description_en, share_text, share_text_en, whatsapp_url, flyer_tagline, flyer_place, custom_poster, poster_alt, recap_participants, recap_text, recap_links, created_at, updated_at) on public.events to anon;
-  revoke select on public.events from anon;
-  grant select (id, slug, status, kind, title, title_en, target, starts_at, ends_at, street, postal_code, city, lat, lng, meeting_point, access, access_en, summary, summary_en, description, description_en, share_text, share_text_en, whatsapp_url, flyer_tagline, flyer_place, custom_poster, poster_alt, recap_participants, recap_text, recap_links, created_at, updated_at) on public.events to anon;
-  revoke update on public.profiles from authenticated; grant update (display_name, city) on public.profiles to authenticated;`);
+// No grants here: the default privileges above already match Supabase, so the migrations' own revokes and grants are what's tested.
 
 // ---------- helpers ----------
-const as = async (role, uid, fn, headers = '{}') => {
-  await db.exec(`set test.uid = '${uid || ''}'; set request.headers = '${headers}'; set role ${role};`);
-  try { return await fn(); } finally { await db.exec(`reset role; set test.uid = ''; set request.headers = '{}';`); }
+// aal: 'aal2' = session confirmed with the authenticator-app code, 'aal1' = email link only
+const as = async (role, uid, fn, headers = '{}', aal = 'aal2') => {
+  const claims = JSON.stringify({ role, aal, ...(uid ? { sub: uid } : {}) });
+  await db.exec(`set test.uid = '${uid || ''}'; set request.headers = '${headers}'; set request.jwt.claims = '${claims}'; set role ${role};`);
+  try { return await fn(); } finally { await db.exec(`reset role; set test.uid = ''; set request.headers = '{}'; set request.jwt.claims = '';`); }
 };
 const q = async (sql, params) => (await db.query(sql, params)).rows;
 const one = async (sql, params) => (await q(sql, params))[0];
@@ -75,6 +75,16 @@ await as('authenticated', orga, () => q(`update public.profiles set display_name
 ok('organiser can rename themselves', (await one(`select display_name from public.profiles where id = $1`, [orga])).display_name === 'Orga Lyon');
 ok('organiser cannot list organisers', (await as('authenticated', orga, () => q(`select * from public.staff_list()`))).length === 0);
 ok('admin lists organisers', (await as('authenticated', admin, () => q(`select * from public.staff_list()`))).length === 2);
+
+// ---------- two-factor login for admins ----------
+const rights = (uid, aal) => as('authenticated', uid, () => one(`select public.is_admin() as admin, public.is_staff() as staff`), '{}', aal);
+const a1 = await rights(admin, 'aal1');
+ok('admin with the email link only has no rights (needs the app code)', a1.admin === false && a1.staff === false);
+ok('admin with the app code has admin rights', (await rights(admin, 'aal2')).admin === true);
+ok('admin without the code cannot list organisers', (await as('authenticated', admin, () => q(`select * from public.staff_list()`), '{}', 'aal1')).length === 0);
+await throws('admin without the code cannot invite', () => as('authenticated', admin, () => q(`insert into public.invitations (email) values ('z@example.com')`), '{}', 'aal1'), /row-level security/);
+const o1 = await rights(orga, 'aal1');
+ok('organisers need no app code', o1.staff === true && o1.admin === false);
 
 // ---------- actions ----------
 await q(`insert into vault.secrets values ('github_token', 'ghp_test')`);
@@ -139,6 +149,8 @@ ok('public cannot read attendees', (await as('anon', null, () => q(`select * fro
 ok('organiser cannot read attendees', (await as('authenticated', orga, () => q(`select * from public.rsvps`))).length === 0);
 ok('organiser gets no attendee list', (await as('authenticated', orga, () => q(`select * from public.attendees('${e1.id}')`))).length === 0);
 ok('admin reads attendees with emails', (await as('authenticated', admin, () => q(`select * from public.attendees('${e1.id}')`))).filter((r) => r.email).length === 1);
+ok('admin without the app code gets no attendee list', (await as('authenticated', admin, () => q(`select * from public.attendees('${e1.id}')`), '{}', 'aal1')).length === 0);
+ok('admin without the app code cannot edit actions', (await as('authenticated', admin, () => q(`update public.events set title = 'Sans code' where id = '${e1.id}' returning id`), '{}', 'aal1')).length === 0);
 
 // rate limit per connection
 const hdr = JSON.stringify({ 'x-forwarded-for': '203.0.113.7, 10.0.0.1' });

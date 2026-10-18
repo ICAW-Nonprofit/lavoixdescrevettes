@@ -39,7 +39,7 @@ jobs:
           from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname in ('event_overview', 'attendees', 'is_admin', 'is_staff', 'rsvp', 'track');
           \echo '== as the admin account: what the organiser space would get =='
           begin;
-          select set_config('request.jwt.claims', json_build_object('sub', (select id from public.profiles where role = 'admin' limit 1), 'role', 'authenticated')::text, true) is not null as simulating_admin;
+          select set_config('request.jwt.claims', json_build_object('sub', (select id from public.profiles where role = 'admin' limit 1), 'role', 'authenticated', 'aal', 'aal2')::text, true) is not null as simulating_admin;
           set local role authenticated;
           select auth.uid() is not null as has_uid, public.is_admin() as is_admin, public.is_staff() as is_staff;
           select slug, rsvps, views, shares from public.event_overview();

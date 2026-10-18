@@ -102,6 +102,30 @@ function realApi() {
     cancelInvitation: async (email) => check(await sb.from('invitations').delete().eq('email', email)),
     setActive: async (id, active) => check(await sb.rpc('set_organizer_active', { p_user: id, p_active: active })),
     publishNow: async () => check(await sb.rpc('publish_now')),
+
+    // two-factor login (required for admins): a 6-digit code from an authenticator app, on top of the email link
+    async mfaStatus() {
+      const { data, error } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (error) throw new ApiError('error', error.message);
+      return { level: data.currentLevel, hasFactor: data.nextLevel === 'aal2' };
+    },
+    async mfaEnroll() {
+      // a set-up started earlier and never finished leaves an unverified factor behind: remove it first
+      const { data: list } = await sb.auth.mfa.listFactors();
+      for (const f of list?.all || []) if (f.factor_type === 'totp' && f.status !== 'verified') await sb.auth.mfa.unenroll({ factorId: f.id });
+      const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp', issuer: 'La Voix des Crevettes', friendlyName: `Espace orga ${Date.now()}` });
+      if (error) throw new ApiError('error', error.message);
+      return { factorId: data.id, qr: data.totp.qr_code, secret: data.totp.secret };
+    },
+    async mfaVerify(code, factorId) {
+      if (!factorId) {
+        const { data } = await sb.auth.mfa.listFactors();
+        factorId = data?.totp?.[0]?.id;
+      }
+      const { error } = await sb.auth.mfa.challengeAndVerify({ factorId, code });
+      if (error) throw new ApiError(error.code === 'mfa_verification_failed' || /invalid|expired/i.test(error.message) ? 'mfa_code' : 'error', error.message);
+      profileCache = null;
+    },
   };
 }
 
@@ -160,12 +184,14 @@ function demoApi() {
     onAuthChange: (cb) => listeners.push(cb),
     async sendLoginLink() {
       db.signedIn = true; // demo: no email, you're simply signed in
+      db.aal = 'aal1';
       save();
       await wait();
       listeners.forEach((cb) => cb('SIGNED_IN'));
     },
     async signOut() {
       db.signedIn = false;
+      db.aal = 'aal1';
       save();
     },
     async updateProfile(fields) {
@@ -237,6 +263,16 @@ function demoApi() {
       save();
     },
     publishNow: async () => wait(),
+    // demo: no QR code, any 6 digits work
+    mfaStatus: async () => ({ level: db.aal || 'aal1', hasFactor: Boolean(db.mfa) }),
+    mfaEnroll: async () => wait({ factorId: 'demo-factor', qr: null, secret: 'DEMO DEMO DEMO DEMO' }),
+    async mfaVerify(code) {
+      await wait();
+      if (!/^\d{6}$/.test(code)) throw new ApiError('mfa_code');
+      db.mfa = true;
+      db.aal = 'aal2';
+      save();
+    },
     resetDemo() {
       db = fresh();
       db.signedIn = true;

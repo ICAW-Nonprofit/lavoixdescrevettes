@@ -201,7 +201,7 @@ Rules:
 1. **New migration** `supabase/migrations/<YYYYMMDDHHMMSS>_<name>.sql`.
    - `alter table public.events add column … check (…)`.
    - Then **`grant select (<new column>) on public.events to anon;`** if it's public. Anon has column-level grants only.
-2. `supabase/tests/db.test.mjs`: the test setup repeats the anon column grant list, so add the column there too. Add tests for any new rule.
+2. `supabase/tests/db.test.mjs`: the test setup starts from Supabase's default rights, so the migration's own grant is what gets tested. Add a test that anon can read the new column (if public) and tests for any new rule.
 3. `scripts/snapshot-events.mjs`: add it to `COLUMNS`.
 4. `src/content.config.ts`: map it in the loader and add it to the zod schema (optional unless every row has it).
 5. `src/scripts/espace/editor.js` (form field) and `api.js` (demo data, if the demo should show it).
@@ -217,6 +217,10 @@ Rules:
 - **Login:** Supabase magic link (implicit flow), only for invited emails.
   - The `before_auth_user_created` trigger refuses non-invited addresses.
   - Emails go out through Brevo SMTP.
+- **Two-factor login for admins:** after the email link, an admin must enter a 6-digit code from an authenticator app (Supabase TOTP MFA).
+  - Server side: `is_admin()` and `is_staff()` give an admin no rights unless the session token has `aal = 'aal2'` (`session_aal()`). Organisers need no code.
+  - Client side: `secondFactor()` in `ui.js` shows the set-up (QR code) or code screen, from `requireSession()` and `home.js`. Demo mode accepts any 6 digits.
+  - Recovery (lost phone) and the Supabase setting are in SETUP.md, section 8.
 - **Roles** (`profiles.role`):
   - `admin`: everything, plus attendees' names and emails, organiser management and deleting actions.
   - `organizer`: create and edit **any** action, see counts only.
@@ -246,7 +250,7 @@ Project URL `https://ifhsohgisjbnuxljsesj.supabase.co`. The publishable key is i
 | `rsvps` | name, optional email, ip_hash, reminder_sent_at | admins only; the public writes through `rsvp()` |
 | `event_stats` | daily counters: views, shares, newsletter, calendar | staff read; the public writes through `track()` |
 
-**Functions:** `my_role`, `is_staff`, `is_admin`, `rsvp`, `rsvp_public_count`, `attendees`, `track`, `event_overview`, `rsvps_per_day`, `staff_list`, `set_organizer_active`, `publish_now`, `send_reminders`, `housekeeping`, `secret`, `request_publish_now`.
+**Functions:** `my_role`, `is_staff`, `is_admin`, `session_aal`, `rsvp`, `rsvp_public_count`, `attendees`, `track`, `event_overview`, `rsvps_per_day`, `staff_list`, `set_organizer_active`, `publish_now`, `send_reminders`, `housekeeping`, `secret`, `request_publish_now`.
 
 - They are `security definer` with `set search_path = public`.
 - `execute` is revoked from `public` and granted only to the roles that need it. **Do the same for every new function.**
