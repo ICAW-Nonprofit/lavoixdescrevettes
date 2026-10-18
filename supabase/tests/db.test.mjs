@@ -170,7 +170,8 @@ await as('anon', null, () => q(`select public.rsvp('action-demain', 'Sans email'
 const n1 = (await one(`select public.send_reminders() as n`)).n;
 const mail = await one(`select body from net.calls where url = 'https://api.brevo.com/v3/smtp/email' order by id desc limit 1`);
 ok('reminder sent only to attendees with an email', n1 === 1);
-ok('reminder escapes names and titles in HTML', mail.body.htmlContent.includes('Léa &lt;b&gt;') && mail.body.htmlContent.includes('Action &lt;demain&gt; &amp; co'));
+ok('reminder escapes titles in HTML', mail.body.htmlContent.includes('Action &lt;demain&gt; &amp; co'));
+ok('reminder never contains the name typed in the public form', !JSON.stringify(mail.body).includes('Léa'));
 ok('reminder has the French date', / à 11 h/.test(mail.body.htmlContent));
 ok('reminder not sent twice', (await one(`select public.send_reminders() as n`)).n === 0);
 const [rep] = await insertEv(orga, { ...ev, slug: 'action-reportee' }, '1 day');

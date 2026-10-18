@@ -258,6 +258,8 @@ Project URL `https://ifhsohgisjbnuxljsesj.supabase.co`. The publishable key is i
 - Rate-limited: 5 sign-ups per hour per connection hash per action, 120 per hour per action.
 - The same email updates the existing sign-up instead of counting twice.
 - The public count is shown from 10 people up.
+- Anyone can type anyone's email (there's no confirmation step), so **the reminder email never contains anything a visitor typed**: no name, only the action's own text. Keep it that way.
+- The bot checks (hidden `website` field, 1.5 s minimum) live in `scripts/rsvp.js`. Bots that call the API directly skip them; the rate limits above are what stop those.
 
 **Cron jobs (pg_cron):**
 
