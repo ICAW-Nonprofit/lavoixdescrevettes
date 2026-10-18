@@ -408,7 +408,8 @@ async function loadAttendees() {
   try {
     const rows = await api.attendees(ev.id);
     const csv = () => {
-      const esc = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`;
+      // names come from the public form: a leading = + - @ would run as a formula in Excel, so it's prefixed with '
+      const esc = (s) => `"${String(s ?? '').replace(/^[=+\-@\t\r]/, "'$&").replace(/"/g, '""')}"`;
       const text = ['prénom;email;inscrit le', ...rows.map((r) => [r.name, r.email, r.created_at].map(esc).join(';'))].join('\n');
       const a = el('a', { href: URL.createObjectURL(new Blob(['﻿' + text], { type: 'text/csv' })), download: `participants-${ev.slug}.csv` });
       a.click();
