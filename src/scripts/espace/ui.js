@@ -208,6 +208,8 @@ function codeForm(title, factorId, ...intro) {
   );
 }
 
+let enrolling = null;
+
 /**
  * Admins confirm each login with a code from an authenticator app (the database refuses admin rights without it).
  * Returns true when the page can go on; otherwise shows the set-up or code screen and returns false.
@@ -224,7 +226,8 @@ export async function secondFactor(ctx) {
         el('p', { class: 'big-text' }, 'Ouvre ton appli d’authentification et tape le code à 6 chiffres de « La Voix des Crevettes ».')));
       return false;
     }
-    const s = await api.mfaEnroll();
+    // start() can run twice on a fresh login (page load + sign-in event): set up only one factor per page
+    const s = await (enrolling ||= api.mfaEnroll());
     fill(main, codeForm('Active la double authentification', s.factorId,
       el('p', { class: 'big-text' }, 'Ton compte admin voit les noms et emails des participant·es. Pour le protéger, chaque connexion demande en plus un code à 6 chiffres, donné par une appli sur ton téléphone.'),
       el('ol', { class: 'mfa-steps' },
