@@ -11,7 +11,8 @@ export async function getEvents() {
   const sorted = all.sort((a, b) => a.data.start.getTime() - b.data.start.getTime());
   const upcoming = sorted.filter((e) => e.data.end.getTime() >= now && e.data.status !== 'annule');
   const past = sorted.filter((e) => e.data.end.getTime() < now).reverse();
-  return { all: sorted, upcoming, past, next: upcoming[0] };
+  // a postponed action stays listed, but its date isn't known yet: never the "next action"
+  return { all: sorted, upcoming, past, next: upcoming.find((e) => e.data.status === 'prevu') };
 }
 
 export async function getPosts(lang: Lang) {

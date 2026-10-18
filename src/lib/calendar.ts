@@ -53,7 +53,7 @@ function fold(line: string) {
 }
 
 function vevent(e: EventEntry, lang: Lang, pageUrl: string) {
-  const status = e.data.status === 'annule' ? 'CANCELLED' : 'CONFIRMED';
+  const status = ({ prevu: 'CONFIRMED', reporte: 'TENTATIVE', annule: 'CANCELLED' } as const)[e.data.status];
   return [
     'BEGIN:VEVENT',
     `UID:${e.id}@lavoixdescrevettes`,

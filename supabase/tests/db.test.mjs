@@ -157,6 +157,10 @@ ok('reminder sent only to attendees with an email', n1 === 1);
 ok('reminder escapes names and titles in HTML', mail.body.htmlContent.includes('Léa &lt;b&gt;') && mail.body.htmlContent.includes('Action &lt;demain&gt; &amp; co'));
 ok('reminder has the French date', / à 11 h/.test(mail.body.htmlContent));
 ok('reminder not sent twice', (await one(`select public.send_reminders() as n`)).n === 0);
+const [rep] = await insertEv(orga, { ...ev, slug: 'action-reportee' }, '1 day');
+await q(`update public.events set status = 'postponed', starts_at = t.starts_at, ends_at = t.ends_at from public.events t where t.id = '${tom.id}' and public.events.id = '${rep.id}'`);
+await as('anon', null, () => q(`select public.rsvp('action-reportee', 'Noé', 'noe@example.com')`));
+ok('no reminder for a postponed action (its date is not known yet)', (await one(`select public.send_reminders() as n`)).n === 0);
 await throws('public cannot trigger reminders', () => as('anon', null, () => q(`select public.send_reminders()`)), /permission denied/);
 await throws('public cannot read secrets', () => as('anon', null, () => q(`select public.secret('github_token')`)), /permission denied/);
 

@@ -179,7 +179,8 @@ The language switch in the header uses each page's `alternates`. Pages also emit
 5. `src/content.config.ts` maps each DB row (snake_case, FR plus optional `_en`) to the shape the pages use:
    - `{ title: {fr,en}, summary, description, start, end, venue, lat/lng, status: prevu|annule|reporte, … }`
    - English falls back to French when an organiser didn't translate.
-6. `getEvents()` in `src/lib/content.ts` returns `upcoming` (not ended, not cancelled), `past` and `next`. The **home page "next action" and the sticky CTA** use `next`.
+6. `getEvents()` in `src/lib/content.ts` returns `upcoming` (not ended, not cancelled), `past` and `next` (the first upcoming action that is not postponed). The **home page "next action", the header button and the sticky CTA** use `next`.
+7. **"Reportée" (`postponed`) means the new date isn't known yet.** The action stays in the agenda with a badge, but it's never the `next` action, it gets no reminder email and calendar files mark it `TENTATIVE`.
 
 Rules:
 
@@ -258,7 +259,7 @@ Project URL `https://ifhsohgisjbnuxljsesj.supabase.co`. The publishable key is i
 
 **Cron jobs (pg_cron):**
 
-- `lvdc-reminders` at 16:00 UTC (about 17–18 h in Paris): Brevo emails to the next day's attendees who left an email.
+- `lvdc-reminders` at 16:00 UTC (about 17–18 h in Paris): Brevo emails to the next day's attendees who left an email. Only for actions that are going ahead (not cancelled, not postponed).
 - `lvdc-housekeeping` at 03:30 UTC: forgets connection hashes after an action, and attendees' emails 30 days after it.
 
 **Vault secrets** (never in the repo): `github_token`, `brevo_api_key`, `mail_from`. Optional: `mail_from_name`, `site_url`, `github_repo`.
