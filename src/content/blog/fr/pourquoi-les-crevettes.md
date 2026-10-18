@@ -1,5 +1,5 @@
 ---
-title: "Pourquoi les crevettes ? L'animal d'élevage le plus nombreux du monde"
+title: "Pourquoi les crevettes ? Les plus exploitées et tuées pour l'alimentation"
 description: "Des centaines de milliards d'animaux, élevés loin de nos yeux et presque sans protection : voici pourquoi on a choisi de se battre pour les crevettes."
 lang: fr
 translationKey: pourquoi

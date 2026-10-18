@@ -89,7 +89,12 @@ GitHub Actions ── npm run build ── scripts/snapshot-events.mjs (Supabase
 - **Logo** (the team's file, Oct 2026):
   - `public/logo.svg` is the full square logo.
   - `public/logo-navy.svg` is used on blue backgrounds (header), and `public/logo-bleu.svg` on navy backgrounds (footer, menu, organiser space).
-  - `public/favicon.svg` and `.ico`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png` and `logo.png` (structured data) are generated from it.
+  - `public/favicon.svg` is the shrimp alone (no lettering), cropped so it fills the navy square and stays readable at 16 px.
+    `favicon.ico`, `favicon-32.png`, `apple-touch-icon.png`, `icon-192.png` and `icon-512.png` are rendered from `favicon.svg` (resvg).
+    `logo.png` (structured data) stays the full logo.
+- **Photo credit:** most action photos are by @come_closer_project (`site.photographer` in `src/config.ts`).
+  - Every photo of people shows a small white `@come_closer_project` (`components/PhotoCredit.astro`, inside an element with class `credited`): home hero, About team photo, blog photo covers (post page and cards; drawings get none).
+  - The legal notice credits the photographer in FR and EN. A new photo of people gets the overlay too, unless someone else took it.
 
 `npm run verify` checks the shrimp emoji, retailer names in general content files, AI-assistant names and obvious secrets. It can't judge tone or sourcing: you have to.
 
@@ -99,7 +104,7 @@ GitHub Actions ── npm run build ── scripts/snapshot-events.mjs (Supabase
 
 ```
 astro.config.mjs        site + base path, sitemap filter, Content-Security-Policy (CSP)
-src/config.ts           public IDs: Mailchimp, Instagram, WhatsApp group, Formspree endpoint, GA4 ID (empty = off)
+src/config.ts           public IDs: Mailchimp, Instagram, photographer, WhatsApp group, Formspree endpoint, GA4 ID (empty = off)
 src/supabase.json       public Supabase URL + publishable key (empty = demo mode, no "J'y vais")
 src/i18n.ts             routes FR/EN, url() base-path helper, date formatting (Europe/Paris), UI strings
 src/content.config.ts   content collections: events (from events.json), blog, faq, resources, press
@@ -109,7 +114,7 @@ src/lib/                content.ts (getEvents: next/upcoming/past), calendar.ts 
 src/pages/              thin route files (FR at root, EN under en/); each renders a view with lang="fr"|"en"
 src/views/              the real page templates, shared by FR and EN
 src/components/         Header, Footer, Seo, StickyCta, CookieBanner, EventMap, EventRow, Rsvp, ShareEvent,
-                        AddToCalendar, Newsletter, PressClippings, ReportTeaser, ShrimpScene, Breadcrumbs, …
+                        AddToCalendar, Newsletter, PressClippings, ReportTeaser, ShrimpScene, PhotoCredit, Breadcrumbs, …
 src/layouts/            Base.astro (public pages) · Espace.astro (organiser space: noindex, no menu)
 src/scripts/            browser JS: site.js (menu, sticky CTA), shrimp.js (live shrimp), map*.js, rsvp.js,
                         share-event.js, newsletter.js, contact.js, consent.js, directions.js, not-found.js

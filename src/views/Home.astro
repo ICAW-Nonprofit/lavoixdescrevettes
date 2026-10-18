@@ -7,6 +7,7 @@ import PostCard from '../components/PostCard.astro';
 import Newsletter from '../components/Newsletter.astro';
 import ReportTeaser from '../components/ReportTeaser.astro';
 import PressClippings from '../components/PressClippings.astro';
+import PhotoCredit from '../components/PhotoCredit.astro';
 import { site } from '../config';
 import { getEvents, getPosts, postSlug } from '../lib/content';
 import { route, url, ui, eventPath, postPath, formatDay, formatTime, alternatesFor, type Lang } from '../i18n';
@@ -72,7 +73,7 @@ const c =
             p: 'Inscris-toi à la newsletter, et écris-nous sur Instagram pour rejoindre notre groupe WhatsApp.',
             link: 'Newsletter',
           },
-          { h: 'Parle des crevettes', p: 'Partage nos posts, parle-en autour de toi, et laisse les crevettes hors de ton assiette.', link: 'Instagram' },
+          { h: 'Parle des crevettes', p: 'Partage nos posts, parles-en autour de toi, et laisse les crevettes hors de ton assiette.', link: 'Instagram' },
         ],
         eventsTitle: 'Prochaines actions',
         postsTitle: 'À lire',
@@ -193,8 +194,9 @@ const jsonLd = [
       </div>
     </div>
 
-    <figure class="crowd duotone">
+    <figure class="crowd duotone credited">
       <Image src={crowd} alt={c.crowdAlt} widths={[800, 1400, 2000]} sizes="100vw" loading="eager" />
+      <PhotoCredit />
     </figure>
   </ShrimpScene>
 

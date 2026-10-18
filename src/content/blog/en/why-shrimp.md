@@ -1,5 +1,5 @@
 ---
-title: "Why shrimp? The most numerous farmed animal in the world"
+title: "Why shrimp? The animal most commonly used and killed for food production"
 description: "Hundreds of billions of animals, farmed far from our eyes and barely protected at all: this is why we chose to fight for shrimp."
 lang: en
 translationKey: pourquoi

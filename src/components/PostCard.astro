@@ -1,5 +1,6 @@
 ---
 import { Image } from 'astro:assets';
+import PhotoCredit from './PhotoCredit.astro';
 import { postSlug, readingTime, type PostEntry } from '../lib/content';
 import { url, ui, postPath, formatDate, type Lang } from '../i18n';
 
@@ -13,8 +14,9 @@ const drawing = d.coverStyle === 'drawing';
 ---
 
 <a class="post-card" href={url(postPath(postSlug(post), lang))}>
-  <div class:list={['thumb', drawing ? 'drawing' : 'duotone']}>
+  <div class:list={['thumb', drawing ? 'drawing' : 'duotone credited']}>
     <Image src={d.cover} alt={d.coverAlt} widths={[400, 700]} sizes="(min-width: 900px) 380px, 100vw" />
+    {!drawing && <PhotoCredit />}
   </div>
   <div class="body">
     <p class="meta">{d.category} · {formatDate(d.date, lang)} · {readingTime(post.body)} {ui[lang].minRead}</p>

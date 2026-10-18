@@ -245,20 +245,8 @@
   background: color-mix(in srgb, var(--bleu) 22%, var(--blanc));
 }
 .share {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   font-weight: 700;
   white-space: nowrap;
-}
-.share svg {
-  width: 110px;
-  height: 12px;
-  background: var(--bleu-pale);
-  flex: none;
-}
-.share rect {
-  fill: var(--marine);
 }
 .segment {
   font-weight: 600;
@@ -353,8 +341,5 @@
     font-weight: 700;
     text-transform: uppercase;
     font-size: 0.9rem;
-  }
-  .share svg {
-    width: 80px;
   }
 }

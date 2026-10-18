@@ -31,7 +31,7 @@ export const retailers: Retailer[] = [
   { name: 'Lidl', share: 8.2, ablation: true, stunning: false },
   { name: 'Groupe Casino', share: 3, approx: true, ablation: true, stunning: false },
   { name: 'E.Leclerc', share: 24, ablation: false, stunning: false },
-  { name: 'Biocoop', segment: { fr: 'Spécialiste bio', en: 'Organic specialist' }, ablation: false, stunning: false },
+  { name: 'Biocoop', segment: { fr: 'Spécialiste bio', en: 'Organic specialist' }, ablation: true, stunning: false },
   { name: 'Grand Frais', segment: { fr: 'Spécialiste frais', en: 'Fresh food specialist' }, ablation: false, stunning: false },
   { name: 'Picard', segment: { fr: 'Spécialiste surgelés', en: 'Frozen food specialist' }, ablation: false, stunning: false },
 ];
