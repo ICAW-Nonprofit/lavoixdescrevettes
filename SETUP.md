@@ -114,6 +114,16 @@ Admins see attendees' names and emails, so their login needs two things: the ema
 - **Privacy**: attendees' emails are deleted 30 days after the action; organisers never see names or emails, only admins.
 - **The token expires** after a year: generate a new one (step 5) and run `select vault.update_secret((select id from vault.secrets where name = 'github_token'), '<NEW TOKEN>');`.
 
+### Where to see the logs
+
+| What | Where | Kept |
+|---|---|---|
+| Who did what in the organiser space: logins, actions created / edited / deleted, accounts (de)activated, invitations, attendee lists opened | `/espace/admin/` → **Journal de sécurité** (admins only). Full table: Supabase → **Table Editor** → `audit_log` | 1 year |
+| Every login attempt, failed ones and rate-limit blocks included | Supabase → **Logs & Analytics** → **Auth** | 1 day (free plan) |
+| Every request to the database API, blocked ones included | Supabase → **Logs & Analytics** → **API Gateway** / **Postgres** | 1 day (free plan) |
+| Reminder and login emails sent | Brevo → **Transactional → Logs** | Brevo's plan |
+| Site builds, migrations, daily database check | GitHub → **Actions**. The daily **Database check** fails, and GitHub emails you, when a reminder email or publish request failed. It also prints how many log entries of each kind the last 7 days had. | 90 days |
+
 ### When the real domain arrives
 
 1. `astro.config.mjs`: set `site` to `https://lavoixdescrevettes.org` and remove `base`.

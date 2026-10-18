@@ -229,7 +229,7 @@ Rules:
 - **Pages:**
   - `/espace/` (`home.js`): login, profile, list of actions with counters ("J'y vais", views, shares, newsletter, calendar).
   - `/espace/action/?id=` (`editor.js`): create or edit, address search (`address.js`, Géoplateforme), live flyer preview (`flyer-preview.js`, same template as the build), custom flyer upload to the `posters` bucket.
-  - `/espace/admin/` (`admin.js`): dashboard, sign-ups per day chart, invitations, activate or deactivate organisers.
+  - `/espace/admin/` (`admin.js`): dashboard, sign-ups per day chart, invitations, activate or deactivate organisers, security log ("Journal de sécurité").
 - **Demo mode** (`/espace/?demo`, or automatically when `src/supabase.json` is empty): in-memory data in `sessionStorage`, nothing sent anywhere. Use it to test UI changes without touching real data. `?nodemo` leaves it.
 - A new action's public page exists only after the rebuild (2–3 min). `pageLink()` shows "Publication en cours…" and polls until the page answers.
 - All backend calls go through `api` in `api.js`, which has both a real and a demo implementation. **Add every new call to both.**
@@ -249,8 +249,11 @@ Project URL `https://ifhsohgisjbnuxljsesj.supabase.co`. The publishable key is i
 | `events` | the actions | everyone reads the public columns; staff insert and update; admins delete |
 | `rsvps` | name, optional email, ip_hash, reminder_sent_at | admins only; the public writes through `rsvp()` |
 | `event_stats` | daily counters: views, shares, newsletter, calendar | staff read; the public writes through `track()` |
+| `audit_log` | security log: logins, actions created / edited (field names only) / deleted, accounts, invitations, attendee lists opened. Kept 1 year. | nobody directly; written by triggers, admins read through `audit_recent()` |
 
-**Functions:** `my_role`, `is_staff`, `is_admin`, `session_aal`, `rsvp`, `rsvp_public_count`, `attendees`, `track`, `event_overview`, `rsvps_per_day`, `staff_list`, `set_organizer_active`, `publish_now`, `send_reminders`, `housekeeping`, `secret`, `request_publish_now`.
+**Functions:** `my_role`, `is_staff`, `is_admin`, `session_aal`, `rsvp`, `rsvp_public_count`, `attendees`, `track`, `event_overview`, `rsvps_per_day`, `staff_list`, `set_organizer_active`, `publish_now`, `send_reminders`, `housekeeping`, `secret`, `request_publish_now`, `audit`, `audit_recent` (plus the `audit_*` trigger functions).
+
+- **Security log:** a new sensitive operation (a new kind of delete, a new way to read personal data) gets an `audit()` call or trigger, a label in `WHAT` in `admin.js`, and a test. Never put personal data of attendees or text content in `detail`.
 
 - They are `security definer` with `set search_path = public`.
 - `execute` is revoked from `public` and granted only to the roles that need it. **Do the same for every new function.**

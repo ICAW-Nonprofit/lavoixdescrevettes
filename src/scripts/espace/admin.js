@@ -161,6 +161,59 @@ async function organisers(box, me) {
   );
 }
 
+// ---------- security log ----------
+const WHAT = {
+  'action.create': 'Action créée',
+  'action.update': 'Action modifiée',
+  'action.delete': 'Action supprimée',
+  'account.create': 'Compte créé',
+  'account.role': 'Compte modifié',
+  'invitation.create': 'Invitation envoyée',
+  'invitation.delete': 'Invitation annulée',
+  login: 'Connexion',
+  'attendees.view': 'Liste des participant·es ouverte',
+};
+const ROLE = { admin: 'admin', organizer: 'orga', disabled: 'désactivé' };
+const FIELD = {
+  title: 'titre', title_en: 'titre EN', status: 'statut', kind: 'type', target: 'cible', starts_at: 'date', ends_at: 'fin',
+  street: 'adresse', postal_code: 'adresse', city: 'adresse', lat: 'adresse', lng: 'adresse', meeting_point: 'point de RDV',
+  summary: 'résumé', summary_en: 'résumé EN', description: 'description', description_en: 'description EN',
+  share_text: 'texte de partage', share_text_en: 'texte de partage EN', whatsapp_url: 'WhatsApp', custom_poster: 'affiche',
+  flyer_tagline: 'affiche', flyer_place: 'affiche', recap_participants: 'bilan', recap_text: 'bilan', recap_links: 'bilan',
+};
+function logDetail(r) {
+  const d = r.detail || {};
+  if (r.action === 'action.update' && Array.isArray(d.fields)) return [...new Set(d.fields.map((f) => FIELD[f] || f))].join(', ');
+  if (r.action === 'action.delete') return d.title || '';
+  if (r.action === 'account.role') return `${ROLE[d.from] || d.from} → ${ROLE[d.to] || d.to}`;
+  return '';
+}
+
+async function journal(box) {
+  let rows;
+  try {
+    rows = await api.auditLog(200);
+  } catch (err) {
+    return fill(box, el('p', {}, errorText(err)));
+  }
+  fill(box,
+    el('h2', { class: 'esp-h2' }, 'Journal de sécurité'),
+    el('p', { class: 'small' }, 'Les 200 dernières opérations de l’espace orga : connexions, actions créées, modifiées ou supprimées, comptes et invitations, listes de participant·es ouvertes. Gardé un an. Le contenu des textes n’est pas enregistré, seulement les champs modifiés.'),
+    rows.length
+      ? table(
+          [
+            { label: 'Quand', render: (r) => fmtDateTime(r.at) },
+            { label: 'Qui', render: (r) => r.who || 'Supabase (auto)' },
+            { label: 'Quoi', render: (r) => WHAT[r.action] || r.action },
+            { label: 'Sur', render: (r) => r.target || '—' },
+            { label: 'Détail', render: (r) => logDetail(r) || '—' },
+          ],
+          rows,
+        )
+      : el('p', { class: 'paper' }, 'Rien pour l’instant.'),
+  );
+}
+
 async function main() {
   const ctx = await requireSession();
   if (!ctx) return;
@@ -177,6 +230,7 @@ async function main() {
   const upcoming = rows.filter((r) => !isPast(r));
   const past = rows.filter(isPast);
   const orgBox = el('section', { 'aria-label': 'Organisateur·ices' }, loading());
+  const logBox = el('section', { class: 'u-mt36', 'aria-label': 'Journal de sécurité' }, loading());
 
   fill(mainEl, 
     el('div', { class: 'esp-head' },
@@ -225,8 +279,10 @@ async function main() {
       el('section', {}, el('h2', { class: 'esp-h2' }, 'Par organisateur·ice'),
         table([{ label: 'Nom', key: 'name' }, { label: 'Actions', key: 'actions', num: true }, { label: 'J’y vais', key: 'rsvps', num: true }, { label: 'Présent·es', key: 'present', num: true }], groupBy(rows, 'creator_name')))),
     orgBox,
+    logBox,
   );
   organisers(orgBox, ctx.user.id);
+  journal(logBox);
 }
 
 main();

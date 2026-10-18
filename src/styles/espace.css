@@ -414,6 +414,10 @@
 }
 
 /* tables & dashboard */
+/* grid columns would otherwise grow to the table's full width on phones; the table scrolls inside instead */
+.esp-main .two-col > * {
+  min-width: 0;
+}
 .table-wrap {
   overflow-x: auto;
   border: var(--border);

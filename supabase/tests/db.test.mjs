@@ -205,5 +205,26 @@ ok('cron jobs scheduled', (await one(`select count(*)::int as n from cron.jobs`)
 await as('authenticated', admin, () => q(`delete from public.events where id = '${past.id}'`));
 ok('admin deletes an action', !(await one(`select 1 as x from public.events where id = $1`, [past.id])));
 
+// ---------- security log ----------
+await as('authenticated', admin, () => q(`select * from public.attendees('${e1.id}')`)); // second look within the hour
+await q(`update auth.users set last_sign_in_at = now() where id = '${orga}'`);
+const log = await as('authenticated', admin, () => q(`select * from public.audit_recent(1000)`));
+const has = (action, target, f = () => true) => log.some((r) => r.action === action && r.target === target && f(r));
+ok('log: action created, with who did it', has('action.create', 'action-test-paris', (r) => r.who === 'Orga Lyon'));
+ok('log: edited fields are named, their content is not', has('action.update', 'action-test-paris', (r) => r.detail.fields.includes('title') && !JSON.stringify(r.detail).includes('Nouveau titre')));
+ok('log: action deleted', has('action.delete', 'action-passee'));
+ok('log: organiser deactivated', has('account.role', 'orga@example.com', (r) => r.detail.to === 'disabled'));
+ok('log: invitation sent', has('invitation.create', 'orga@example.com'));
+ok('log: login', has('login', 'orga@example.com'));
+ok('log: admin opened an attendee list (once per hour)', log.filter((r) => r.action === 'attendees.view' && r.target === 'action-test-paris').length === 1);
+ok('organiser cannot read the log', (await as('authenticated', orga, () => q(`select * from public.audit_recent()`))).length === 0);
+ok('admin without the app code cannot read the log', (await as('authenticated', admin, () => q(`select * from public.audit_recent()`), '{}', 'aal1')).length === 0);
+await throws('nobody reads the log table directly', () => as('authenticated', admin, () => q(`select * from public.audit_log`)), /permission denied/);
+await throws('nobody writes the log directly', () => as('authenticated', admin, () => q(`insert into public.audit_log (action) values ('fake')`)), /permission denied/);
+await throws('public cannot write the log', () => as('anon', null, () => q(`select public.audit('fake', 'x')`)), /permission denied/);
+await q(`insert into public.audit_log (at, action) values (now() - interval '400 days', 'old')`);
+await q(`select public.housekeeping()`);
+ok('housekeeping deletes log entries older than a year', !(await one(`select 1 as x from public.audit_log where action = 'old'`)));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

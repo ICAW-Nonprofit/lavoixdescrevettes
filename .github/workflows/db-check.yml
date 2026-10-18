@@ -29,6 +29,8 @@ jobs:
                  coalesce((select sum(views) from public.event_stats s where s.event_id = e.id), 0) as views,
                  coalesce((select sum(shares) from public.event_stats s where s.event_id = e.id), 0) as shares
           from public.events e order by e.starts_at;
+          \echo '== security log: last 7 days, by kind (counts only) =='
+          select action, count(*) from public.audit_log where at > now() - interval '7 days' group by action order by action;
           \echo '== accounts by role =='
           select role, count(*) from public.profiles group by role;
           \echo '== table owners and row security =='

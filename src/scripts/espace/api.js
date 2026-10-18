@@ -102,6 +102,7 @@ function realApi() {
     cancelInvitation: async (email) => check(await sb.from('invitations').delete().eq('email', email)),
     setActive: async (id, active) => check(await sb.rpc('set_organizer_active', { p_user: id, p_active: active })),
     publishNow: async () => check(await sb.rpc('publish_now')),
+    auditLog: async (limit = 200) => check(await sb.rpc('audit_recent', { p_limit: limit })) || [],
 
     // two-factor login (required for admins): a 6-digit code from an authenticator app, on top of the email link
     async mfaStatus() {
@@ -163,6 +164,11 @@ function demoApi() {
         { id: 'demo-orga', email: 'orga.lyon@example.org', display_name: 'Orga Lyon', city: 'Lyon', role: 'organizer', created_at: iso(now - 30 * day), last_sign_in_at: iso(now - 3 * day), actions: 1 },
       ],
       invitations: [{ email: 'nouvelle@example.org', display_name: 'Nouvelle orga', city: 'Marseille', role: 'organizer', created_at: iso(now - day) }],
+      audit: [
+        { at: iso(now - day), who: 'Démo', action: 'invitation.create', target: 'nouvelle@example.org', detail: { role: 'organizer' } },
+        { at: iso(now - 21 * day - 3600000), who: 'Orga Lyon', action: 'action.update', target: past.slug, detail: { fields: ['recap_participants', 'recap_text'] } },
+        { at: iso(now - 30 * day), who: 'Orga Lyon', action: 'login', target: 'orga.lyon@example.org' },
+      ],
       signedIn: false,
     };
   };
@@ -176,6 +182,10 @@ function demoApi() {
   let db = load();
   const save = () => sessionStorage.setItem(KEY, JSON.stringify(db));
   const wait = (v) => new Promise((r) => setTimeout(() => r(v), 250));
+  // demo security log (the real one is written by the database)
+  const log = (action, target, detail) => {
+    db.audit = [{ at: new Date().toISOString(), who: db.profile.display_name || 'Démo', action, target, detail }, ...(db.audit || [])].slice(0, 200);
+  };
   const listeners = [];
 
   return {
@@ -185,6 +195,7 @@ function demoApi() {
     async sendLoginLink() {
       db.signedIn = true; // demo: no email, you're simply signed in
       db.aal = 'aal1';
+      log('login', db.profile.email);
       save();
       await wait();
       listeners.forEach((cb) => cb('SIGNED_IN'));
@@ -214,18 +225,23 @@ function demoApi() {
     async saveEvent(row) {
       if (row.id) {
         const i = db.events.findIndex((e) => e.id === row.id);
+        const fields = Object.keys(row).filter((k) => k !== 'slug' && JSON.stringify(row[k] ?? null) !== JSON.stringify(db.events[i][k] ?? null)).sort();
         db.events[i] = { ...db.events[i], ...row, slug: db.events[i].slug, updated_at: new Date().toISOString() };
+        if (fields.length) log('action.update', db.events[i].slug, { fields });
         save();
         return wait(structuredClone(db.events[i]));
       }
       if (db.events.some((e) => e.slug === row.slug)) throw new ApiError('duplicate');
       const ev = { ...row, id: crypto.randomUUID(), created_by: db.profile.id, created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
       db.events.push(ev);
+      log('action.create', ev.slug);
       save();
       return wait(structuredClone(ev));
     },
     async deleteEvent(id) {
+      const ev = db.events.find((e) => e.id === id);
       db.events = db.events.filter((e) => e.id !== id);
+      if (ev) log('action.delete', ev.slug, { title: ev.title });
       save();
     },
     async uploadPoster(file) {
@@ -235,7 +251,15 @@ function demoApi() {
         fr.readAsDataURL(file);
       });
     },
-    attendees: async (id) => wait(db.rsvps[id] || []),
+    async attendees(id) {
+      const slug = db.events.find((e) => e.id === id)?.slug;
+      const recent = (db.audit || []).some((a) => a.action === 'attendees.view' && a.target === slug && Date.now() - Date.parse(a.at) < 3600000);
+      if (!recent) {
+        log('attendees.view', slug);
+        save();
+      }
+      return wait(db.rsvps[id] || []);
+    },
     async rsvpsPerDay(days = 60) {
       const counts = {};
       for (const list of Object.values(db.rsvps))
@@ -249,20 +273,30 @@ function demoApi() {
     staff: async () => wait(db.staff),
     invitations: async () => wait(db.invitations.filter((i) => !db.staff.some((s) => s.email === i.email))),
     async invite({ email, display_name, city }) {
-      db.invitations.unshift({ email: email.trim().toLowerCase(), display_name, city, role: 'organizer', created_at: new Date().toISOString() });
+      const clean = email.trim().toLowerCase();
+      if (!db.invitations.some((i) => i.email === clean)) {
+        db.invitations.unshift({ email: clean, display_name, city, role: 'organizer', created_at: new Date().toISOString() });
+        log('invitation.create', clean, { role: 'organizer' });
+      }
       save();
       await wait();
     },
     async cancelInvitation(email) {
       db.invitations = db.invitations.filter((i) => i.email !== email);
+      log('invitation.delete', email);
       save();
     },
     async setActive(id, active) {
       const p = db.staff.find((s) => s.id === id);
-      if (p && p.role !== 'admin') p.role = active ? 'organizer' : 'disabled';
+      if (p && p.role !== 'admin') {
+        const from = p.role;
+        p.role = active ? 'organizer' : 'disabled';
+        if (from !== p.role) log('account.role', p.email, { from, to: p.role });
+      }
       save();
     },
     publishNow: async () => wait(),
+    auditLog: async () => wait(db.audit || []),
     // demo: no QR code, any 6 digits work
     mfaStatus: async () => ({ level: db.aal || 'aal1', hasFactor: Boolean(db.mfa) }),
     mfaEnroll: async () => wait({ factorId: 'demo-factor', qr: null, secret: 'DEMO DEMO DEMO DEMO' }),
