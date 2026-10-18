@@ -402,6 +402,7 @@ git checkout -- src/content/events.json   # unless you meant to change it
 - organiser pages that aren't `noindex`, or noindex pages listed in the sitemap;
 - a web manifest that doesn't match the base path;
 - the shrimp emoji, AI-assistant names, retailer names in general content files, secret-looking strings;
+- `md()` (`src/lib/md.ts`) no longer escaping HTML or dropping `javascript:` links in organiser text;
 - edits to migrations that already exist on `origin/main`.
 
 It **warns** when flyer design files differ from `origin/main`, and when an action doesn't last 1 h 30.
