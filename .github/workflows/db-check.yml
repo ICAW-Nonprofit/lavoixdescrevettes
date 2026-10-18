@@ -1,9 +1,13 @@
 name: Database check
 
-# Manual health check of the live database. Prints counts and settings only: never names, emails or IDs
+# Health check of the live database. Prints counts and settings only: never names, emails or IDs
 # (logs of a public repository are public).
+# Also runs daily, 30 min after the reminder emails (16:00 UTC): it fails, so GitHub emails you, when an outgoing
+# call failed (pg_net keeps responses about 6 hours, hence the time and the window).
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '30 16 * * *'
 
 permissions:
   contents: read
@@ -43,3 +47,11 @@ jobs:
           from (select e.id as event, (select count(*) from public.attendees(e.id)) as n from public.events e) a;
           rollback;
           SQL
+      - name: Failed outgoing calls (reminder emails, publish requests)
+        run: |
+          n=$(psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -tA -c "select count(*) from net._http_response where created > now() - interval '6 hours' and (coalesce(timed_out, false) or error_msg is not null or coalesce(status_code, 0) not between 200 and 299)")
+          echo "Failed in the last 6 hours: $n"
+          if [ "$n" != "0" ]; then
+            echo "::error::$n outgoing call(s) failed (Brevo reminder emails or GitHub publish requests). Check the Brevo key and the GitHub token (SETUP.md)."
+            exit 1
+          fi
