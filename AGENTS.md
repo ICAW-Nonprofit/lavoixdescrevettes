@@ -18,6 +18,7 @@ When you change how something works, update this file in the same commit.
 7. **No AI-assistant names** anywhere (files, site, tests, test data, commit messages) and **no co-author lines** in commits.
 8. **Every page exists in French and English.** French is the default, at the root. English is under `/en/`. The organiser space is French only.
 9. If you're unsure whether a change is safe, stop and ask. Don't guess.
+10. **When you finish, list very briefly what to test by hand, with a clickable URL for every changed page** (section 13, "Report back").
 
 ---
 
@@ -424,6 +425,15 @@ For any visible change, run `npm run preview` (or `npm run dev`) and check in a 
 - If `supabase/**` changed, also watch the **Database (Supabase)** run. Then check the live page.
 - `main` receives bot commits (backups), so always `git pull --rebase` before pushing.
 - Never force-push `main`.
+
+### Report back
+
+Every time you finish a change, end your report with a short **"To test by hand"** list:
+
+- One line per thing to check: what to do and what should happen. Keep it to the essentials.
+- Give the full clickable URL of every page the change touched, in FR and EN (e.g. `https://nicolas-cozzarin.github.io/lavoixdescrevettes-prototype/en/report/`).
+  - Use the live URL once it's merged and deployed. Before that, give the local preview URL (`http://localhost:4321/lavoixdescrevettes-prototype/…`).
+- Say which width to check (phone, desktop or both).
 
 ---
 
