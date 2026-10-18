@@ -3,6 +3,7 @@ import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import Newsletter from '../components/Newsletter.astro';
+import PhotoCredit from '../components/PhotoCredit.astro';
 import { site } from '../config';
 import { route, url, ui, alternatesFor, type Lang } from '../i18n';
 import team from '../assets/photos/action-groupe-allee.jpg';
@@ -72,7 +73,10 @@ const crumbs = [{ label: t.breadcrumbHome, href: route('home', lang) }, { label:
 
   <div class="container">
     <figure class="team-photo tape">
-      <Image src={team} alt={c.teamAlt} widths={[700, 1100, 1500]} sizes="(min-width: 1200px) 1180px, 100vw" loading="eager" />
+      <div class="credited">
+        <Image src={team} alt={c.teamAlt} widths={[700, 1100, 1500]} sizes="(min-width: 1200px) 1180px, 100vw" loading="eager" />
+        <PhotoCredit />
+      </div>
       <figcaption>{c.caption}</figcaption>
     </figure>
   </div>

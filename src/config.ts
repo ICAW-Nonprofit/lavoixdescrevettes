@@ -12,6 +12,12 @@ export const site = {
     instagram: 'https://www.instagram.com/icaw_org/',
   },
 
+  /** Photographer of most action photos: credited in the legal notice and on every photo of people (components/PhotoCredit.astro). */
+  photographer: {
+    handle: 'come_closer_project',
+    instagram: 'https://www.instagram.com/come_closer_project/',
+  },
+
   /** Mailchimp audience run by ICAW (same list as https://mailchi.mp/i-caw/la-voix-des-crevettes). */
   newsletter: {
     hostedPage: 'https://mailchi.mp/i-caw/la-voix-des-crevettes',

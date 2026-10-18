@@ -6,6 +6,7 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import PostCard from '../components/PostCard.astro';
 import Share from '../components/Share.astro';
 import Newsletter from '../components/Newsletter.astro';
+import PhotoCredit from '../components/PhotoCredit.astro';
 import { site } from '../config';
 import { getPosts, postSlug, readingTime, translationOf, type PostEntry } from '../lib/content';
 import { route, url, ui, postPath, formatDate, type Lang } from '../i18n';
@@ -74,8 +75,9 @@ const drawing = d.coverStyle === 'drawing';
     </div>
 
     <div class="narrow">
-      <figure class:list={['article-cover', drawing ? 'drawing' : 'duotone']}>
+      <figure class:list={['article-cover', drawing ? 'drawing' : 'duotone credited']}>
         <Image src={d.cover} alt={d.coverAlt} widths={[700, 1100, 1500]} sizes="(min-width: 800px) 760px, 100vw" loading="eager" />
+        {!drawing && <PhotoCredit />}
       </figure>
       <div class="prose">
         <Content />
