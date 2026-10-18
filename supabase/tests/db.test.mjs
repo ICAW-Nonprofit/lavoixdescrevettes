@@ -30,6 +30,9 @@ create function net.http_post(url text, body jsonb default '{}', params jsonb de
   returns bigint language sql as $$ insert into net.calls (url, body, headers) values (url, body, headers) returning id $$;
 create table cron.jobs (name text, sched text, cmd text);
 create function cron.schedule(n text, s text, c text) returns bigint language sql as $$ insert into cron.jobs values (n, s, c); select 1::bigint $$;
+-- like Supabase: new tables and functions in public are fully granted to the API roles (RLS and revokes then restrict)
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
 `);
 const strip = (sql) => sql.replace(/^create extension.*$/gim, '-- (extension stub)').replace(/with schema pg_catalog/g, '');
 for (const p of migrations) {
@@ -100,9 +103,22 @@ await throws('public cannot read who created an action', () => as('anon', null, 
 ok('public reads action fields', (await as('anon', null, () => q(`select slug, title from public.events`))).length === 1);
 await throws('public cannot create actions', () => as('anon', null, () => q(`insert into public.events (slug, title, city, summary, starts_at, ends_at) values ('a-b', 'Titre ok', 'Paris', 'Résumé assez long', now(), now() + interval '1 hour')`)), /permission denied|row-level/);
 
+// rebuilds: only the team can trigger them
+const dispatches = async () => (await one(`select count(*)::int as n from net.calls where url like '%/deploy.yml/dispatches'`)).n;
+let d0 = await dispatches();
+await throws('public cannot update actions', () => as('anon', null, () => q(`update public.events set title = 'Piraté' where id = '${e1.id}'`)), /permission denied/);
+await throws('public cannot delete actions', () => as('anon', null, () => q(`delete from public.events where false`)), /permission denied/);
+await throws('public cannot truncate tables', () => as('anon', null, () => q(`truncate public.events cascade`)), /permission denied/);
+ok('public cannot trigger a rebuild', (await dispatches()) === d0);
+
 // disabled organiser
 await as('authenticated', admin, () => q(`select public.set_organizer_active('${orga}', false)`));
 await throws('disabled organiser cannot create actions', () => insertEv(orga, { ...ev, slug: 'action-2' }), /row-level security/);
+d0 = await dispatches();
+await as('authenticated', orga, () => q(`update public.events set title = 'Rien' where id = '${e1.id}'`));
+ok('disabled organiser cannot trigger a rebuild (empty update)', (await dispatches()) === d0);
+await as('authenticated', admin, () => q(`update public.events set title = 'Titre admin' where id = '${e1.id}'`));
+ok('a team edit still triggers a rebuild', (await dispatches()) === d0 + 1);
 await throws('organiser cannot disable others', () => as('authenticated', orga, () => q(`select public.set_organizer_active('${admin}', false)`)), /forbidden/);
 await as('authenticated', admin, () => q(`select public.set_organizer_active('${orga}', true)`));
 ok('admin re-enables organiser', (await one(`select role from public.profiles where id = $1`, [orga])).role === 'organizer');

@@ -250,6 +250,8 @@ Project URL `https://ifhsohgisjbnuxljsesj.supabase.co`. The publishable key is i
 
 - They are `security definer` with `set search_path = public`.
 - `execute` is revoked from `public` and granted only to the roles that need it. **Do the same for every new function.**
+- Supabase grants every right on new tables to `anon` and `authenticated`. Visitors (`anon`) have no insert, update, delete or truncate on any table (`20261018130000_publish_guard.sql`): they write only through `rsvp()` and `track()`. **Revoke the same on every new table.**
+- Statement-level triggers fire even when RLS blocks every row. `request_publish()` therefore ignores visitors and signed-in accounts that aren't staff.
 
 **`rsvp()` rules:**
 
