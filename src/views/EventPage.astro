@@ -61,7 +61,7 @@ const jsonLd = [
         addressLocality: d.venue.city,
         addressCountry: 'FR',
       },
-      geo: { '@type': 'GeoCoordinates', latitude: d.lat, longitude: d.lng },
+      ...(d.lat != null && { geo: { '@type': 'GeoCoordinates', latitude: d.lat, longitude: d.lng } }),
     },
     image: [posterAbs],
     organizer: { '@type': 'Organization', name: site.name, url: new URL(url(route('home', lang)), Astro.site).href },

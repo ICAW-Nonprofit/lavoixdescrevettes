@@ -8,6 +8,7 @@ import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
+import { md } from '../src/lib/md.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const read = (p) => readFileSync(join(root, p), 'utf8');
@@ -116,6 +117,10 @@ for (const e of events) {
   if (!(start < end)) fail(`events.json: ${e.slug} ends before it starts.`);
   else if (end - start !== 90 * 60e3) warn(`${e.slug} lasts ${Math.round((end - start) / 60e3)} min (actions last 1 h 30 unless the team said otherwise).`);
 }
+
+// Organiser text goes through md(): it must keep escaping HTML and dropping unsafe links
+const mdOut = md('<script>x</script> [a](javascript:alert(1)) [b](https://x.org/"onclick=y)');
+if (/<script|href="javascript:|"onclick/i.test(mdOut)) fail(`src/lib/md.ts: organiser text is no longer made safe (got: ${mdOut}).`);
 
 // ───────────────────────────── 2. built site ─────────────────────────────
 

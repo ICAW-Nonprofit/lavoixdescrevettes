@@ -44,7 +44,8 @@ const events = defineCollection({
           fr: r.poster_alt || `Affiche de l'action pour les crevettes du ${DATES_FR.format(day)} à ${r.city}`,
           en: `Flyer for the action for shrimp on ${DATES_EN.format(day)} in ${r.city}`,
         },
-        whatsapp: r.whatsapp_url || undefined,
+        // a link the schema would reject is left out, so one typo can't fail the whole build
+        whatsapp: z.string().url().safeParse(r.whatsapp_url).success ? r.whatsapp_url : undefined,
         shareText: both(r.share_text, r.share_text_en),
         recap: r.recap_participants || r.recap_text || r.recap_links
           ? { participants: r.recap_participants ?? undefined, text: r.recap_text || undefined, links: r.recap_links || undefined }

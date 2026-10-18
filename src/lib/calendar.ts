@@ -53,7 +53,7 @@ function fold(line: string) {
 }
 
 function vevent(e: EventEntry, lang: Lang, pageUrl: string) {
-  const status = e.data.status === 'annule' ? 'CANCELLED' : 'CONFIRMED';
+  const status = ({ prevu: 'CONFIRMED', reporte: 'TENTATIVE', annule: 'CANCELLED' } as const)[e.data.status];
   return [
     'BEGIN:VEVENT',
     `UID:${e.id}@lavoixdescrevettes`,
@@ -63,7 +63,7 @@ function vevent(e: EventEntry, lang: Lang, pageUrl: string) {
     `SUMMARY:${esc(e.data.title[lang])}`,
     `DESCRIPTION:${esc(`${stripMd(e.data.description[lang])}\n\n${pageUrl}`)}`,
     `LOCATION:${esc(addressOf(e))}`,
-    `GEO:${e.data.lat};${e.data.lng}`,
+    ...(e.data.lat != null ? [`GEO:${e.data.lat};${e.data.lng}`] : []), // coordinates are optional (online actions)
     `URL:${pageUrl}`,
     `STATUS:${status}`,
     'END:VEVENT',

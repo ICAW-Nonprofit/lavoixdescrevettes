@@ -179,7 +179,8 @@ The language switch in the header uses each page's `alternates`. Pages also emit
 5. `src/content.config.ts` maps each DB row (snake_case, FR plus optional `_en`) to the shape the pages use:
    - `{ title: {fr,en}, summary, description, start, end, venue, lat/lng, status: prevu|annule|reporte, … }`
    - English falls back to French when an organiser didn't translate.
-6. `getEvents()` in `src/lib/content.ts` returns `upcoming` (not ended, not cancelled), `past` and `next`. The **home page "next action" and the sticky CTA** use `next`.
+6. `getEvents()` in `src/lib/content.ts` returns `upcoming` (not ended, not cancelled), `past` and `next` (the first upcoming action that is not postponed). The **home page "next action", the header button and the sticky CTA** use `next`.
+7. **"Reportée" (`postponed`) means the new date isn't known yet.** The action stays in the agenda with a badge, but it's never the `next` action, it gets no reminder email and calendar files mark it `TENTATIVE`.
 
 Rules:
 
@@ -192,6 +193,7 @@ Rules:
 - **Organiser text is untrusted.**
   - Render descriptions only through `md()` from `src/lib/md.ts`: it escapes everything and allows only http(s), mailto and relative links.
   - JSON-LD escapes `<`.
+  - The build must never fail because of one action's text. For example, a WhatsApp link that isn't a valid URL is left out by the loader in `content.config.ts` (the editor refuses it first).
   - In `/espace/`, always build DOM with `el()` and `fill()` from `scripts/espace/ui.js`, never `innerHTML`.
 
 ### Adding a field to actions (the full chain: miss one and something silently breaks)
@@ -257,7 +259,7 @@ Project URL `https://ifhsohgisjbnuxljsesj.supabase.co`. The publishable key is i
 
 **Cron jobs (pg_cron):**
 
-- `lvdc-reminders` at 16:00 UTC (about 17–18 h in Paris): Brevo emails to the next day's attendees who left an email.
+- `lvdc-reminders` at 16:00 UTC (about 17–18 h in Paris): Brevo emails to the next day's attendees who left an email. Only for actions that are going ahead (not cancelled, not postponed).
 - `lvdc-housekeeping` at 03:30 UTC: forgets connection hashes after an action, and attendees' emails 30 days after it.
 
 **Vault secrets** (never in the repo): `github_token`, `brevo_api_key`, `mail_from`. Optional: `mail_from_name`, `site_url`, `github_repo`.
@@ -271,7 +273,7 @@ Project URL `https://ifhsohgisjbnuxljsesj.supabase.co`. The publishable key is i
 - The **Database (Supabase)** workflow runs the SQL tests on every push to `main` that touches `supabase/**`, then applies files not yet listed in `public._lvdc_migrations`.
 - Write migrations that are safe to apply on the live data, and think about existing rows (defaults, nullable columns).
 - **Tests:** `npm run test:db` runs every migration on PGlite with stand-ins for auth, storage, vault, pg_net and pg_cron, then checks the access rules. Keep it passing, and add tests for every new rule.
-- **db-check.yml** (run by hand) prints counts and settings only, **never names, emails or IDs**: the logs of a public repo are public.
+- **db-check.yml** (by hand, and daily at 16:30 UTC) prints counts and settings only, **never names, emails or IDs**: the logs of a public repo are public. It fails, so GitHub emails you, when an outgoing call (reminder email or publish request) failed in the last 6 hours.
 
 ---
 
@@ -354,7 +356,7 @@ Project URL `https://ifhsohgisjbnuxljsesj.supabase.co`. The publishable key is i
 |---|---|---|
 | `deploy.yml` (Deploy to GitHub Pages) | push to `main`, daily 04:00 UTC, dispatch from Supabase | Builds with Node 24 (`withastro/action`) and deploys. On non-push runs it commits `events.json` as a backup. A burst of saves queues at most one extra build. |
 | `database.yml` (Database (Supabase)) | push to `main` touching `supabase/**`, or manual | `npm run test:db`, then applies new migrations with `psql` (needs the `SUPABASE_DB_URL` secret) |
-| `db-check.yml` (Database check) | manual | Counts and access-rule sanity checks on the live DB (no personal data) |
+| `db-check.yml` (Database check) | manual, daily 16:30 UTC | Counts and access-rule sanity checks on the live DB (no personal data). Fails when a reminder email or publish request failed in the last 6 hours. |
 | `checks.yml` (Checks) | push to any branch, pull requests, manual | `npm run test:db`, `npm run build`, `npm run verify`. Deploys nothing and uses no secret. |
 
 Supabase dispatches `deploy.yml` on **`main`**: organiser saves always publish what is on `main`. A broken `main` means organisers can't publish, which is why changes go through a branch and the Checks workflow first.
@@ -400,6 +402,7 @@ git checkout -- src/content/events.json   # unless you meant to change it
 - organiser pages that aren't `noindex`, or noindex pages listed in the sitemap;
 - a web manifest that doesn't match the base path;
 - the shrimp emoji, AI-assistant names, retailer names in general content files, secret-looking strings;
+- `md()` (`src/lib/md.ts`) no longer escaping HTML or dropping `javascript:` links in organiser text;
 - edits to migrations that already exist on `origin/main`.
 
 It **warns** when flyer design files differ from `origin/main`, and when an action doesn't last 1 h 30.
