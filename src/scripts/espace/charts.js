@@ -79,19 +79,26 @@ export function timeChart({ title, subtitle, kind = 'line', label, points, notes
       svg.append(svgEl('text', { class: 'tick', x: xAt(i), y: H - 7, 'text-anchor': j === 0 ? 'start' : j === count - 1 ? 'end' : 'middle' }, fmtTick(points[i].day)));
     }
 
-    // notes: a hairline and a lettered marker; markers closer than 14 px merge (the count shows)
+    // notes: a hairline on every note day and a lettered marker. Days whose markers would be closer than 14 px
+    // share one marker, centred over the group, showing the count; hovering any of those days lists the whole group.
     const clusters = [];
     for (const i of [...notesByIdx.keys()].sort((a, b) => a - b)) {
       const last = clusters.at(-1);
-      if (last && xAt(i) - last.x < 14) last.items.push(...notesByIdx.get(i));
-      else clusters.push({ x: xAt(i), items: [...notesByIdx.get(i)] });
+      if (last && xAt(i) - xAt(last.at(-1)) < 14) last.push(i);
+      else clusters.push([i]);
     }
-    for (const c of clusters) {
-      const one = c.items.length === 1;
+    const groups = new Map();
+    for (const group of clusters) {
+      const items = group.flatMap((i) => notesByIdx.get(i));
+      const cls = `note-${items.length === 1 ? items[0].kind : 'many'}`;
+      const x = (xAt(group[0]) + xAt(group.at(-1))) / 2;
+      for (const i of group) {
+        svg.append(svgEl('line', { class: 'note-line', x1: xAt(i), x2: xAt(i), y1: T - 6, y2: T + ph }));
+        groups.set(i, { items, spread: group.length > 1 });
+      }
       svg.append(
-        svgEl('line', { class: 'note-line', x1: c.x, x2: c.x, y1: T - 6, y2: T + ph }),
-        svgEl('rect', { class: `note-mark note-${one ? c.items[0].kind : 'many'}`, x: c.x - 8, y: 2, width: 16, height: 16, rx: 3 }),
-        svgEl('text', { class: `note-text note-${one ? c.items[0].kind : 'many'}`, x: c.x, y: 14, 'text-anchor': 'middle' }, one ? c.items[0].kind : String(c.items.length)),
+        svgEl('rect', { class: `note-mark ${cls}`, x: x - 8, y: 2, width: 16, height: 16, rx: 3 }),
+        svgEl('text', { class: `note-text ${cls}`, x, y: 14, 'text-anchor': 'middle' }, items.length === 1 ? items[0].kind : String(items.length)),
       );
     }
 
@@ -118,7 +125,7 @@ export function timeChart({ title, subtitle, kind = 'line', label, points, notes
     const cross = svgEl('line', { class: 'cross', y1: T, y2: T + ph, visibility: 'hidden' });
     const dot = svgEl('circle', { class: 'dot', r: 4, visibility: 'hidden' });
     svg.append(cross, dot);
-    geo = { W, T, L, bw, xAt, yAt, bars, cross, dot };
+    geo = { W, T, L, bw, xAt, yAt, bars, cross, dot, groups };
     if (cur != null) show(cur);
   }
 
@@ -126,6 +133,7 @@ export function timeChart({ title, subtitle, kind = 'line', label, points, notes
     if (!geo) return;
     cur = Math.max(0, Math.min(n - 1, i));
     const p = points[cur];
+    const g = geo.groups.get(cur);
     const x = geo.xAt(cur);
     geo.cross.setAttribute('x1', x);
     geo.cross.setAttribute('x2', x);
@@ -142,7 +150,8 @@ export function timeChart({ title, subtitle, kind = 'line', label, points, notes
       el('p', { class: 'tip-date' }, fmtLong(p.day)),
       el('p', { class: 'tip-row' }, el('span', { class: `key key-${kind}`, 'aria-hidden': 'true' }), el('strong', {}, fmtNum(p.value)), ` ${label}`),
       (tip ? tip(p) : []).map((t) => el('p', { class: 'tip-extra' }, t)),
-      (notesByIdx.get(cur) || []).map((nt) => el('p', { class: 'tip-note' }, noteKey(nt.kind), nt.label)));
+      // a group spread over several days: each note with its own date
+      (g?.items || []).map((nt) => el('p', { class: 'tip-note' }, noteKey(nt.kind), g.spread ? `${fmtTick(nt.day)} · ${nt.label}` : nt.label)));
     tipBox.hidden = false;
     const tw = tipBox.offsetWidth;
     let left = x + 14;
