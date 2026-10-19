@@ -39,6 +39,8 @@ alter default privileges in schema public grant all on functions to anon, authen
 const strip = (sql) => sql.replace(/^create extension.*$/gim, '-- (extension stub)').replace(/with schema pg_catalog/g, '');
 for (const p of migrations) {
   const name = String(p).split('/').pop();
+  // live data before the dashboard migration: newsletter sign-ups counted on an action page, to check the backfill
+  if (name === '20261019120000_dashboard.sql') await db.exec(`insert into public.event_stats (event_id, day, newsletter) select id, '2026-01-15', 4 from public.events limit 1`);
   try { await db.exec(strip(readFileSync(p, 'utf8'))); ok(`migration applies: ${name}`, true); }
   catch (e) { ok(`migration applies: ${name}`, false, e.message); process.exit(1); }
 }
@@ -147,7 +149,8 @@ await throws('bad email rejected', () => as('anon', null, () => q(`select public
 await throws('public cannot write rsvps directly', () => as('anon', null, () => q(`insert into public.rsvps (event_id, name) values ('${e1.id}', 'x')`)), /permission denied|row-level/);
 ok('public cannot read attendees', (await as('anon', null, () => q(`select * from public.rsvps`).catch(() => []))).length === 0);
 ok('organiser cannot read attendees', (await as('authenticated', orga, () => q(`select * from public.rsvps`))).length === 0);
-ok('organiser gets no attendee list', (await as('authenticated', orga, () => q(`select * from public.attendees('${e1.id}')`))).length === 0);
+const orgaList = await as('authenticated', orga, () => q(`select * from public.attendees('${e1.id}')`));
+ok('organiser gets the first names, never the emails', orgaList.length === 10 && orgaList.every((r) => r.email === null) && orgaList.some((r) => r.name === 'Camille B'));
 ok('admin reads attendees with emails', (await as('authenticated', admin, () => q(`select * from public.attendees('${e1.id}')`))).filter((r) => r.email).length === 1);
 ok('admin without the app code gets no attendee list', (await as('authenticated', admin, () => q(`select * from public.attendees('${e1.id}')`), '{}', 'aal1')).length === 0);
 ok('admin without the app code cannot edit actions', (await as('authenticated', admin, () => q(`update public.events set title = 'Sans code' where id = '${e1.id}' returning id`), '{}', 'aal1')).length === 0);
@@ -172,6 +175,53 @@ const row = ov.find((r) => r.slug === 'action-test-paris');
 ok('organiser dashboard: counts per action', ov.length === 2 && row.rsvps === 16 && row.views === 2 && row.creator_name === 'Orga Lyon');
 ok('public gets no dashboard', (await as('anon', null, () => q(`select * from public.event_overview()`).catch(() => []))).length === 0);
 ok('sign-ups per day', (await as('authenticated', orga, () => q(`select * from public.rsvps_per_day(30)`))).reduce((a, r) => a + r.count, 0) === 16);
+
+// site-wide newsletter counter: every sign-up on the site, with or without an action page
+ok('backfill: sign-ups already counted on action pages are in the site counter', (await one(`select newsletter from public.site_stats where day = '2026-01-15'`))?.newsletter === 4);
+await as('anon', null, () => q(`select public.track(null, 'newsletter')`));
+await as('anon', null, () => q(`select public.track('no-such-action', 'newsletter')`));
+await as('anon', null, () => q(`select public.track(null, null)`));
+const today = await as('authenticated', orga, () => one(`select newsletter from public.site_stats where day = (now() at time zone 'Europe/Paris')::date`));
+ok('newsletter sign-ups count site-wide (action page, no page, unknown page)', today.newsletter === 3);
+ok('a sign-up without an action page is not counted for an action', (await one(`select sum(newsletter)::int as n from public.event_stats`)).n === 1);
+await throws('public cannot read the site counter', () => as('anon', null, () => q(`select * from public.site_stats`)), /permission denied/);
+await throws('public cannot write the site counter', () => as('anon', null, () => q(`insert into public.site_stats (day, newsletter) values ('2026-02-01', 99)`)), /permission denied/);
+await throws('organiser cannot write the site counter', () => as('authenticated', orga, () => q(`update public.site_stats set newsletter = 999`)), /permission denied/);
+ok('admin without the app code cannot read the site counter', (await as('authenticated', admin, () => q(`select * from public.site_stats`), '{}', 'aal1')).length === 0);
+ok('admin reads the site counter', (await as('authenticated', admin, () => q(`select * from public.site_stats`))).length === 2);
+
+// notes on the dashboard chart
+const [note1] = await as('authenticated', orga, () => q(`insert into public.dashboard_notes (day, label) values ('2026-10-16', 'Passage radio') returning id, created_by`));
+ok('organiser adds a note (signed with their account)', note1.created_by === orga);
+await throws('organiser cannot add a note in someone else\'s name', () => as('authenticated', orga, () => q(`insert into public.dashboard_notes (day, label, created_by) values ('2026-10-16', 'x', '${admin}')`)), /row-level security/);
+await throws('empty note rejected', () => as('authenticated', orga, () => q(`insert into public.dashboard_notes (day, label) values ('2026-10-16', '   ')`)), /check/);
+const [note2] = await as('authenticated', admin, () => q(`insert into public.dashboard_notes (day, label) values ('2026-10-17', 'Note admin') returning id`));
+ok('the team reads every note', (await as('authenticated', orga, () => q(`select * from public.dashboard_notes`))).length === 2);
+ok('organiser cannot delete someone else\'s note', (await as('authenticated', orga, () => q(`delete from public.dashboard_notes where id = ${note2.id} returning id`))).length === 0);
+await throws('nobody edits a note (delete and add again)', () => as('authenticated', orga, () => q(`update public.dashboard_notes set label = 'Modifiée' where id = ${note1.id}`)), /permission denied/);
+await throws('public cannot read notes', () => as('anon', null, () => q(`select * from public.dashboard_notes`)), /permission denied/);
+await throws('public cannot add notes', () => as('anon', null, () => q(`insert into public.dashboard_notes (day, label) values ('2026-10-16', 'x')`)), /permission denied/);
+ok('admin without the app code reads no notes', (await as('authenticated', admin, () => q(`select * from public.dashboard_notes`), '{}', 'aal1')).length === 0);
+ok('admin deletes any note', (await as('authenticated', admin, () => q(`delete from public.dashboard_notes where id = ${note1.id} returning id`))).length === 1);
+ok('author deletes their own note', (await as('authenticated', admin, () => q(`delete from public.dashboard_notes where id = ${note2.id} returning id`))).length === 1);
+
+// who created each action: active, disabled, deleted account, created in SQL
+await as('authenticated', admin, () => q(`insert into public.invitations (email, display_name) values ('temp@example.com', 'Temp')`));
+const temp = (await one(`insert into auth.users (email) values ('temp@example.com') returning id`)).id;
+await insertEv(temp, { ...ev, slug: 'action-compte-supprime' });
+await q(`delete from auth.users where id = '${temp}'`);
+await q(`insert into public.events (slug, title, city, summary, starts_at, ends_at) values ('action-import-sql', 'Action importée', 'Lyon', 'Créée dans l’éditeur SQL.', now() + interval '5 days', now() + interval '5 days 90 minutes')`);
+await as('authenticated', admin, () => q(`select public.set_organizer_active('${orga}', false)`));
+const creators = Object.fromEntries((await as('authenticated', admin, () => q(`select slug, creator_name, creator_status from public.event_overview()`))).map((r) => [r.slug, r]));
+ok('dashboard: creator of a deactivated account', creators['action-test-paris'].creator_status === 'disabled' && creators['action-test-paris'].creator_name === 'Orga Lyon');
+ok('dashboard: creator account deleted, action kept', creators['action-compte-supprime']?.creator_status === 'deleted' && creators['action-compte-supprime'].creator_name === null);
+ok('dashboard: action created in SQL', creators['action-import-sql']?.creator_status === 'team');
+ok('disabled organiser gets no dashboard', (await as('authenticated', orga, () => q(`select * from public.event_overview()`))).length === 0);
+ok('disabled organiser gets no attendee list', (await as('authenticated', orga, () => q(`select * from public.attendees('${e1.id}')`))).length === 0);
+ok('disabled organiser reads no site counter and no notes', (await as('authenticated', orga, () => q(`select * from public.site_stats`))).length === 0 && (await as('authenticated', orga, () => q(`select * from public.dashboard_notes`))).length === 0);
+ok('admin without the app code gets no dashboard', (await as('authenticated', admin, () => q(`select * from public.event_overview()`), '{}', 'aal1')).length === 0);
+await as('authenticated', admin, () => q(`select public.set_organizer_active('${orga}', true)`));
+await q(`delete from public.events where slug in ('action-compte-supprime', 'action-import-sql')`);
 
 // ---------- reminders ----------
 await q(`insert into vault.secrets values ('brevo_api_key', 'xkeysib-test'), ('mail_from', 'contact@example.com')`);
@@ -216,7 +266,8 @@ ok('log: action deleted', has('action.delete', 'action-passee'));
 ok('log: organiser deactivated', has('account.role', 'orga@example.com', (r) => r.detail.to === 'disabled'));
 ok('log: invitation sent', has('invitation.create', 'orga@example.com'));
 ok('log: login', has('login', 'orga@example.com'));
-ok('log: admin opened an attendee list (once per hour)', log.filter((r) => r.action === 'attendees.view' && r.target === 'action-test-paris').length === 1);
+ok('log: admin opened an attendee list (once per hour)', log.filter((r) => r.action === 'attendees.view' && r.target === 'action-test-paris' && r.who === 'Admin').length === 1);
+ok('log: organiser opened an attendee list', has('attendees.view', 'action-test-paris', (r) => r.who === 'Orga Lyon'));
 ok('organiser cannot read the log', (await as('authenticated', orga, () => q(`select * from public.audit_recent()`))).length === 0);
 ok('admin without the app code cannot read the log', (await as('authenticated', admin, () => q(`select * from public.audit_recent()`), '{}', 'aal1')).length === 0);
 await throws('nobody reads the log table directly', () => as('authenticated', admin, () => q(`select * from public.audit_log`)), /permission denied/);
