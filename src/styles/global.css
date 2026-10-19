@@ -889,6 +889,9 @@ p {
 }
 
 /* ---------- Newsletter ---------- */
+.newsletter {
+  padding-bottom: 0; /* always sits right above the navy footer, whose own top padding is the gap */
+}
 .newsletter .form-grid {
   display: grid;
   gap: 16px;
