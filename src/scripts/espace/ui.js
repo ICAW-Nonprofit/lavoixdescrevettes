@@ -1,5 +1,6 @@
 // Small DOM helpers for the organiser space. Text always goes in as text (never innerHTML).
 import { api, BASE, DEMO, CONFIGURED } from './api.js';
+import { creatorLabel } from './calc.js';
 
 /** el('div', { class: 'x', onclick: fn }, 'text', child, [children]) */
 export function el(tag, attrs = {}, ...children) {
@@ -127,24 +128,46 @@ export const errorText = (err) =>
     mfa_code: 'Code incorrect ou expiré. Tape le code affiché en ce moment dans ton appli.',
   })[err?.code] || `Oups, ça n'a pas marché. ${err?.message ? `(${err.message})` : ''}`;
 
-/** Header of every organiser page. */
+/** Table with optional number columns ({ label, key, num, render }) and a class per row (e.g. grey past rows). */
+export function table(cols, rows, rowClass) {
+  return el('div', { class: 'table-wrap' },
+    el('table', { class: 'esp-table' },
+      el('thead', {}, el('tr', {}, cols.map((c) => el('th', { scope: 'col', class: c.num ? 'num' : null }, c.label)))),
+      el('tbody', {}, rows.map((r) => el('tr', { class: rowClass?.(r) || null }, cols.map((c) => el('td', { class: c.num ? 'num' : null }, c.render ? c.render(r) : r[c.key] ?? '—')))))));
+}
+
+const STATUS = { cancelled: 'Annulée', postponed: 'Reportée' };
+export const statusBadge = (e) => STATUS[e.status] && el('span', { class: 'badge' }, STATUS[e.status]);
+
+/** Who created an action: grey for deleted accounts, actions made in SQL and deactivated accounts. */
+export const creator = (r) =>
+  r.creator_status && r.creator_status !== 'active'
+    ? el('span', { class: 'is-muted' }, creatorLabel(r), r.creator_status === 'disabled' && ' (désactivé·e)')
+    : creatorLabel(r);
+
+/** Header of every organiser page: the tabs. Sub-pages of Actions (details, editor) keep that tab lit. */
 export function header(ctx, current) {
   const admin = ctx?.profile?.role === 'admin';
+  const staff = admin || ctx?.profile?.role === 'organizer';
+  const tab = (key, href, label, lit = [key]) =>
+    el('a', { class: 'esp-tab', href: link(href), 'aria-current': current === key ? 'page' : lit.includes(current) ? 'true' : null }, label);
   const nav = el(
     'nav',
     { class: 'esp-nav', 'aria-label': 'Espace organisation' },
-    el('a', { href: link('/espace/'), 'aria-current': current === 'home' ? 'page' : null }, 'Mes actions'),
-    admin && el('a', { href: link('/espace/admin/'), 'aria-current': current === 'admin' ? 'page' : null }, 'Tableau de bord'),
-    el('a', { href: link('/') }, 'Voir le site ↗'),
-    ctx &&
-      el('button', {
-        class: 'linkish',
-        type: 'button',
-        onclick: async () => {
-          await api.signOut();
-          location.href = link('/espace/');
-        },
-      }, 'Se déconnecter'),
+    staff && tab('admin', '/espace/admin/', 'Tableau de bord'),
+    tab('home', '/espace/', 'Actions', ['home', 'edit', 'details']),
+    admin && tab('settings', '/espace/parametres/', 'Paramètres'),
+    el('span', { class: 'esp-nav-end' },
+      el('a', { href: link('/') }, 'Voir le site ↗'),
+      ctx &&
+        el('button', {
+          class: 'linkish',
+          type: 'button',
+          onclick: async () => {
+            await api.signOut();
+            location.href = link('/espace/');
+          },
+        }, 'Se déconnecter')),
   );
   return el(
     'header',
