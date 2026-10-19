@@ -124,7 +124,7 @@ export const ui = {
       city: 'Ville',
       participate: 'Tu veux participer à des actions ?', // non-breaking space keeps « ? » on the line
       choices: ['Participer à des actions dans ma ville', 'Organiser des actions dans ma ville', 'Actions en ligne', 'Juste recevoir les infos'],
-      consent: "J'accepte de recevoir les emails de La Voix des Crevettes et de l'ICAW.",
+      consent: "J'accepte de recevoir les emails de La Voix des Crevettes.",
       privacyLink: 'Données personnelles',
       submit: "Je m'inscris",
       sending: 'Envoi…',
@@ -193,7 +193,7 @@ export const ui = {
       city: 'City',
       participate: 'Would you like to take part in actions?',
       choices: ['Join actions in my city', 'Organise actions in my city', 'Online actions', 'Just get the news'],
-      consent: 'I agree to receive emails from La Voix des Crevettes and ICAW.',
+      consent: 'I agree to receive emails from La Voix des Crevettes.',
       privacyLink: 'Personal data',
       submit: 'Sign me up',
       sending: 'Sending…',
