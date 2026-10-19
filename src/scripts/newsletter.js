@@ -1,6 +1,20 @@
 // Newsletter → ICAW's Mailchimp audience.
 // With JS: submit through Mailchimp's JSONP endpoint, then go to our thank-you page.
 // Without JS: the form posts normally and Mailchimp shows its own confirmation page.
+import { rpc } from './supabase-rpc.js';
+
+/** Anonymous count of the sign-up: site-wide, and for the last action page seen in this tab (if any). */
+function count(form) {
+  const { trackUrl: base, trackKey: key } = form.dataset;
+  if (!base) return;
+  let slug = null;
+  try {
+    slug = sessionStorage.getItem('lvdc-last-action');
+  } catch {
+    /* storage blocked: still counted site-wide */
+  }
+  rpc(base, key, 'track', { p_slug: slug, p_kind: 'newsletter' }).catch(() => {});
+}
 
 for (const form of document.querySelectorAll('[data-newsletter]')) {
   const msg = form.querySelector('[data-msg]');
@@ -38,7 +52,7 @@ for (const form of document.querySelectorAll('[data-newsletter]')) {
       delete window[cb];
       script.remove();
       if (res && res.result === 'success') {
-        document.dispatchEvent(new Event('lvdc:newsletter')); // counted for the action page it came from
+        count(form);
         location.href = form.dataset.thanks;
       }
       else if (res && /already subscribed/i.test(res.msg || '')) location.href = form.dataset.thanks;

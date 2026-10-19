@@ -1,8 +1,18 @@
 ---
+import { getCollection } from 'astro:content';
 import Espace from '../../../layouts/Espace.astro';
+
+// Notes for the newsletter chart known at build time: media coverage (M) and French blog posts (B).
+// Passed as data (an attribute), not as a script, so the Content-Security-Policy has nothing to allow.
+const day = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(d);
+const notes = [
+  ...(await getCollection('press')).map((p) => ({ day: day(p.data.date), kind: 'M', label: p.data.outlet })),
+  ...(await getCollection('blog', (p) => p.data.lang === 'fr' && !p.data.draft)).map((p) => ({ day: day(p.data.date), kind: 'B', label: p.data.title })),
+];
 ---
 
 <Espace title="Tableau de bord · Espace organisation">
+  <div id="build-notes" hidden data-notes={JSON.stringify(notes)}></div>
   <script>
     import '../../../scripts/espace/admin.js';
   </script>

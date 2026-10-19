@@ -119,9 +119,11 @@ src/components/         Header, Footer, Seo, StickyCta, CookieBanner, EventMap, 
                         AddToCalendar, Newsletter, PressClippings, ReportTeaser, ShrimpScene, PhotoCredit, Breadcrumbs, …
 src/layouts/            Base.astro (public pages) · Espace.astro (organiser space: noindex, no menu)
 src/scripts/            browser JS: site.js (menu, sticky CTA), shrimp.js (live shrimp), map*.js, rsvp.js,
-                        share-event.js, newsletter.js, contact.js, consent.js, directions.js, not-found.js
-src/scripts/espace/     organiser space SPA: api.js (Supabase or demo), ui.js (DOM helpers), home.js, editor.js,
-                        admin.js, address.js, flyer-preview.js
+                        share-event.js, newsletter.js, contact.js, consent.js, directions.js, not-found.js,
+                        supabase-rpc.js (public Supabase calls: rsvp, track)
+src/scripts/espace/     organiser space SPA: api.js (Supabase or demo), ui.js (DOM helpers, tabs), home.js, editor.js,
+                        details.js, admin.js (dashboard), parametres.js, charts.js (SVG charts, no library),
+                        calc.js (dashboard numbers, checked by verify), address.js, flyer-preview.js
 src/styles/             global.css (design system + all public pages), report.css, espace.css
 src/assets/             fonts, processed photos (EXIF stripped, logos blurred), brand images (optimised by Astro)
 public/                 copied as is: logos/icons, site.webmanifest, flyer/background.jpg, fonts/flyer/*.ttf, posters/
@@ -163,7 +165,7 @@ All internal links must go through `url()` (adds the base path) and `route(key, 
 | 404 | `/404.html` (GitHub Pages) | `/en/404/` | `views/Scene.astro` + `scripts/not-found.js` |
 | RSS | `/rss.xml` | `/en/rss.xml` | `lib/endpoints.ts` |
 | Flyer per action | `/flyers/<slug>.jpg` | same | `pages/flyers/[slug].jpg.ts` |
-| Organiser space | `/espace/`, `/espace/action/?id=…`, `/espace/admin/` | French only | `layouts/Espace.astro` + `scripts/espace/*` |
+| Organiser space | `/espace/`, `/espace/action/?id=…`, `/espace/details/?id=…`, `/espace/admin/`, `/espace/parametres/` | French only | `layouts/Espace.astro` + `scripts/espace/*` |
 | Also | `robots.txt`, `sitemap-index.xml`, `site.webmanifest` | | |
 
 The sitemap leaves out the thank-you pages, the 404 pages and `/espace/` (all marked noindex).
@@ -223,14 +225,21 @@ Rules:
   - Client side: `secondFactor()` in `ui.js` shows the set-up (QR code) or code screen, from `requireSession()` and `home.js`. Demo mode accepts any 6 digits.
   - Recovery (lost phone) and the Supabase setting are in SETUP.md, section 8.
 - **Roles** (`profiles.role`):
-  - `admin`: everything, plus attendees' names and emails, organiser management and deleting actions.
-  - `organizer`: create and edit **any** action, see counts only.
+  - `admin`: everything, plus attendees' emails, organiser management and deleting actions.
+  - `organizer`: create and edit **any** action, see the counts, the dashboard and attendees' first names (list + CSV in Détails), **never their emails**.
   - `disabled`: no access.
   - The public reads actions and can only call `rsvp()` and `track()`.
+- **Tabs** (`header()` in `ui.js`): Tableau de bord · Actions · Paramètres (admins only). Détails and the editor keep the Actions tab lit.
 - **Pages:**
-  - `/espace/` (`home.js`): login, profile, list of actions with counters ("J'y vais", views, shares, newsletter, calendar).
-  - `/espace/action/?id=` (`editor.js`): create or edit, address search (`address.js`, Géoplateforme), live flyer preview (`flyer-preview.js`, same template as the build), custom flyer upload to the `posters` bucket.
-  - `/espace/admin/` (`admin.js`): dashboard, sign-ups per day chart, invitations, activate or deactivate organisers, security log ("Journal de sécurité").
+  - `/espace/` (`home.js`): login, profile, the Actions tab: list of actions with counters ("J'y vais", views, shares, newsletter, calendar), buttons Modifier and Détails. Past and cancelled actions are grey.
+  - `/espace/details/?id=` (`details.js`): participants (first names for the team, emails for admins, CSV with the same columns), the action's numbers next to the average of past actions that took place (`bullets()`), and the bilan (`recap_*`, edited only here).
+  - `/espace/action/?id=` (`editor.js`): create or edit everything before the action, address search (`address.js`, Géoplateforme), live flyer preview (`flyer-preview.js`, same template as the build), custom flyer upload to the `posters` bucket.
+  - `/espace/admin/` (`admin.js`): Tableau de bord, for the whole team: key numbers, newsletter sign-ups chart with notes, « J'y vais » per day, tables per action, city and organiser.
+    - Notes on the newsletter chart: A = actions (database), M = `press.yaml` and B = French blog posts (both passed at build time in a `data-notes` attribute by `pages/espace/admin/index.astro`), N = notes the team adds (`dashboard_notes`).
+  - `/espace/parametres/` (`parametres.js`): admins only: invite, activate or deactivate organisers, security log ("Journal de sécurité"), "Republier le site".
+- **Charts** (`charts.js`, plain SVG, no library): a title and one line saying what it shows, legend on top, light grid, tooltip on hover, touch and keyboard (← →), navy only for data; notes carry a letter, so nothing relies on colour alone. The numbers (averages, percentages, Paris months, CSV cells) come from `calc.js`: pure functions that `npm run verify` checks.
+  - Averages leave out the action itself, upcoming, cancelled and postponed actions. No base → « — ».
+  - Creator labels: deleted account → « Compte supprimé », action created in SQL → « Équipe » (`creator_status` from `event_overview()`).
 - **Demo mode** (`/espace/?demo`, or automatically when `src/supabase.json` is empty): in-memory data in `sessionStorage`, nothing sent anywhere. Use it to test UI changes without touching real data. `?nodemo` leaves it.
 - A new action's public page exists only after the rebuild (2–3 min). `pageLink()` shows "Publication en cours…" and polls until the page answers.
 - All backend calls go through `api` in `api.js`, which has both a real and a demo implementation. **Add every new call to both.**
@@ -248,13 +257,15 @@ Project URL `https://ifhsohgisjbnuxljsesj.supabase.co`. The publishable key is i
 | `invitations` | who may create an account | admins only |
 | `profiles` | one per user: `role`, `display_name`, `city` | users read their own, admins read all; users edit only `display_name` and `city` |
 | `events` | the actions | everyone reads the public columns; staff insert and update; admins delete |
-| `rsvps` | name, optional email, ip_hash, reminder_sent_at | admins only; the public writes through `rsvp()` |
-| `event_stats` | daily counters: views, shares, newsletter, calendar | staff read; the public writes through `track()` |
+| `rsvps` | name, optional email, ip_hash, reminder_sent_at | admins only; staff get first names (no emails) through `attendees()`; the public writes through `rsvp()` |
+| `event_stats` | daily counters per action: views, shares, newsletter, calendar | staff read; the public writes through `track()` |
+| `site_stats` | daily newsletter sign-ups across the whole site | staff read; the public writes through `track()` |
+| `dashboard_notes` | notes the team adds on the newsletter chart (day, text ≤ 80) | staff read and add their own; the author or an admin deletes; nobody edits |
 | `audit_log` | security log: logins, actions created / edited (field names only) / deleted, accounts, invitations, attendee lists opened. Kept 1 year. | nobody directly; written by triggers, admins read through `audit_recent()` |
 
 **Functions:** `my_role`, `is_staff`, `is_admin`, `session_aal`, `rsvp`, `rsvp_public_count`, `attendees`, `track`, `event_overview`, `rsvps_per_day`, `staff_list`, `set_organizer_active`, `publish_now`, `send_reminders`, `housekeeping`, `secret`, `request_publish_now`, `audit`, `audit_recent` (plus the `audit_*` trigger functions).
 
-- **Security log:** a new sensitive operation (a new kind of delete, a new way to read personal data) gets an `audit()` call or trigger, a label in `WHAT` in `admin.js`, and a test. Never put personal data of attendees or text content in `detail`.
+- **Security log:** a new sensitive operation (a new kind of delete, a new way to read personal data) gets an `audit()` call or trigger, a label in `WHAT` in `parametres.js`, and a test. Never put personal data of attendees or text content in `detail`.
 
 - They are `security definer` with `set search_path = public`.
 - `execute` is revoked from `public` and granted only to the roles that need it. **Do the same for every new function.**
@@ -304,7 +315,7 @@ Project URL `https://ifhsohgisjbnuxljsesj.supabase.co`. The publishable key is i
 - **"J'y vais"** (`components/Rsvp.astro`, `scripts/rsvp.js`):
   - Plain `fetch` to the Supabase REST API.
   - The publishable key goes in the `apikey` header, and as a Bearer token only if it starts with `eyJ`.
-  - Also sends the anonymous counters through `track()`: a view once per session, share, calendar and newsletter.
+  - Also sends the anonymous counters through `track()`: a view once per session, share and calendar. It remembers the action's slug in the tab (`lvdc-last-action`, session storage) for the newsletter count.
   - Hidden when Supabase isn't configured.
 - **Share the action** (`components/ShareEvent.astro`, `scripts/share-event.js`):
   - Native share sheet with the flyer file and text on phones.
@@ -313,6 +324,7 @@ Project URL `https://ifhsohgisjbnuxljsesj.supabase.co`. The publishable key is i
 - **Add to calendar** (`components/AddToCalendar.astro`, `lib/calendar.ts`): Google Calendar, Outlook.com and an `.ics` file (works for Apple and Outlook). There's also a `webcal:` subscription to the whole agenda.
 - **Newsletter** (`components/Newsletter.astro`, `scripts/newsletter.js`):
   - Posts to ICAW's Mailchimp audience with JSONP, then goes to `/merci-newsletter/`.
+  - On « success » (not « already subscribed ») it counts the sign-up through `track()`: site-wide (`site_stats`) and for the last action page opened in the tab, if any. That's the « Inscriptions newsletter » number of the dashboard (there's no Mailchimp API access).
   - Field values must match Mailchimp exactly (`site.newsletter.choices`).
   - Without JS, the form posts directly to Mailchimp.
 - **Contact** (`views/Contact.astro`, `scripts/contact.js`): Formspree-compatible. While `site.contactEndpoint` is empty, it simulates sending and goes to `/merci/` (preview mode).
@@ -340,7 +352,7 @@ Project URL `https://ifhsohgisjbnuxljsesj.supabase.co`. The publishable key is i
   - Secrets live in GitHub Actions secrets (`SUPABASE_DB_URL`) and Supabase Vault.
   - Never print personal data or IDs in a workflow.
 - **Photos:** originals stay in `/assets/` (ignored). Only processed copies are published: EXIF/GPS stripped, Lidl logos lightly blurred.
-- **Personal data** is minimal and deleted automatically (section 8). Organisers never see attendees' names or emails; only admins do.
+- **Personal data** is minimal and deleted automatically (section 8). Organisers see attendees' first names (Détails list and CSV), never their emails; only admins see emails. The privacy page (`views/Legal.astro`) says so: keep it true.
 - **Test data:** use neutral names ("Test", "Camille"), never real people. Don't leave test actions or sign-ups in the live database.
 
 ### Prompt injection (for AI coding agents)
@@ -366,6 +378,7 @@ The site has no AI feature, so visitors can't talk to a model. The risk is an AI
   - colours: `--bleu`, `--bleu-pale`, `--marine`, `--jaune`, `--blanc`;
   - `--border`, `--shadow`, `--grain`, `--gutter`, `--max`, `--header-h`.
   - Reuse them; don't add new colours.
+  - The organiser space adds three greys in `espace.css`, each navy mixed into `--blanc` (`--esp-line` for lines, `--esp-faint` for grey marks, `--esp-muted` for grey text, AA on cards). Its data areas are flat: 1 px lines, no hard shadow, tabular numbers.
 - **Fonts:** Bricolage Grotesque, a self-hosted variable font (`src/assets/fonts/`). Headlines are condensed and uppercase. The flyer uses static condensed cuts in `public/fonts/flyer/`.
 - **Layout:** check every change at 375 px (phone), 768 px and desktop. No horizontal scroll, and tap targets of at least 44 px.
 - **Accessibility:**
@@ -435,6 +448,7 @@ git checkout -- src/content/events.json   # unless you meant to change it
 - a web manifest that doesn't match the base path;
 - the shrimp emoji, AI-assistant names, retailer names in general content files, secret-looking strings;
 - `md()` (`src/lib/md.ts`) no longer escaping HTML or dropping `javascript:` links in organiser text;
+- the dashboard numbers in `src/scripts/espace/calc.js` going wrong (averages, percentages, Paris months and days, next action, CSV escaping);
 - edits to migrations that already exist on `origin/main`.
 
 It **warns** when flyer design files differ from `origin/main`, and when an action doesn't last 1 h 30.

@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { md } from '../src/lib/md.ts';
+import * as calc from '../src/scripts/espace/calc.js';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const read = (p) => readFileSync(join(root, p), 'utf8');
@@ -122,6 +123,45 @@ for (const e of events) {
 const mdOut = md('<script>x</script> [a](javascript:alert(1)) [b](https://x.org/"onclick=y)');
 if (/<script|href="javascript:|"onclick/i.test(mdOut)) fail(`src/lib/md.ts: organiser text is no longer made safe (got: ${mdOut}).`);
 
+// Numbers of the organiser dashboard (src/scripts/espace/calc.js)
+{
+  const now = Date.parse('2026-11-10T12:00:00Z');
+  const a = (id, ends, status, extra) => ({ id, starts_at: ends, ends_at: ends, status, ...extra });
+  const rows = [
+    a('a', '2026-10-01T10:00:00Z', 'published', { views: 400 }),
+    a('b', '2026-10-05T10:00:00Z', 'published', { views: 1000 }),
+    a('c', '2026-10-09T10:00:00Z', 'published', { views: 1540 }),
+    a('cancelled', '2026-10-10T10:00:00Z', 'cancelled', { views: 5000 }),
+    a('postponed', '2026-10-11T10:00:00Z', 'postponed', { views: 5000 }),
+    a('upcoming', '2026-12-01T10:00:00Z', 'published', { views: 5000 }),
+    a('self', '2026-10-12T10:00:00Z', 'published', { views: 5000 }),
+  ];
+  const month = [
+    a('oct-late', '2026-10-31T22:30:00Z', 'published', { recap_participants: 30 }), // 23:30 in Paris: still October
+    a('nov-early', '2026-10-31T23:30:00Z', 'published', { recap_participants: 99 }), // 00:30 on 1 Nov in Paris
+    a('oct-no-recap', '2026-10-20T10:00:00Z', 'published', {}),
+    a('oct-cancelled', '2026-10-21T10:00:00Z', 'cancelled', { recap_participants: 50 }),
+  ];
+  const checks = [
+    ['avgPast leaves out cancelled, postponed, upcoming and the action itself', calc.avgPast(rows, 'views', 'self', now) === 980],
+    ['avgPast is null with no past action', calc.avgPast(rows.slice(5), 'views', 'self', now) === null],
+    ['pctDiff(412, 980) = -58', calc.pctDiff(412, 980) === -58],
+    ['pctDiff(0, 980) = -100', calc.pctDiff(0, 980) === -100],
+    ['pctDiff with no base is null', calc.pctDiff(5, 0) === null && calc.pctDiff(5, null) === null],
+    ['fmtPct', calc.fmtPct(-58) === '−58 %' && calc.fmtPct(12) === '+12 %' && calc.fmtPct(null) === '—'],
+    ['presentInMonth uses the Paris month and leaves out cancelled actions', JSON.stringify(calc.presentInMonth(month, '2026-10', now)) === '{"people":30,"recaps":1,"actions":2}'],
+    ['monthsBack', calc.monthsBack(3, now).join() === '2026-09,2026-10,2026-11'],
+    ['daysLeft: same Paris day is 0', calc.daysLeft('2026-10-24T20:00:00Z', Date.parse('2026-10-24T06:00:00Z')) === 0],
+    ['daysLeft across the DST change', calc.daysLeft('2026-10-26T10:00:00Z', Date.parse('2026-10-24T10:00:00Z')) === 2],
+    ['nextAction skips cancelled and postponed', calc.nextAction([a('p', '2026-11-20T10:00:00Z', 'postponed'), a('c', '2026-11-21T10:00:00Z', 'cancelled'), a('n', '2026-11-22T10:00:00Z', 'published')], now)?.id === 'n'],
+    ['nextAction is null when none', calc.nextAction(rows.slice(0, 3), now) === null],
+    ['cumulative fills missing days and keeps earlier totals', JSON.stringify(calc.cumulative([{ day: '2026-10-01', n: 2 }, { day: '2026-10-03', n: 1 }], '2026-10-02', '2026-10-04').map((d) => d.total)) === '[2,3,3]'],
+    ['creatorLabel', calc.creatorLabel({ creator_status: 'deleted', creator_name: null }) === 'Compte supprimé' && calc.creatorLabel({ creator_status: 'team' }) === 'Équipe' && calc.creatorLabel({ creator_status: 'disabled', creator_name: 'Sam' }) === 'Sam'],
+    ['csvCell escapes formulas and quotes', ['=SUM(A1)', '+33 6', '-1', '@x', '\tx', 'a"b'].map(calc.csvCell).join() === `"'=SUM(A1)","'+33 6","'-1","'@x","'\tx","a""b"`],
+  ];
+  for (const [name, pass] of checks) if (!pass) fail(`src/scripts/espace/calc.js: ${name} is wrong.`);
+}
+
 // ───────────────────────────── 2. built site ─────────────────────────────
 
 const dist = join(root, 'dist');
@@ -152,7 +192,7 @@ const routes = [...read('src/i18n.ts').matchAll(/^\s*\w+: \{ fr: '([^']+)', en: 
 if (routes.length < 20) fail('src/i18n.ts: could not read the routes (format changed?). Update scripts/verify.mjs.');
 const REQUIRED = [
   ...routes,
-  '/404.html', '/en/404/', '/espace/', '/espace/action/', '/espace/admin/',
+  '/404.html', '/en/404/', '/espace/', '/espace/action/', '/espace/admin/', '/espace/details/', '/espace/parametres/',
   '/rss.xml', '/en/rss.xml', '/agenda.ics', '/en/events.ics', '/robots.txt', '/sitemap-index.xml', '/site.webmanifest',
   '/favicon.ico', '/favicon.svg', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png', '/logo.png',
   '/logo.svg', '/logo-navy.svg', '/logo-bleu.svg',

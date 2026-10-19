@@ -4,6 +4,7 @@
 import { createClient } from '@supabase/supabase-js';
 import cfg from '../../supabase.json';
 import seed from '../../content/events.json';
+import { parisDay } from './calc.js';
 
 export const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 export const SITE = `${location.origin}${BASE}`;
@@ -91,6 +92,11 @@ function realApi() {
     },
     attendees: async (eventId) => check(await sb.rpc('attendees', { p_event: eventId })) || [],
     rsvpsPerDay: async (days = 60) => check(await sb.rpc('rsvps_per_day', { p_days: days })) || [],
+    // shortcut: PostgREST returns at most 1000 rows (≈ 3 years of days with a sign-up); switch to a summing function before then
+    newsletterPerDay: async () => (check(await sb.from('site_stats').select('day, newsletter').order('day')) || []).map((r) => ({ day: r.day, n: r.newsletter })),
+    notes: async () => check(await sb.from('dashboard_notes').select('id, day, label, created_by').order('day')) || [],
+    addNote: async (day, label) => check(await sb.from('dashboard_notes').insert({ day, label })),
+    deleteNote: async (id) => check(await sb.from('dashboard_notes').delete().eq('id', id)),
     staff: async () => check(await sb.rpc('staff_list')) || [],
     invitations: async () => check(await sb.from('invitations').select('*').order('created_at', { ascending: false })) || [],
     async invite({ email, display_name, city }) {
@@ -151,14 +157,35 @@ function demoApi() {
       recap_links: '',
       created_by: 'demo-orga',
     };
+    const older = { ...past, id: 'demo-older', slug: 'action-crevettes-lyon-demo', title: 'Tractage pour les crevettes', city: 'Lyon', kind: 'tractage', starts_at: iso(now - 45 * day), ends_at: iso(now - 45 * day + 5400000), recap_participants: 22, recap_text: null, created_by: 'demo-gone' };
+    const cancelled = { ...past, id: 'demo-cancelled', slug: 'action-crevettes-marseille-demo', title: 'Rassemblement à Marseille', city: 'Marseille', status: 'cancelled', starts_at: iso(now - 8 * day), ends_at: iso(now - 8 * day + 5400000), recap_participants: null, recap_text: null };
+    const soon = { ...seed[0], id: 'demo-soon', slug: 'action-crevettes-nantes-demo', title: 'Action pour les crevettes à Nantes', city: 'Nantes', custom_poster: null, starts_at: iso(now + 30 * day), ends_at: iso(now + 30 * day + 5400000), created_by: null };
+    // newsletter sign-ups via the site: a few a day, more after actions and media coverage
+    const spikes = { 3: 18, 8: 4, 21: 14, 45: 9 };
+    const signups = Array.from({ length: 120 }, (_, i) => ({ day: parisDay(now - i * day), n: (spikes[i] || 0) + ((i * 7) % 5 === 0 ? 2 : i % 3 === 0 ? 1 : 0) }))
+      .filter((r) => r.n)
+      .reverse();
     return {
+      version: 2,
       profile: { id: 'demo-admin', email: 'demo@example.org', display_name: 'Démo', city: 'Paris', role: 'admin' },
-      events: [first, past],
+      events: [first, past, older, cancelled, soon],
       rsvps: {
         [first.id]: Array.from({ length: 12 }, (_, i) => ({ name: ['Camille', 'Sam', 'Léa', 'Noé', 'Inès', 'Yanis'][i % 6], email: i % 3 ? null : `demo${i}@example.org`, created_at: iso(now - (i % 9) * day) })),
         [past.id]: Array.from({ length: 30 }, (_, i) => ({ name: 'Militant·e ' + (i + 1), email: null, created_at: iso(now - (22 + (i % 6)) * day) })),
+        [older.id]: Array.from({ length: 20 }, (_, i) => ({ name: 'Militant·e ' + (i + 31), email: null, created_at: iso(now - (46 + (i % 5)) * day) })),
+        [cancelled.id]: Array.from({ length: 6 }, (_, i) => ({ name: 'Militant·e ' + (i + 51), email: null, created_at: iso(now - (10 + (i % 3)) * day) })),
       },
-      stats: { [first.id]: { views: 412, shares: 57, newsletter: 9, calendar: 23 }, [past.id]: { views: 980, shares: 121, newsletter: 31, calendar: 40 } },
+      stats: {
+        [first.id]: { views: 412, shares: 57, newsletter: 9, calendar: 23 },
+        [past.id]: { views: 980, shares: 121, newsletter: 31, calendar: 40 },
+        [older.id]: { views: 640, shares: 80, newsletter: 14, calendar: 25 },
+        [cancelled.id]: { views: 120, shares: 9, newsletter: 2, calendar: 4 },
+      },
+      signups,
+      notes: [
+        { id: 1, day: parisDay(now - 60 * day), label: 'Lancement de la newsletter', created_by: 'demo-orga' },
+        { id: 2, day: parisDay(now - 12 * day), label: 'Post Instagram partagé par une asso', created_by: 'demo-admin' },
+      ],
       staff: [
         { id: 'demo-admin', email: 'demo@example.org', display_name: 'Démo', city: 'Paris', role: 'admin', created_at: iso(now - 40 * day), last_sign_in_at: iso(now), actions: 1 },
         { id: 'demo-orga', email: 'orga.lyon@example.org', display_name: 'Orga Lyon', city: 'Lyon', role: 'organizer', created_at: iso(now - 30 * day), last_sign_in_at: iso(now - 3 * day), actions: 1 },
@@ -174,7 +201,8 @@ function demoApi() {
   };
   const load = () => {
     try {
-      return JSON.parse(sessionStorage.getItem(KEY)) || fresh();
+      const saved = JSON.parse(sessionStorage.getItem(KEY));
+      return saved?.version === 2 ? saved : fresh(); // older demo data lacks the dashboard's numbers
     } catch {
       return fresh();
     }
@@ -216,7 +244,8 @@ function demoApi() {
             const r = db.rsvps[e.id] || [];
             const s = db.stats[e.id] || { views: 0, shares: 0, newsletter: 0, calendar: 0 };
             const creator = db.staff.find((p) => p.id === e.created_by);
-            return { ...e, creator_name: creator?.display_name || 'Démo', rsvps: r.length, rsvps_with_email: r.filter((x) => x.email).length, ...s };
+            const creator_status = creator ? (creator.role === 'disabled' ? 'disabled' : 'active') : e.created_by ? 'deleted' : 'team';
+            return { ...e, creator_name: creator?.display_name ?? null, creator_status, rsvps: r.length, rsvps_with_email: r.filter((x) => x.email).length, ...s };
           })
           .sort((a, b) => b.starts_at.localeCompare(a.starts_at)),
       );
@@ -258,7 +287,8 @@ function demoApi() {
         log('attendees.view', slug);
         save();
       }
-      return wait(db.rsvps[id] || []);
+      // like the database: emails only for admins
+      return wait((db.rsvps[id] || []).map((r) => (db.profile.role === 'admin' ? r : { ...r, email: null })));
     },
     async rsvpsPerDay(days = 60) {
       const counts = {};
@@ -269,6 +299,16 @@ function demoApi() {
           counts[d] = (counts[d] || 0) + 1;
         }
       return Object.entries(counts).sort().map(([d, c]) => ({ day: d, count: c }));
+    },
+    newsletterPerDay: async () => wait(db.signups),
+    notes: async () => wait(db.notes),
+    async addNote(day, label) {
+      db.notes.push({ id: Date.now(), day, label, created_by: db.profile.id });
+      save();
+    },
+    async deleteNote(id) {
+      db.notes = db.notes.filter((n) => n.id !== id || (n.created_by !== db.profile.id && db.profile.role !== 'admin'));
+      save();
     },
     staff: async () => wait(db.staff),
     invitations: async () => wait(db.invitations.filter((i) => !db.staff.some((s) => s.email === i.email))),

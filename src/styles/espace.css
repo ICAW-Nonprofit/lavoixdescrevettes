@@ -1,6 +1,13 @@
 /* Organiser space: same brand, calmer layout, mobile first. */
 .espace {
   --esp-max: 1100px;
+  /* data areas (dashboard, details, tables): greys are navy mixed into the card colour, not new colours */
+  --esp-line: color-mix(in srgb, var(--marine) 15%, var(--blanc)); /* borders, gridlines */
+  --esp-faint: color-mix(in srgb, var(--marine) 35%, var(--blanc)); /* grey marks: past bars, ticks */
+  --esp-muted: color-mix(in srgb, var(--marine) 62%, var(--blanc)); /* grey text, AA on the card colour */
+}
+.is-muted {
+  color: var(--esp-muted);
 }
 .esp-header {
   background: var(--grain-light), var(--marine);
@@ -55,10 +62,10 @@
 .esp-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 20px;
+  align-items: center;
+  gap: 0 4px;
   max-width: var(--esp-max);
   margin: 0 auto;
-  padding: 4px 0 12px;
 }
 .esp-nav a,
 .esp-nav .linkish {
@@ -70,11 +77,35 @@
   text-decoration: none;
   padding: 6px 0;
 }
-.esp-nav a[aria-current="page"] {
+/* tabs: the current one (or the tab a sub-page belongs to) is underlined in yellow */
+.esp-nav .esp-tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 4px 12px 0;
+  border-bottom: 4px solid transparent;
+}
+.esp-nav .esp-tab:first-child {
+  padding-left: 0;
+}
+.esp-nav .esp-tab:hover {
   color: var(--jaune);
-  text-decoration: underline;
-  text-underline-offset: 6px;
-  text-decoration-thickness: 3px;
+}
+.esp-nav .esp-tab[aria-current] {
+  color: var(--jaune);
+  border-bottom-color: var(--jaune);
+}
+.esp-nav-end {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+  margin-left: auto;
+  padding: 8px 0;
+}
+.esp-nav-end a,
+.esp-nav-end .linkish {
+  font-size: 0.9rem;
+  color: var(--bleu);
 }
 .esp-main {
   max-width: var(--esp-max);
@@ -155,18 +186,22 @@
 .esp-card {
   display: grid;
   grid-template-columns: 1fr;
-  border: var(--border);
+  border: 1px solid var(--esp-line);
   background: var(--blanc);
-  box-shadow: var(--shadow);
 }
 @media (min-width: 720px) {
   .esp-card {
     grid-template-columns: 170px 1fr;
   }
 }
+/* past and cancelled actions: grey */
 .esp-card.is-past {
-  box-shadow: none;
-  opacity: 0.85;
+  color: var(--esp-muted);
+}
+.esp-card.is-past .esp-card-date,
+.esp-card.is-past .esp-card-date span:first-child {
+  background: var(--esp-muted);
+  color: var(--blanc);
 }
 .esp-card-date {
   background: var(--marine);
@@ -253,6 +288,7 @@
   font-size: 0.95rem;
 }
 .esp-form input[type="date"],
+.note-form input[type="date"],
 .esp-form input[type="time"],
 .esp-form input[type="number"],
 .esp-form input[type="url"],
@@ -420,82 +456,505 @@
 }
 .table-wrap {
   overflow-x: auto;
-  border: var(--border);
+  border: 1px solid var(--esp-line);
   background: var(--blanc);
 }
 .esp-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.98rem;
+  font-size: 0.95rem;
 }
 .esp-table th,
 .esp-table td {
   padding: 10px 12px;
   text-align: left;
-  border-bottom: 1px solid var(--bleu-pale);
+  border-bottom: 1px solid var(--esp-line);
   vertical-align: middle;
   white-space: nowrap;
+}
+.esp-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.esp-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--bleu-pale) 35%, var(--blanc));
 }
 .esp-table td:first-child {
   white-space: normal;
   min-width: 160px;
 }
 .esp-table thead th {
-  background: var(--marine);
-  color: var(--bleu);
-  font-stretch: 75%;
-  font-weight: 800;
+  color: var(--esp-muted);
+  font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+  font-size: 0.75rem;
 }
 .esp-table .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+.esp-table tr.is-muted td,
+.esp-table tr.is-muted a {
+  color: var(--esp-muted);
 }
 .row-actions {
   display: inline-flex;
   gap: 12px;
   align-items: center;
 }
+/* ---------- dashboard & details: flat cards, thin lines, tabular numbers ---------- */
+.esp-dash .paper {
+  border: 1px solid var(--esp-line);
+  box-shadow: none;
+  padding: 20px;
+}
+.esp-main.esp-dash .paper h2,
+.esp-main.esp-dash .paper h3 {
+  font-size: 1.3rem;
+  margin: 0;
+}
 .kpis {
   display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  margin: 16px 0 24px;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  margin: 16px 0;
 }
 .kpi {
-  border: var(--border);
+  border: 1px solid var(--esp-line);
   background: var(--blanc);
-  padding: 12px 14px;
+  color: var(--marine);
+  text-decoration: none;
+  padding: 16px 18px;
   display: grid;
-  gap: 2px;
+  align-content: start;
+  gap: 4px;
 }
-.kpi strong {
+a.kpi:hover,
+a.kpi:focus-visible {
+  border-color: var(--marine);
+}
+.kpi-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--esp-muted);
+  margin: 0;
+}
+.kpi-value {
   font-stretch: 75%;
-  font-size: 2.6rem;
+  font-size: 2.8rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-sub {
+  font-size: 0.9rem;
+  color: var(--esp-muted);
+}
+.kpi-trend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--marine);
+}
+.totals {
+  background: var(--blanc);
+  border: 1px solid var(--esp-line);
+  padding: 12px 18px;
+  margin: 0 0 24px;
+}
+.totals dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 28px;
+  margin: 6px 0 0;
+}
+.totals dl > div {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: baseline;
+  gap: 6px;
+}
+.totals dd {
+  margin: 0;
+  font-weight: 800;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.totals dt {
+  color: var(--esp-muted);
+}
+
+/* charts (src/scripts/espace/charts.js) */
+.chart-section {
+  margin: 0 0 24px;
+}
+.chart-card {
+  margin: 0;
+  background: var(--blanc);
+  border: 1px solid var(--esp-line);
+  padding: 18px 18px 14px;
+  min-width: 0;
+}
+.esp-main .chart-card h2,
+.esp-main .chart-card h3 {
+  font-size: 1.3rem;
+  margin: 0 0 2px;
+}
+.chart-sub {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+  color: var(--esp-muted);
+}
+.chart-empty {
+  margin: 0;
+  padding: 24px 0;
+  color: var(--esp-muted);
+}
+.chart-legend {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: 0.85rem;
+  color: var(--esp-muted);
+}
+.chart-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.key {
+  display: inline-block;
+  flex: none;
+  background: var(--marine);
+}
+.key-line {
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+}
+.key-bar {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.key-avg {
+  width: 2px;
+  height: 14px;
+  background: var(--esp-muted);
+}
+/* note markers: the letter carries the meaning, the colour only helps */
+.note-key {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--marine);
+  border-radius: 3px;
+  font-size: 0.66rem;
+  font-weight: 800;
   line-height: 1;
 }
-.kpi span {
-  font-weight: 700;
+.note-A {
+  background: var(--marine);
+  color: var(--blanc);
 }
-.kpi small {
-  font-size: 0.85rem;
+.note-M {
+  background: var(--bleu);
+  color: var(--marine);
 }
-.chart {
-  width: 100%;
-  height: auto;
+.note-B {
+  background: var(--blanc);
+  color: var(--marine);
+}
+.note-N {
+  background: var(--jaune);
+  color: var(--marine);
+}
+.chart-plot {
+  position: relative;
+  touch-action: pan-y;
+  cursor: crosshair;
+}
+.chart-plot:focus-visible {
+  outline: 3px solid var(--marine);
+  outline-offset: 4px;
+}
+.chart-svg {
   display: block;
+  font: 12px var(--font);
+  overflow: visible;
 }
-.chart rect {
+.chart-svg .grid {
+  stroke: var(--esp-line);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+.chart-svg .tick {
+  fill: var(--esp-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.chart-svg .bar,
+.minibars .bar {
   fill: var(--marine);
 }
-.chart line {
+.minibars .bar.is-past {
+  fill: var(--esp-faint);
+}
+.chart-svg.is-hovering .bar {
+  opacity: 0.4;
+}
+.chart-svg.is-hovering .bar.is-hot {
+  opacity: 1;
+}
+.chart-svg .line,
+.spark .line {
+  fill: none;
   stroke: var(--marine);
   stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
 }
-.chart text {
-  font: 12px var(--font);
+.chart-svg .area,
+.spark .area {
   fill: var(--marine);
+  fill-opacity: 0.1;
+}
+.chart-svg .dot,
+.spark .dot {
+  fill: var(--marine);
+  stroke: var(--blanc);
+  stroke-width: 2;
+}
+.chart-svg .end-label {
+  fill: var(--marine);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.chart-svg .cross,
+.chart-svg .note-line {
+  stroke: var(--esp-faint);
+  stroke-width: 1;
+}
+.chart-svg .note-mark {
+  stroke: var(--marine);
+  stroke-width: 1;
+}
+.chart-svg .note-mark.note-A,
+.chart-svg .note-mark.note-many {
+  fill: var(--marine);
+}
+.chart-svg .note-mark.note-M {
+  fill: var(--bleu);
+}
+.chart-svg .note-mark.note-B {
+  fill: var(--blanc);
+}
+.chart-svg .note-mark.note-N {
+  fill: var(--jaune);
+}
+.chart-svg .note-text {
+  font-size: 10px;
+  font-weight: 800;
+  fill: var(--marine);
+}
+.chart-svg .note-text.note-A,
+.chart-svg .note-text.note-many {
+  fill: var(--blanc);
+}
+.chart-tip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 5;
+  pointer-events: none;
+  min-width: 160px;
+  max-width: 250px;
+  padding: 8px 10px;
+  background: var(--blanc);
+  border: 1px solid var(--esp-line);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--marine) 16%, transparent);
+  font-size: 0.85rem;
+}
+.chart-tip p {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.chart-tip .tip-date {
+  color: var(--esp-muted);
+  font-size: 0.78rem;
+  margin-bottom: 4px;
+}
+.tip-row strong {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+.tip-extra {
+  color: var(--esp-muted);
+}
+.chart-tip .tip-note {
+  margin-top: 4px;
+  align-items: flex-start;
+}
+.chart-data {
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+.chart-data summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--esp-muted);
+  padding: 8px 0;
+}
+.chart-data .table-wrap {
+  max-height: 280px;
+  overflow: auto;
+}
+
+/* notes under the newsletter chart */
+.notes {
+  background: var(--blanc);
+  border: 1px solid var(--esp-line);
+  border-top: 0;
+  padding: 12px 18px 16px;
+}
+.notes-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.esp-main .notes-head h3 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.notes-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  max-height: 260px;
+  overflow: auto;
+  font-size: 0.9rem;
+}
+.notes-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  border-top: 1px solid var(--esp-line);
+}
+.notes-day {
+  min-width: 96px;
+  white-space: nowrap;
+  color: var(--esp-muted);
+  font-variant-numeric: tabular-nums;
+}
+.notes-label {
+  flex: 1;
+  min-width: 0;
+}
+.note-form {
+  display: grid;
+  gap: 10px 14px;
+  align-items: end;
+  margin: 10px 0;
+}
+@media (min-width: 640px) {
+  .note-form {
+    grid-template-columns: 190px 1fr;
+  }
+  .note-form .form-foot {
+    grid-column: 1 / -1;
+  }
+}
+
+/* details: this action vs the average of past actions */
+.details-grid {
+  display: grid;
+  gap: 20px;
+  margin: 20px 0;
+}
+.details-grid > * {
+  min-width: 0;
+}
+@media (min-width: 960px) {
+  .details-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+#attendees .table-wrap {
+  max-height: 420px;
+  overflow: auto;
+  margin-top: 10px;
+}
+.bullets .chart-legend {
+  margin-bottom: 14px;
+}
+.bullet-rows {
+  margin: 0;
+  display: grid;
+  gap: 16px;
+}
+.bullet {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 14px;
+  align-items: center;
+}
+.bullet dt {
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+.bullet dd {
+  margin: 0;
+}
+.bullet-track {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  position: relative;
+  height: 14px;
+  background: color-mix(in srgb, var(--marine) 6%, var(--blanc));
+  border-radius: 0 4px 4px 0;
+}
+.bullet-bar {
+  display: block;
+  height: 100%;
+  background: var(--marine);
+  border-radius: 0 4px 4px 0;
+}
+/* the average: a grey tick with a ring in the card colour, so it shows over the navy bar too */
+.bullet-avg {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  width: 3px;
+  margin-left: -1.5px;
+  background: var(--esp-muted);
+  box-shadow: 0 0 0 2px var(--blanc);
+}
+.bullet-nums {
+  grid-row: 1;
+  grid-column: 2;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  color: var(--esp-muted);
+  font-variant-numeric: tabular-nums;
+}
+.bullet-nums strong {
+  color: var(--marine);
+  font-size: 1.05rem;
 }
 
 /* toast */

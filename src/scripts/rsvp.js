@@ -1,18 +1,10 @@
 // "J'y vais" + live count + anonymous counters (views, shares, calendar adds, newsletter sign-ups).
 // Talks to Supabase's REST API directly (no library), with the public anon key.
 
+import { rpc } from './supabase-rpc.js';
+
 const box = document.querySelector('[data-rsvp]');
 const tracker = document.querySelector('[data-track-slug]');
-
-function rpc(base, key, fn, body) {
-  return fetch(`${base}/rest/v1/rpc/${fn}`, {
-    method: 'POST',
-    // new-style keys (sb_publishable_…) go in `apikey` only; legacy JWT anon keys also as a bearer token
-    headers: { apikey: key, ...(key.startsWith('eyJ') ? { Authorization: `Bearer ${key}` } : {}), 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-    keepalive: true,
-  });
-}
 
 // ---------- anonymous counters ----------
 if (tracker) {
@@ -20,6 +12,7 @@ if (tracker) {
   const track = (kind) => rpc(base, key, 'track', { p_slug: slug, p_kind: kind }).catch(() => {});
   const seen = `lvdc-view-${slug}`;
   try {
+    sessionStorage.setItem('lvdc-last-action', slug); // a newsletter sign-up later in this tab counts for this action (newsletter.js)
     if (!sessionStorage.getItem(seen)) {
       sessionStorage.setItem(seen, '1');
       track('view');
@@ -32,7 +25,6 @@ if (tracker) {
     if (el) track('share');
     if (e.target.closest('.cal-menu a, .popup-cal a, [data-cal-link]')) track('calendar');
   });
-  document.addEventListener('lvdc:newsletter', () => track('newsletter'));
 }
 
 // ---------- "J'y vais" ----------

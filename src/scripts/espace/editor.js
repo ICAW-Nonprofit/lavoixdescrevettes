@@ -100,7 +100,6 @@ function buildForm() {
   const isNew = !ev.id;
   const when = ev.starts_at ? isoToParis(ev.starts_at) : { date: '', time: '11:00' };
   const end = ev.ends_at ? isoToParis(ev.ends_at).time : '12:30';
-  const past = ev.ends_at && Date.parse(ev.ends_at) < Date.now();
   const admin = ctx.profile.role === 'admin';
 
   f.date = el('input', { id: 'f-date', type: 'date', required: true, value: when.date });
@@ -238,15 +237,8 @@ function buildForm() {
       field('share_text_en', 'Share text', textarea('share_text_en', { rows: 4, maxlength: 1500 })),
     ),
 
-    el('details', { class: 'paper', open: Boolean(past) },
-      el('summary', {}, '7. Après l’action : le bilan'),
-      el('p', { class: 'small' }, 'Le bilan s’affiche sur la page de l’action une fois passée.'),
-      field('recap_participants', 'Nombre de personnes présentes', input('recap_participants', { type: 'number', min: 0, max: 100000, inputmode: 'numeric' })),
-      field('recap_text', 'Comment ça s’est passé', textarea('recap_text', { rows: 5, maxlength: 6000 })),
-      field('recap_links', 'Liens (presse, posts Instagram…)', textarea('recap_links', { rows: 3, maxlength: 2000, placeholder: 'Un lien https:// par ligne' })),
-    ),
-
-    admin && !isNew && el('section', { class: 'paper', id: 'attendees' }, el('h2', {}, 'Participant·es'), loading()),
+    !isNew && el('p', { class: 'paper small' }, 'Après l’action, le bilan (nombre de personnes présentes, récit, liens) et la liste des participant·es sont dans ',
+      el('a', { href: `${link('/espace/details/')}?id=${ev.id}#bilan` }, 'Détails'), '.'),
 
     el('div', { class: 'esp-savebar' },
       el('p', { class: 'small', id: 'save-state' }, isNew ? 'Nouvelle action' : `Modifiée le ${fmtDateTime(ev.updated_at)}`),
@@ -286,7 +278,6 @@ function collect() {
   if (wa && !(wa.startsWith('https://') && URL.canParse(wa))) problems.push('un lien WhatsApp valide (https://…)');
   if (problems.length) throw new Error(`Il manque ${problems.join(', ')}.`);
   const lat = f.lat.value ? Number(f.lat.value) : null;
-  const n = f.recap_participants.value;
   return {
     kind: kind(),
     status: f.status?.value || 'published',
@@ -313,9 +304,6 @@ function collect() {
     flyer_tagline: nn(f.flyer_tagline.value),
     flyer_place: nn(f.flyer_place.value),
     custom_poster: nn(f.custom_poster.value),
-    recap_participants: n === '' ? null : Math.max(0, Math.round(Number(n))),
-    recap_text: nn(f.recap_text.value),
-    recap_links: nn(f.recap_links.value),
   };
 }
 
@@ -396,36 +384,10 @@ async function loadStats() {
     fill(box,
       s(row.rsvps, 'j’y vais'), ctx.profile.role === 'admin' && row.rsvps_with_email ? el('span', { class: 'stat' }, `(${row.rsvps_with_email} avec email)`) : null,
       s(row.views, 'vues'), s(row.shares, 'partages'), s(row.newsletter, 'newsletter'), s(row.calendar, 'calendrier'),
+      el('a', { class: 'btn btn-ghost btn-small', href: `${link('/espace/details/')}?id=${ev.id}` }, 'Détails'),
       pageLink(`${SITE}/agenda/${ev.slug}/`));
   } catch {
     /* numbers are a bonus: never block the form */
-  }
-}
-
-async function loadAttendees() {
-  const box = $('#attendees');
-  if (!box) return;
-  try {
-    const rows = await api.attendees(ev.id);
-    const csv = () => {
-      // names come from the public form: a leading = + - @ would run as a formula in Excel, so it's prefixed with '
-      const esc = (s) => `"${String(s ?? '').replace(/^[=+\-@\t\r]/, "'$&").replace(/"/g, '""')}"`;
-      const text = ['prénom;email;inscrit le', ...rows.map((r) => [r.name, r.email, r.created_at].map(esc).join(';'))].join('\n');
-      const a = el('a', { href: URL.createObjectURL(new Blob(['﻿' + text], { type: 'text/csv' })), download: `participants-${ev.slug}.csv` });
-      a.click();
-    };
-    fill(box, 
-      el('h2', {}, `Participant·es (${rows.length})`),
-      el('p', { class: 'small' }, 'Visible par les admins uniquement. Les emails sont effacés 30 jours après l’action.'),
-      rows.length
-        ? el('div', { class: 'table-wrap' }, el('table', { class: 'esp-table' },
-            el('thead', {}, el('tr', {}, el('th', {}, 'Prénom / pseudo'), el('th', {}, 'Email'), el('th', {}, 'Inscrit·e le'))),
-            el('tbody', {}, rows.map((r) => el('tr', {}, el('td', {}, r.name), el('td', {}, r.email || '—'), el('td', {}, fmtDateTime(r.created_at)))))))
-        : el('p', {}, 'Personne pour l’instant.'),
-      rows.length > 0 && el('button', { class: 'btn btn-ghost btn-small', type: 'button', onclick: csv }, 'Exporter (CSV)'),
-    );
-  } catch (err) {
-    fill(box, el('h2', {}, 'Participant·es'), el('p', {}, errorText(err)));
   }
 }
 
@@ -443,7 +405,7 @@ async function main() {
     if (!ev) return fill(main, el('p', { class: 'paper' }, 'Action introuvable. ', el('a', { href: link('/espace/') }, 'Retour')));
   } else ev = {};
   fill(main, 
-    el('p', { class: 'small' }, el('a', { href: link('/espace/') }, '← Toutes les actions')),
+    el('p', { class: 'small' }, el('a', { href: link('/espace/') }, '← Actions')),
     el('h1', {}, ev.id ? ev.title : 'Nouvelle action'),
     ev.id && el('p', { class: 'stats ev-stats', id: 'ev-stats' }),
     buildForm(),
@@ -451,11 +413,7 @@ async function main() {
   refreshSuggestions();
   updatePreview();
   loadStats();
-  loadAttendees();
-  onReturn(() => {
-    loadStats();
-    loadAttendees();
-  });
+  onReturn(loadStats);
   addEventListener('beforeunload', (e) => {
     if (dirty) e.preventDefault();
   });

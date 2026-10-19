@@ -1,6 +1,6 @@
 // /espace/ — login, then the list of actions with their numbers.
 import { api, DEMO, SITE } from './api.js';
-import { el, fill, mount, header, link, toast, errorText, fmtDay, fmtTime, isPast, loading, pageLink, onReturn, secondFactor } from './ui.js';
+import { el, fill, mount, header, link, toast, errorText, fmtDay, fmtTime, isPast, loading, pageLink, onReturn, secondFactor, statusBadge, creator } from './ui.js';
 
 function loginView() {
   const msg = el('p', { class: 'form-msg', role: 'status' });
@@ -69,21 +69,23 @@ const stat = (n, label) => el('span', { class: 'stat' }, el('strong', {}, String
 
 function eventCard(e, admin) {
   const past = isPast(e);
-  const status = { cancelled: 'Annulée', postponed: 'Reportée' }[e.status];
   const pageUrl = `${SITE}/agenda/${e.slug}/`;
+  const details = `${link('/espace/details/')}?id=${e.id}`;
+  const recap = past && e.status === 'published' && e.recap_participants == null;
   return el(
     'li',
-    { class: `esp-card${past ? ' is-past' : ''}` },
+    { class: `esp-card${past || e.status === 'cancelled' ? ' is-past' : ''}` },
     el('div', { class: 'esp-card-date' }, el('span', {}, fmtDay(e.starts_at)), el('span', {}, fmtTime(e.starts_at))),
     el('div', { class: 'esp-card-body' },
-      el('h3', {}, e.title, status && el('span', { class: 'badge' }, status)),
-      el('p', { class: 'meta' }, e.city, e.creator_name && ` · par ${e.creator_name}`),
+      el('h3', {}, e.title, statusBadge(e)),
+      el('p', { class: 'meta' }, e.city, ' · par ', creator(e)),
       el('p', { class: 'stats' },
         stat(e.rsvps, 'j’y vais'), admin && e.rsvps_with_email ? el('span', { class: 'stat' }, `(${e.rsvps_with_email} avec email)`) : null,
         stat(e.views, 'vues'), stat(e.shares, 'partages'), stat(e.newsletter, 'newsletter'), stat(e.calendar, 'calendrier'),
         past && e.recap_participants ? stat(e.recap_participants, 'présent·es') : null),
       el('div', { class: 'esp-card-actions' },
-        el('a', { class: 'btn btn-primary btn-small', href: `${link('/espace/action/')}?id=${e.id}` }, past && !e.recap_participants ? 'Ajouter le bilan' : 'Modifier'),
+        el('a', { class: 'btn btn-primary btn-small', href: recap ? `${details}#bilan` : `${link('/espace/action/')}?id=${e.id}` }, recap ? 'Ajouter le bilan' : 'Modifier'),
+        el('a', { class: 'btn btn-ghost btn-small', href: details }, 'Détails'),
         pageLink(pageUrl),
         el('button', {
           class: 'btn btn-ghost btn-small',
@@ -130,7 +132,7 @@ async function loadList(ctx, main) {
   const now = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date());
   fill(main,
     el('div', { class: 'esp-head' },
-      el('h1', {}, 'Les actions'),
+      el('h1', {}, 'Actions'),
       el('a', { class: 'btn btn-primary', href: link('/espace/action/') }, '+ Nouvelle action')),
     el('p', {}, 'Tout le monde dans l’équipe peut modifier toutes les actions. Chaque enregistrement met le site à jour en 2 à 3 minutes.'),
     el('p', { class: 'small refresh' }, `Chiffres à jour à ${now}. `,
