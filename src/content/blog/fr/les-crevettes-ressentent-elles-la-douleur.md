@@ -41,4 +41,3 @@ C'est ce qu'on demande aux supermarchés : mettre fin aux pratiques les plus cru
 - Birch, J. et al. (2021). [*Review of the Evidence of Sentience in Cephalopod Molluscs and Decapod Crustaceans*](https://www.lse.ac.uk/News/News-Assets/PDFs/2021/Sentience-in-Cephalopod-Molluscs-and-Decapod-Crustaceans-Final-Report-November-2021.pdf). London School of Economics.
 - Barr, S., Laming, P. R., Dick, J. T. A. & Elwood, R. W. (2008). [*Nociception or pain in a decapod crustacean?*](https://doi.org/10.1016/j.anbehav.2007.07.004) Animal Behaviour.
 - Elwood, R. W. & Appel, M. (2009). *Pain experience in hermit crabs?* Animal Behaviour.
-- Shrimp Welfare Project. [*Do shrimps feel pain?*](https://www.shrimpwelfareproject.org/blog/do-shrimps-feel-pain)

@@ -13,7 +13,7 @@ Quand on pense aux animaux d'élevage, on pense aux vaches, aux cochons, aux pou
 
 ## Des chiffres qui donnent le vertige
 
-Rethink Priorities estime qu'environ **230 milliards de crevettes** vivent dans les élevages à n'importe quel moment de l'année : plus que n'importe quel autre animal d'élevage. Selon l'ICAW, environ **440 milliards** de crevettes d'élevage sont tuées chaque année, soit près de 14 000 chaque seconde. Et c'est sans compter les crevettes sauvages pêchées, encore plus nombreuses.
+Rethink Priorities estime qu'environ **230 milliards de crevettes** vivent dans les élevages à n'importe quel moment de l'année : plus que n'importe quel autre animal d'élevage. Selon Rethink Priorities, environ **440 milliards** de crevettes d'élevage sont tuées chaque année, soit près de 14 000 chaque seconde. Et c'est sans compter les crevettes sauvages pêchées, encore plus nombreuses.
 
 ## Loin des yeux
 

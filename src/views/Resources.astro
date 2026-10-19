@@ -38,7 +38,6 @@ const c =
           elevage: 'Élevage et chiffres',
           enquetes: 'Enquêtes et médias',
           debats: 'Débats',
-          organisations: 'Organisations',
         },
         enTag: 'EN',
       }
@@ -62,11 +61,10 @@ const c =
           elevage: 'Farming and numbers',
           enquetes: 'Investigations and media',
           debats: 'Debates',
-          organisations: 'Organisations',
         },
         enTag: 'EN',
       };
-const order = ['science', 'elevage', 'enquetes', 'debats', 'organisations'] as const;
+const order = ['science', 'elevage', 'enquetes', 'debats'] as const;
 const crumbs = [{ label: t.breadcrumbHome, href: route('home', lang) }, { label: c.h1 }];
 const jsonLd = [
   {
