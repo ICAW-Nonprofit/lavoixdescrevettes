@@ -30,6 +30,7 @@ export const site = {
     choices: [
       'Participer à des actions dans ma ville',
       'Organiser des actions dans ma ville',
+      'Actions en ligne',
       'Je ne suis pas intéressé-e',
     ],
   },

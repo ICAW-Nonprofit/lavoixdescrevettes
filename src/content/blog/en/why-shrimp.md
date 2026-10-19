@@ -13,7 +13,7 @@ When we think of farmed animals, we think of cows, pigs and chickens. Rarely of 
 
 ## Mind-boggling numbers
 
-Rethink Priorities estimates that around **230 billion shrimp** are alive on farms at any given moment: more than any other farmed animal. According to ICAW, around **440 billion** farmed shrimp are killed every year, nearly 14,000 every second. And that's without counting wild-caught shrimp, which are even more numerous.
+Rethink Priorities estimates that around **230 billion shrimp** are alive on farms at any given moment: more than any other farmed animal. According to Rethink Priorities, around **440 billion** farmed shrimp are killed every year, nearly 14,000 every second. And that's without counting wild-caught shrimp, which are even more numerous.
 
 ## Out of sight
 

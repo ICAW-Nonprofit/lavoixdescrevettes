@@ -17,9 +17,6 @@ const rss = lang === 'fr' ? '/rss.xml' : '/en/rss.xml';
     <div>
       <p class="footer-mark"><img src={url('/logo-bleu.svg')} alt="La Voix des Crevettes" width="875" height="655" loading="lazy" /></p>
       <p>{f.blurb}</p>
-      <p>
-        {f.with} <a href={site.icaw.url} rel="noopener" target="_blank">{site.icaw.name} ({site.icaw.short})</a>.
-      </p>
     </div>
     <div>
       <h2>{f.site}</h2>
@@ -37,7 +34,6 @@ const rss = lang === 'fr' ? '/rss.xml' : '/en/rss.xml';
       <ul>
         <li><a href={site.instagram} rel="noopener" target="_blank">Instagram</a></li>
         <li><a href={site.newsletter.hostedPage} rel="noopener" target="_blank">Newsletter</a></li>
-        <li><a href={site.icaw.url} rel="noopener" target="_blank">ICAW</a></li>
         <li><a href={url(rss)}>{f.rss}</a></li>
       </ul>
     </div>

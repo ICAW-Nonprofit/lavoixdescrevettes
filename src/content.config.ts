@@ -114,7 +114,7 @@ const resources = defineCollection({
   loader: file('src/content/resources.yaml'),
   schema: z.object({
     order: z.number(),
-    category: z.enum(['science', 'elevage', 'enquetes', 'debats', 'organisations']),
+    category: z.enum(['science', 'elevage', 'enquetes', 'debats']),
     title: z.string(),
     url: z.string().url(),
     source: z.string(),

@@ -107,7 +107,6 @@ export const ui = {
     footer: {
       blurb:
         "Groupe local d'actions organisées en France pour lutter contre les pires pratiques d'élevage des crevettes.",
-      with: 'Une initiative menée avec',
       follow: 'Suivre',
       site: 'Le site',
       legal: 'Légal',
@@ -124,7 +123,7 @@ export const ui = {
       firstName: 'Prénom',
       city: 'Ville',
       participate: 'Tu veux participer à des actions ?', // non-breaking space keeps « ? » on the line
-      choices: ['Participer à des actions dans ma ville', 'Organiser des actions dans ma ville', 'Juste recevoir les infos'],
+      choices: ['Participer à des actions dans ma ville', 'Organiser des actions dans ma ville', 'Actions en ligne', 'Juste recevoir les infos'],
       consent: "J'accepte de recevoir les emails de La Voix des Crevettes et de l'ICAW.",
       privacyLink: 'Données personnelles',
       submit: "Je m'inscris",
@@ -177,7 +176,6 @@ export const ui = {
     statusPostponed: 'Postponed',
     footer: {
       blurb: 'A grassroots group organising actions across France against the worst practices in shrimp farming.',
-      with: 'An initiative run with the',
       follow: 'Follow',
       site: 'Site',
       legal: 'Legal',
@@ -194,7 +192,7 @@ export const ui = {
       firstName: 'First name',
       city: 'City',
       participate: 'Would you like to take part in actions?',
-      choices: ['Join actions in my city', 'Organise actions in my city', 'Just get the news'],
+      choices: ['Join actions in my city', 'Organise actions in my city', 'Online actions', 'Just get the news'],
       consent: 'I agree to receive emails from La Voix des Crevettes and ICAW.',
       privacyLink: 'Personal data',
       submit: 'Sign me up',

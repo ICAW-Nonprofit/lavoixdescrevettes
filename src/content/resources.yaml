@@ -1,4 +1,4 @@
-# "Pour aller plus loin" links. category: science | elevage | enquetes | debats | organisations
+# "Pour aller plus loin" links. category: science | elevage | enquetes | debats
 - id: lse-2021
   order: 1
   category: science
@@ -10,16 +10,6 @@
   description:
     fr: Le rapport scientifique qui a conduit le Royaume-Uni à reconnaître les crustacés décapodes comme sentients.
     en: The scientific report that led the UK to recognise decapod crustaceans as sentient.
-- id: swp-pain
-  order: 2
-  category: science
-  title: Do shrimps feel pain?
-  url: https://www.shrimpwelfareproject.org/blog/do-shrimps-feel-pain
-  source: Shrimp Welfare Project
-  lang: en
-  description:
-    fr: Un tour d'horizon accessible des indices de douleur chez les crevettes (nocicepteurs, comportements de protection, apprentissage d'évitement).
-    en: An accessible overview of the evidence for pain in shrimp (nociceptors, protective behaviour, avoidance learning).
 - id: wiki-pain
   order: 3
   category: science
@@ -114,27 +104,6 @@
   description:
     fr: Les problèmes éthiques de l'élevage de crevettes et l'essor des alternatives végétales.
     en: The ethical problems of shrimp farming and the rise of plant-based alternatives.
-- id: kernel-who-cares
-  order: 12
-  category: enquetes
-  title: Who cares about the shrimp?
-  url: https://forum.effectivealtruism.org/posts/NGLCHHogG4op4b8rG/who-cares-about-the-shrimp
-  source: Alex Wennerberg, Kernel Magazine
-  lang: en
-  description:
-    fr: Un long portrait du Shrimp Welfare Project et des personnes qui se battent pour les crevettes.
-    en: A long-form portrait of the Shrimp Welfare Project and the people fighting for shrimp.
-- id: daily-show
-  order: 13
-  category: enquetes
-  title: The Daily Show did a segment on EA and shrimp welfare
-  url: https://forum.effectivealtruism.org/posts/LeCJqzdHZZB3uBhZg/the-daily-show-did-a-segment-on-ea-and-shrimp-welfare
-  source: EA Forum
-  year: 2025
-  lang: en
-  description:
-    fr: Quand le bien-être des crevettes passe au Daily Show, avec le Shrimp Welfare Project.
-    en: Shrimp welfare makes it onto The Daily Show, featuring the Shrimp Welfare Project.
 - id: ea-asphyxiation
   order: 14
   category: debats
@@ -155,33 +124,3 @@
   description:
     fr: Une analyse chiffrée (et discutée) des effets indirects des améliorations du bien-être des crevettes.
     en: A quantitative (and debated) analysis of the indirect effects of shrimp welfare improvements.
-- id: org-icaw
-  order: 16
-  category: organisations
-  title: International Council for Animal Welfare
-  url: https://www.i-caw.org/
-  source: ICAW
-  lang: en
-  description:
-    fr: L'association avec laquelle on mène nos actions, contre les pires pratiques d'élevage dans les chaînes d'approvisionnement.
-    en: The organisation we run our actions with, fighting the worst farming practices in corporate supply chains.
-- id: org-swp
-  order: 17
-  category: organisations
-  title: Shrimp Welfare Project
-  url: https://www.shrimpwelfareproject.org/
-  source: Shrimp Welfare Project
-  lang: en
-  description:
-    fr: L'organisation internationale qui travaille avec les producteurs et les distributeurs pour réduire la souffrance des crevettes.
-    en: The international organisation working with producers and retailers to reduce shrimp suffering.
-- id: org-rp
-  order: 18
-  category: organisations
-  title: Rethink Priorities
-  url: https://rethinkpriorities.org/
-  source: Rethink Priorities
-  lang: en
-  description:
-    fr: Le centre de recherche à l'origine de nombreuses estimations sur les animaux aquatiques d'élevage.
-    en: The research centre behind many estimates on farmed aquatic animals.
