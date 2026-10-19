@@ -1,6 +1,7 @@
 ---
 import { site } from '../config';
 import { route, url, ui, type Lang } from '../i18n';
+import supabase from '../supabase.json';
 
 interface Props {
   lang: Lang;
@@ -29,6 +30,8 @@ const id = `nl-${lang}`;
       data-sending={t.sending}
       data-error={t.error}
       data-error-link={t.errorLink}
+      data-track-url={supabase.url || undefined}
+      data-track-key={supabase.url ? supabase.anonKey : undefined}
     >
       <div class="form-grid">
         <div class="field">
