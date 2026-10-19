@@ -111,7 +111,7 @@ Admins see attendees' names and emails, so their login needs two things: the ema
 - **Backups**: every build copies the actions into `src/content/events.json` in the repo. If Supabase is ever down, the site still builds from that copy.
 - **Sleeping**: free Supabase projects pause after a week without activity. The daily rebuild (every morning) keeps it awake.
 - **Reminders**: sent every day around 17–18 h (Paris) to attendees of the next day's actions who left an email.
-- **Privacy**: attendees' emails are deleted 30 days after the action; organisers never see names or emails, only admins.
+- **Privacy**: attendees' emails are deleted 30 days after the action; organisers see attendees' first names (list and CSV), never their emails; only admins see emails.
 - **The token expires** after a year: generate a new one (step 5) and run `select vault.update_secret((select id from vault.secrets where name = 'github_token'), '<NEW TOKEN>');`.
 
 ### Where to see the logs
