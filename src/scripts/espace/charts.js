@@ -34,8 +34,9 @@ function barPath(x, y, w, h, r) {
 /**
  * Chart over days. points: [{ day: 'YYYY-MM-DD', value }], notes: [{ day, kind: 'A'|'M'|'B'|'N', label }].
  * tip(point) → extra tooltip lines. data: { cols, rows } for the « Voir les données » table.
+ * label2 (line charts only): a second series from points[].value2, drawn dashed (so it never relies on colour).
  */
-export function timeChart({ title, subtitle, kind = 'line', label, points, notes = [], summary, tip, data }) {
+export function timeChart({ title, subtitle, kind = 'line', label, label2, points, notes = [], summary, tip, data }) {
   const n = points.length;
   const index = new Map(points.map((p, i) => [p.day, i]));
   const notesByIdx = new Map();
@@ -55,7 +56,7 @@ export function timeChart({ title, subtitle, kind = 'line', label, points, notes
     const W = plot.clientWidth;
     if (!W || !n) return;
     const H = W < 520 ? 190 : 230;
-    const max = Math.max(0, ...points.map((p) => p.value));
+    const max = Math.max(0, ...points.map((p) => (label2 ? Math.max(p.value, p.value2) : p.value)));
     const step = niceStep(max);
     const yMax = Math.max(1, Math.ceil(max / step)) * step; // stop at the first clean step above the data
     const yLabels = Array.from({ length: yMax / step + 1 }, (_, k) => compact.format(k * step));
@@ -121,11 +122,14 @@ export function timeChart({ title, subtitle, kind = 'line', label, points, notes
       );
       const ey = yAt(points[n - 1].value);
       svg.append(svgEl('text', { class: 'end-label', x: xAt(n - 1) - 8, y: ey < T + 18 ? ey + 18 : ey - 10, 'text-anchor': 'end' }, fmtNum(points[n - 1].value)));
+      if (label2) svg.append(svgEl('path', { class: 'line line-2', d: points.map((p, i) => `${i ? 'L' : 'M'}${xAt(i)},${yAt(p.value2)}`).join('') }));
     }
     const cross = svgEl('line', { class: 'cross', y1: T, y2: T + ph, visibility: 'hidden' });
     const dot = svgEl('circle', { class: 'dot', r: 4, visibility: 'hidden' });
+    const dot2 = svgEl('circle', { class: 'dot dot-2', r: 4, visibility: 'hidden' });
     svg.append(cross, dot);
-    geo = { W, T, L, bw, xAt, yAt, bars, cross, dot, groups };
+    if (label2) svg.append(dot2); // detached (unused) otherwise
+    geo = { W, T, L, bw, xAt, yAt, bars, cross, dot, dot2, groups };
     if (cur != null) show(cur);
   }
 
@@ -145,10 +149,14 @@ export function timeChart({ title, subtitle, kind = 'line', label, points, notes
       geo.dot.setAttribute('cx', x);
       geo.dot.setAttribute('cy', geo.yAt(p.value));
       geo.dot.setAttribute('visibility', 'visible');
+      geo.dot2.setAttribute('cx', x);
+      geo.dot2.setAttribute('cy', geo.yAt(p.value2 || 0));
+      geo.dot2.setAttribute('visibility', 'visible');
     }
     fill(tipBox,
       el('p', { class: 'tip-date' }, fmtLong(p.day)),
       el('p', { class: 'tip-row' }, el('span', { class: `key key-${kind}`, 'aria-hidden': 'true' }), el('strong', {}, fmtNum(p.value)), ` ${label}`),
+      label2 && el('p', { class: 'tip-row' }, el('span', { class: 'key key-line-2', 'aria-hidden': 'true' }), el('strong', {}, fmtNum(p.value2)), ` ${label2}`),
       (tip ? tip(p) : []).map((t) => el('p', { class: 'tip-extra' }, t)),
       // a group spread over several days: each note with its own date
       (g?.items || []).map((nt) => el('p', { class: 'tip-note' }, noteKey(nt.kind), g.spread ? `${fmtTick(nt.day)} · ${nt.label}` : nt.label)));
@@ -162,7 +170,7 @@ export function timeChart({ title, subtitle, kind = 'line', label, points, notes
     cur = null;
     tipBox.hidden = true;
     svg.classList.remove('is-hovering');
-    if (geo) for (const m of [geo.cross, geo.dot]) m.setAttribute('visibility', 'hidden');
+    if (geo) for (const m of [geo.cross, geo.dot, geo.dot2]) m.setAttribute('visibility', 'hidden');
   }
   const at = (e) => Math.floor((e.clientX - plot.getBoundingClientRect().left - geo.L) / geo.bw);
   plot.addEventListener('pointermove', (e) => geo && show(at(e)));
@@ -183,6 +191,7 @@ export function timeChart({ title, subtitle, kind = 'line', label, points, notes
     el('figcaption', {}, el('h3', {}, title), el('p', { class: 'chart-sub' }, subtitle)),
     el('ul', { class: 'chart-legend' },
       el('li', {}, el('span', { class: `key key-${kind}`, 'aria-hidden': 'true' }), label),
+      label2 && el('li', {}, el('span', { class: 'key key-line-2', 'aria-hidden': 'true' }), label2),
       kinds.map((k) => el('li', {}, noteKey(k), NOTE_KINDS[k]))),
     n ? plot : el('p', { class: 'chart-empty' }, 'Pas encore de données.'),
     data && data.rows.length > 0 && el('details', { class: 'chart-data' }, el('summary', {}, 'Voir les données'), table(data.cols, data.rows)),

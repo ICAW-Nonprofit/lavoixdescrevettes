@@ -1,5 +1,6 @@
 // "Share this action": native share sheet with flyer + text on phones/tablets,
 // a panel of links (WhatsApp, Signal, Telegram, email, copy, download) on computers or older browsers.
+import { trackCampaign } from './campaign.js';
 
 const touch = matchMedia('(pointer: coarse)').matches;
 const files = new Map(); // flyer URL → File, prepared in advance: Safari only allows sharing right after the tap
@@ -34,16 +35,21 @@ for (const box of document.querySelectorAll('[data-share-event]')) {
   };
 
   btn.addEventListener('click', async () => {
-    if (!useNative) return togglePanel();
+    if (!useNative) {
+      if (panel.hidden) trackCampaign('share_click'); // opening the panel, not closing it
+      return togglePanel();
+    }
     const file = files.get(flyer);
     if (!file) prepare(flyer, flyerName); // not ready yet: share the text now, the flyer next time
     // Open the share sheet first (Safari only allows it right after the tap)…
     const sharing = navigator.share(file ? { files: [file], title, text } : { title, text });
+    trackCampaign('share_click');
     // …then best-effort copy of the text, because some apps (Instagram, WhatsApp on iPhone) keep only the image.
     let didCopy = false;
     if (file) navigator.clipboard?.writeText(text).then(() => (didCopy = true), () => {});
     try {
       await sharing;
+      trackCampaign('share_done'); // the phone says the share went through
       status.textContent = didCopy ? `${thanks} ${copied}` : thanks;
     } catch (err) {
       if (err && err.name === 'AbortError') return; // closed the share sheet

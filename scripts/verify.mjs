@@ -157,6 +157,11 @@ if (/<script|href="javascript:|"onclick/i.test(mdOut)) fail(`src/lib/md.ts: orga
     ['nextAction is null when none', calc.nextAction(rows.slice(0, 3), now) === null],
     ['cumulative fills missing days and keeps earlier totals', JSON.stringify(calc.cumulative([{ day: '2026-10-01', n: 2 }, { day: '2026-10-03', n: 1 }], '2026-10-02', '2026-10-04').map((d) => d.total)) === '[2,3,3]'],
     ['creatorLabel', calc.creatorLabel({ creator_status: 'deleted', creator_name: null }) === 'Compte supprimé' && calc.creatorLabel({ creator_status: 'team' }) === 'Équipe' && calc.creatorLabel({ creator_status: 'disabled', creator_name: 'Sam' }) === 'Sam'],
+    ['fallbackReason: gone, cancelled, over, postponed, other page', calc.fallbackReason(null, now) === 'deleted'
+      && calc.fallbackReason({ status: 'cancelled', ends_at: '2026-12-01T10:00:00Z' }, now) === 'cancelled'
+      && calc.fallbackReason({ status: 'published', ends_at: '2026-11-10T11:59:00Z' }, now) === 'ended'
+      && calc.fallbackReason({ status: 'postponed', ends_at: '2026-12-01T10:00:00Z' }, now) === null && calc.fallbackReason({}, now) === null],
+    ['pctOf', calc.pctOf(1, 3) === 33 && calc.pctOf(2, 3) === 67 && calc.pctOf(null, 4) === 0 && calc.pctOf(5, 0) === null],
     ['csvCell escapes formulas and quotes', ['=SUM(A1)', '+33 6', '-1', '@x', '\tx', 'a"b'].map(calc.csvCell).join() === `"'=SUM(A1)","'+33 6","'-1","'@x","'\tx","a""b"`],
   ];
   for (const [name, pass] of checks) if (!pass) fail(`src/scripts/espace/calc.js: ${name} is wrong.`);
@@ -193,6 +198,7 @@ if (routes.length < 20) fail('src/i18n.ts: could not read the routes (format cha
 const REQUIRED = [
   ...routes,
   '/404.html', '/en/404/', '/espace/', '/espace/action/', '/espace/admin/', '/espace/details/', '/espace/parametres/',
+  '/espace/campagnes/', '/espace/campagnes/details/',
   '/rss.xml', '/en/rss.xml', '/agenda.ics', '/en/events.ics', '/robots.txt', '/sitemap-index.xml', '/site.webmanifest',
   '/favicon.ico', '/favicon.svg', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png', '/logo.png',
   '/logo.svg', '/logo-navy.svg', '/logo-bleu.svg',
@@ -237,6 +243,18 @@ for (const e of events) {
 
 // Home page "next action" = the soonest action that isn't over or cancelled
 const now = Date.now();
+// Campaign links (the backup copy of the database): codes printed on flyers, so every one keeps its page
+let campaigns = [];
+try {
+  campaigns = JSON.parse(read('src/content/campaigns.json'));
+  if (!Array.isArray(campaigns)) throw new Error('not a list');
+} catch (e) {
+  fail(`src/content/campaigns.json: unreadable (${e.message}).`);
+  campaigns = [];
+}
+const CODE = /^[23456789abcdefghjkmnpqrstuvwxyz]{6}$/;
+for (const c of campaigns) if (!CODE.test(c.code_qr || '') || !CODE.test(c.code_link || '')) fail(`campaigns.json: invalid code "${c.code_qr}" / "${c.code_link}".`);
+
 const next = events
   .filter((e) => Date.parse(e.ends_at) >= now && e.status !== 'cancelled')
   .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at))[0];
@@ -300,6 +318,15 @@ for (const f of [...built].filter((f) => /^sitemap-\d+\.xml$/.test(f))) {
       const p = path.replace(/^\//, '') + (path.endsWith('/') ? 'index.html' : '');
       if (noindexPages.has(p)) fail(`${f}: ${loc} is noindex and shouldn't be in the sitemap (filter in astro.config.mjs).`);
     }
+  }
+}
+
+// Campaign links: a page for each code (QR and plain link), noindex (so out of the sitemap, checked above).
+// Their redirects are data-* links, already checked like every other link.
+for (const c of campaigns) {
+  for (const code of [c.code_qr, c.code_link]) {
+    if (!exists(`/c/${code}/`)) fail(`Missing campaign link page: /c/${code}/`);
+    else if (!noindexPages.has(`c/${code}/index.html`)) fail(`dist/c/${code}/index.html: campaign links must be noindex.`);
   }
 }
 

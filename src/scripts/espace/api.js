@@ -110,6 +110,15 @@ function realApi() {
     publishNow: async () => check(await sb.rpc('publish_now')),
     auditLog: async (limit = 200) => check(await sb.rpc('audit_recent', { p_limit: limit })) || [],
 
+    // campaigns (codes, author and dates are set by the database)
+    campaigns: async () => check(await sb.rpc('campaign_overview')) || [],
+    // shortcut: PostgREST returns at most 1000 rows (≈ 500 days of visits by QR and by link); sum in a function before then
+    campaignStats: async (id) => check(await sb.from('campaign_stats').select('day, channel, visits, rsvps, share_clicks, shares_done, newsletter').eq('campaign_id', id).order('day')) || [],
+    campaignHistory: async (id) => check(await sb.rpc('campaign_history', { p_id: id })) || [],
+    createCampaign: async (fields) => check(await sb.from('campaigns').insert(fields).select('id').single()),
+    updateCampaign: async (id, fields) => check(await sb.from('campaigns').update(fields).eq('id', id)),
+    archiveCampaign: async (id) => check(await sb.from('campaigns').update({ archived_at: new Date().toISOString() }).eq('id', id)),
+
     // two-factor login (required for admins): a 6-digit code from an authenticator app, on top of the email link
     async mfaStatus() {
       const { data, error } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
@@ -165,8 +174,28 @@ function demoApi() {
     const signups = Array.from({ length: 120 }, (_, i) => ({ day: parisDay(now - i * day), n: (spikes[i] || 0) + ((i * 7) % 5 === 0 ? 2 : i % 3 === 0 ? 1 : 0) }))
       .filter((r) => r.n)
       .reverse();
+    // campaigns: a flyer for the next action, posters for an article, an archived post whose action is over
+    const camp = (id, name, support, dest, ago, code_qr, code_link, extra) => ({
+      id, name, support, dest_event_id: dest.event || null, dest_page: dest.page || null, fallback_page: 'agenda',
+      code_qr, code_link, created_by: 'demo-orga', created_at: iso(now - ago * day), archived_at: null, archived_by: null, ...extra,
+    });
+    const campaigns = [
+      camp('demo-camp-flyers', 'Flyers marché Croix-Rousse', 'flyer', { event: soon.id }, 12, 'k7p2qa', 'x3m9tb'),
+      camp('demo-camp-affiches', 'Affiches fac Lyon 2', 'affiche', { page: 'blog/pourquoi-les-crevettes' }, 26, 'h4vn8r', 'p2wq7c', { created_by: 'demo-admin', fallback_page: 'home' }),
+      camp('demo-camp-insta', 'Post Instagram première action', 'instagram', { event: past.id }, 30, 'm6t3ks', 'd9fy4e', { archived_at: iso(now - 5 * day), archived_by: 'demo-admin' }),
+    ];
+    // visits per day and channel since each campaign started, with what visitors did next
+    const visitsFor = (c, seed, rsvps) =>
+      Array.from({ length: Math.round((now - Date.parse(c.created_at)) / day) + 1 }, (_, ago) => ago).flatMap((ago) =>
+        ['qr', 'link'].map((channel) => {
+          const visits = channel === 'qr' ? (ago * seed) % 7 : (ago * seed + 1) % 4;
+          return { day: parisDay(now - ago * day), channel, visits, rsvps: rsvps && visits > 4 ? 1 : 0, share_clicks: visits > 3 ? 1 : 0, shares_done: visits > 5 ? 1 : 0, newsletter: visits === 6 ? 1 : 0 };
+        })).filter((r) => r.visits).reverse();
+    const campaignStats = { [campaigns[0].id]: visitsFor(campaigns[0], 5, true), [campaigns[1].id]: visitsFor(campaigns[1], 3, false), [campaigns[2].id]: visitsFor(campaigns[2], 2, true) };
     return {
-      version: 2,
+      version: 3,
+      campaigns,
+      campaignStats,
       profile: { id: 'demo-admin', email: 'demo@example.org', display_name: 'Démo', city: 'Paris', role: 'admin' },
       events: [first, past, older, cancelled, soon],
       rsvps: {
@@ -202,7 +231,7 @@ function demoApi() {
   const load = () => {
     try {
       const saved = JSON.parse(sessionStorage.getItem(KEY));
-      return saved?.version === 2 ? saved : fresh(); // older demo data lacks the dashboard's numbers
+      return saved?.version === 3 ? saved : fresh(); // older demo data lacks the dashboard's numbers or the campaigns
     } catch {
       return fresh();
     }
@@ -337,6 +366,64 @@ function demoApi() {
     },
     publishNow: async () => wait(),
     auditLog: async () => wait(db.audit || []),
+    async campaigns() {
+      const name = (uid) => db.staff.find((p) => p.id === uid)?.display_name ?? null;
+      return wait(db.campaigns.map((c) => {
+        const ev = db.events.find((e) => e.id === c.dest_event_id);
+        const st = db.campaignStats[c.id] || [];
+        const sum = (k, ch) => st.reduce((a, r) => a + (!ch || r.channel === ch ? r[k] : 0), 0);
+        return {
+          ...c, dest_event_id: ev ? c.dest_event_id : null, creator_name: name(c.created_by),
+          event_slug: ev?.slug ?? null, event_title: ev?.title ?? null, event_starts_at: ev?.starts_at ?? null, event_ends_at: ev?.ends_at ?? null, event_status: ev?.status ?? null,
+          visits_qr: sum('visits', 'qr'), visits_link: sum('visits', 'link'), rsvps: sum('rsvps'), share_clicks: sum('share_clicks'), shares_done: sum('shares_done'), newsletter: sum('newsletter'),
+        };
+      }).sort((a, b) => b.created_at.localeCompare(a.created_at)));
+    },
+    campaignStats: async (id) => wait(structuredClone(db.campaignStats[id] || [])),
+    async campaignHistory(id) {
+      const c = db.campaigns.find((x) => x.id === id);
+      const name = (uid) => db.staff.find((p) => p.id === uid)?.display_name ?? null;
+      return wait(!c ? [] : [
+        { at: c.created_at, who: name(c.created_by), action: 'campaign.create', fields: null },
+        ...(db.audit || []).filter((a) => a.action === 'campaign.update' && a.target === c.code_link).map((a) => ({ at: a.at, who: a.who, action: a.action, fields: a.detail.fields })),
+        c.archived_at && { at: c.archived_at, who: name(c.archived_by), action: 'campaign.archive', fields: null },
+      ].filter(Boolean).sort((a, b) => a.at.localeCompare(b.at)));
+    },
+    async createCampaign(fields) {
+      const taken = (n) => db.campaigns.some((c) => c.name.toLowerCase() === n.toLowerCase());
+      if (taken(fields.name)) throw new ApiError('duplicate');
+      const codes = new Set(db.campaigns.flatMap((c) => [c.code_qr, c.code_link]));
+      const code = () => {
+        let s;
+        do s = Array.from({ length: 6 }, () => '23456789abcdefghjkmnpqrstuvwxyz'[Math.floor(Math.random() * 31)]).join('');
+        while (codes.has(s));
+        codes.add(s);
+        return s;
+      };
+      const c = { id: crypto.randomUUID(), ...fields, code_qr: code(), code_link: code(), created_by: db.profile.id, created_at: new Date().toISOString(), archived_at: null, archived_by: null };
+      db.campaigns.push(c);
+      log('campaign.create', c.code_link);
+      save();
+      return wait({ id: c.id });
+    },
+    async updateCampaign(id, fields) {
+      const c = db.campaigns.find((x) => x.id === id);
+      if (fields.name && db.campaigns.some((x) => x.id !== id && x.name.toLowerCase() === fields.name.toLowerCase())) throw new ApiError('duplicate');
+      const changed = Object.keys(fields).filter((k) => fields[k] !== c[k]).sort();
+      Object.assign(c, fields);
+      if (changed.length) log('campaign.update', c.code_link, { fields: changed });
+      save();
+      await wait();
+    },
+    async archiveCampaign(id) {
+      const c = db.campaigns.find((x) => x.id === id);
+      if (!c.archived_at) {
+        Object.assign(c, { archived_at: new Date().toISOString(), archived_by: db.profile.id });
+        log('campaign.archive', c.code_link);
+      }
+      save();
+      await wait();
+    },
     // demo: no QR code, any 6 digits work
     mfaStatus: async () => ({ level: db.aal || 'aal1', hasFactor: Boolean(db.mfa) }),
     mfaEnroll: async () => wait({ factorId: 'demo-factor', qr: null, secret: 'DEMO DEMO DEMO DEMO' }),

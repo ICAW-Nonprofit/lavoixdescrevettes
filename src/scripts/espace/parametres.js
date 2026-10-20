@@ -106,6 +106,9 @@ const WHAT = {
   'invitation.delete': 'Invitation annulée',
   login: 'Connexion',
   'attendees.view': 'Liste des participant·es ouverte',
+  'campaign.create': 'Campagne créée',
+  'campaign.update': 'Campagne modifiée',
+  'campaign.archive': 'Campagne archivée',
 };
 const ROLE = { admin: 'admin', organizer: 'orga', disabled: 'désactivé' };
 const FIELD = {
@@ -114,10 +117,12 @@ const FIELD = {
   summary: 'résumé', summary_en: 'résumé EN', description: 'description', description_en: 'description EN',
   share_text: 'texte de partage', share_text_en: 'texte de partage EN', whatsapp_url: 'WhatsApp', custom_poster: 'affiche',
   flyer_tagline: 'affiche', flyer_place: 'affiche', recap_participants: 'bilan', recap_text: 'bilan', recap_links: 'bilan',
+  // campaigns
+  name: 'nom', dest_event_id: 'destination', dest_page: 'destination', fallback_page: 'page de secours',
 };
 function logDetail(r) {
   const d = r.detail || {};
-  if (r.action === 'action.update' && Array.isArray(d.fields)) return [...new Set(d.fields.map((f) => FIELD[f] || f))].join(', ');
+  if ((r.action === 'action.update' || r.action === 'campaign.update') && Array.isArray(d.fields)) return [...new Set(d.fields.map((f) => FIELD[f] || f))].join(', ');
   if (r.action === 'action.delete') return d.title || '';
   if (r.action === 'account.role') return `${ROLE[d.from] || d.from} → ${ROLE[d.to] || d.to}`;
   return '';
@@ -132,7 +137,7 @@ async function journal(box) {
   }
   fill(box,
     el('h2', { class: 'esp-h2' }, 'Journal de sécurité'),
-    el('p', { class: 'small' }, 'Les 200 dernières opérations de l’espace orga : connexions, actions créées, modifiées ou supprimées, comptes et invitations, listes de participant·es ouvertes. Gardé un an. Le contenu des textes n’est pas enregistré, seulement les champs modifiés.'),
+    el('p', { class: 'small' }, 'Les 200 dernières opérations de l’espace orga : connexions, actions créées, modifiées ou supprimées, campagnes créées, modifiées ou archivées, comptes et invitations, listes de participant·es ouvertes. Gardé un an. Le contenu des textes n’est pas enregistré, seulement les champs modifiés.'),
     rows.length
       ? table(
           [

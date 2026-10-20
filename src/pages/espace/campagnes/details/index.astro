@@ -1,0 +1,14 @@
+---
+import Espace from '../../../../layouts/Espace.astro';
+import { getPosts, postSlug } from '../../../../lib/content';
+
+// French blog posts a campaign can point to (same as the campaign list).
+const pages = (await getPosts('fr')).map((p) => ({ slug: postSlug(p), title: p.data.title }));
+---
+
+<Espace title="Campagne · Espace organisation">
+  <div id="build-pages" hidden data-pages={JSON.stringify(pages)}></div>
+  <script>
+    import '../../../../scripts/espace/campaign-details.js';
+  </script>
+</Espace>

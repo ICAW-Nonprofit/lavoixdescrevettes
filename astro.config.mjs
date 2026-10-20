@@ -10,8 +10,8 @@ export default defineConfig({
   trailingSlash: 'always',
   integrations: [
     sitemap({
-      // noindex pages stay out: thank-you pages, 404, organiser space
-      filter: (page) => !/\/(merci|merci-newsletter|thanks|thanks-newsletter|404)\/$|\/espace\//.test(page),
+      // noindex pages stay out: thank-you pages, 404, organiser space, campaign links
+      filter: (page) => !/\/(merci|merci-newsletter|thanks|thanks-newsletter|404)\/$|\/espace\/|\/c\//.test(page),
     }),
   ],
   security: {

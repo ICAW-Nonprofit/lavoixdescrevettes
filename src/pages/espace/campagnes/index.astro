@@ -1,0 +1,14 @@
+---
+import Espace from '../../../layouts/Espace.astro';
+import { getPosts, postSlug } from '../../../lib/content';
+
+// French blog posts a campaign can point to. Passed as data (an attribute), not as a script, so the CSP has nothing to allow.
+const pages = (await getPosts('fr')).map((p) => ({ slug: postSlug(p), title: p.data.title }));
+---
+
+<Espace title="Campagnes · Espace organisation">
+  <div id="build-pages" hidden data-pages={JSON.stringify(pages)}></div>
+  <script>
+    import '../../../scripts/espace/campaigns.js';
+  </script>
+</Espace>

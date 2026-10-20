@@ -7,7 +7,8 @@ export const GET: APIRoute = ({ site }) => {
   const lines = [
     'User-agent: *',
     'Allow: /',
-    ...['/merci/', '/merci-newsletter/', '/en/thanks/', '/en/thanks-newsletter/'].map((p) => `Disallow: ${url(p)}`),
+    // /c/: campaign links (redirects printed as QR codes)
+    ...['/merci/', '/merci-newsletter/', '/en/thanks/', '/en/thanks-newsletter/', '/c/'].map((p) => `Disallow: ${url(p)}`),
     '',
     `Sitemap: ${abs('/sitemap-index.xml')}`,
   ];

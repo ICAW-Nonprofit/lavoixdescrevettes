@@ -145,7 +145,7 @@ export const creator = (r) =>
     ? el('span', { class: 'is-muted' }, creatorLabel(r), r.creator_status === 'disabled' && ' (désactivé·e)')
     : creatorLabel(r);
 
-/** Header of every organiser page: the tabs. Sub-pages of Actions (details, editor) keep that tab lit. */
+/** Header of every organiser page: the tabs. Sub-pages (action details and editor, campaign details) keep their tab lit. */
 export function header(ctx, current) {
   const admin = ctx?.profile?.role === 'admin';
   const staff = admin || ctx?.profile?.role === 'organizer';
@@ -156,6 +156,7 @@ export function header(ctx, current) {
     { class: 'esp-nav', 'aria-label': 'Espace organisation' },
     staff && tab('admin', '/espace/admin/', 'Tableau de bord'),
     tab('home', '/espace/', 'Actions', ['home', 'edit', 'details']),
+    staff && tab('campaigns', '/espace/campagnes/', 'Campagnes', ['campaigns', 'campaign']),
     admin && tab('settings', '/espace/parametres/', 'Paramètres'),
     el('span', { class: 'esp-nav-end' },
       el('a', { href: link('/') }, 'Voir le site ↗'),

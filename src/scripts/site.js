@@ -1,4 +1,5 @@
 // Small site-wide behaviours: mobile menu, sticky mobile CTA, expired "next action" ticket, share buttons.
+import { trackCampaign } from './campaign.js';
 
 /* ---------- mobile menu ---------- */
 const openBtn = document.querySelector('[data-menu-open]');
@@ -51,7 +52,10 @@ for (const box of document.querySelectorAll('[data-share]')) {
   const native = box.querySelector('[data-share-native]');
   if (native && navigator.share) {
     native.hidden = false;
-    native.addEventListener('click', () => navigator.share({ title, url }).catch(() => {}));
+    native.addEventListener('click', () => {
+      navigator.share({ title, url }).then(() => trackCampaign('share_done'), () => {});
+      trackCampaign('share_click');
+    });
   }
   box.querySelector('[data-share-copy]')?.addEventListener('click', async () => {
     try {
@@ -60,5 +64,6 @@ for (const box of document.querySelectorAll('[data-share]')) {
     } catch {
       prompt('', url);
     }
+    trackCampaign('share_click');
   });
 }

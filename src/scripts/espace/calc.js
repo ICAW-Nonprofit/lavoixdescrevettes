@@ -82,6 +82,21 @@ export function groupBy(rows, keyFn) {
   return [...m.values()].sort((a, b) => b.rsvps - a.rsvps);
 }
 
+/**
+ * Why a campaign link sends people to its fallback page, or null when it goes to its destination.
+ * dest: null when the action or the article no longer exists; { status, ends_at } for an action; {} for another page.
+ * Shared by the /c/<code>/ pages (build) and the organiser space (flag on the row).
+ */
+export function fallbackReason(dest, now = Date.now()) {
+  if (!dest) return 'deleted';
+  if (dest.status === 'cancelled') return 'cancelled';
+  if (dest.ends_at && new Date(dest.ends_at).getTime() < now) return 'ended';
+  return null;
+}
+
+/** n as a whole percentage of `of` (« % des visites »); null when `of` is 0. */
+export const pctOf = (n, of) => (of ? Math.round(((n || 0) / of) * 100) : null);
+
 /** One CSV cell. Names come from the public form: a leading = + - @ (or tab, CR) would run as a formula in a spreadsheet. */
 export const csvCell = (s) => `"${String(s ?? '').replace(/^[=+\-@\t\r]/, "'$&").replace(/"/g, '""')}"`;
 
