@@ -152,7 +152,7 @@ function demoApi() {
   const day = 86400000;
   const iso = (t) => new Date(t).toISOString();
   const fresh = () => {
-    const first = { ...seed[0], created_by: 'demo-admin' };
+    const first = { ...seed[0], created_by: 'demo-admin', created_at: iso(now - 10 * day) };
     const past = {
       ...seed[0],
       id: 'demo-past',
@@ -165,10 +165,11 @@ function demoApi() {
       recap_text: 'Une super première ! Merci à toutes et tous.',
       recap_links: '',
       created_by: 'demo-orga',
+      created_at: iso(now - 30 * day),
     };
-    const older = { ...past, id: 'demo-older', slug: 'action-crevettes-lyon-demo', title: 'Tractage pour les crevettes', city: 'Lyon', kind: 'tractage', starts_at: iso(now - 45 * day), ends_at: iso(now - 45 * day + 5400000), recap_participants: 22, recap_text: null, created_by: 'demo-gone' };
-    const cancelled = { ...past, id: 'demo-cancelled', slug: 'action-crevettes-marseille-demo', title: 'Rassemblement à Marseille', city: 'Marseille', status: 'cancelled', starts_at: iso(now - 8 * day), ends_at: iso(now - 8 * day + 5400000), recap_participants: null, recap_text: null };
-    const soon = { ...seed[0], id: 'demo-soon', slug: 'action-crevettes-nantes-demo', title: 'Action pour les crevettes à Nantes', city: 'Nantes', custom_poster: null, starts_at: iso(now + 30 * day), ends_at: iso(now + 30 * day + 5400000), created_by: null };
+    const older = { ...past, id: 'demo-older', slug: 'action-crevettes-lyon-demo', title: 'Tractage pour les crevettes', city: 'Lyon', kind: 'tractage', starts_at: iso(now - 45 * day), ends_at: iso(now - 45 * day + 5400000), recap_participants: 22, recap_text: null, created_by: 'demo-gone', created_at: iso(now - 52 * day) };
+    const cancelled = { ...past, id: 'demo-cancelled', slug: 'action-crevettes-marseille-demo', title: 'Rassemblement à Marseille', city: 'Marseille', status: 'cancelled', starts_at: iso(now - 8 * day), ends_at: iso(now - 8 * day + 5400000), recap_participants: null, recap_text: null, created_at: iso(now - 14 * day) };
+    const soon = { ...seed[0], id: 'demo-soon', slug: 'action-crevettes-nantes-demo', title: 'Action pour les crevettes à Nantes', city: 'Nantes', custom_poster: null, starts_at: iso(now + 30 * day), ends_at: iso(now + 30 * day + 5400000), created_by: null, created_at: iso(now - 2 * day) };
     // newsletter sign-ups via the site: a few a day, more after actions and media coverage
     const spikes = { 3: 18, 8: 4, 21: 14, 45: 9 };
     const signups = Array.from({ length: 120 }, (_, i) => ({ day: parisDay(now - i * day), n: (spikes[i] || 0) + ((i * 7) % 5 === 0 ? 2 : i % 3 === 0 ? 1 : 0) }))
@@ -193,7 +194,7 @@ function demoApi() {
         })).filter((r) => r.visits).reverse();
     const campaignStats = { [campaigns[0].id]: visitsFor(campaigns[0], 5, true), [campaigns[1].id]: visitsFor(campaigns[1], 3, false), [campaigns[2].id]: visitsFor(campaigns[2], 2, true) };
     return {
-      version: 3,
+      version: 4,
       campaigns,
       campaignStats,
       profile: { id: 'demo-admin', email: 'demo@example.org', display_name: 'Démo', city: 'Paris', role: 'admin' },
@@ -231,7 +232,7 @@ function demoApi() {
   const load = () => {
     try {
       const saved = JSON.parse(sessionStorage.getItem(KEY));
-      return saved?.version === 3 ? saved : fresh(); // older demo data lacks the dashboard's numbers or the campaigns
+      return saved?.version === 4 ? saved : fresh(); // older demo data lacks the dashboard's numbers, the campaigns or the actions' creation dates
     } catch {
       return fresh();
     }

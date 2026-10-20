@@ -1,7 +1,7 @@
 // Charts of the organiser space: plain SVG, no library. Light grid, legend on top, tooltip on hover, touch
 // and keyboard. Data marks are navy only; notes are lettered markers (A/M/B/N), so nothing relies on colour alone.
 import { el, fill, table } from './ui.js';
-import { fmtNum, fmtPct, pctDiff } from './calc.js';
+import { fmtNum } from './calc.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 function svgEl(tag, attrs = {}, text) {
@@ -195,27 +195,6 @@ export function timeChart({ title, subtitle, kind = 'line', label, label2, point
       kinds.map((k) => el('li', {}, noteKey(k), NOTE_KINDS[k]))),
     n ? plot : el('p', { class: 'chart-empty' }, 'Pas encore de données.'),
     data && data.rows.length > 0 && el('details', { class: 'chart-data' }, el('summary', {}, 'Voir les données'), table(data.cols, data.rows)),
-  );
-}
-
-/** This action vs the average of past actions: one row per number, bar = this action, tick = average. */
-export function bullets(rows) {
-  return el('div', { class: 'bullets' },
-    el('ul', { class: 'chart-legend' },
-      el('li', {}, el('span', { class: 'key key-bar', 'aria-hidden': 'true' }), 'Cette action'),
-      el('li', {}, el('span', { class: 'key key-avg', 'aria-hidden': 'true' }), 'Moyenne des actions passées')),
-    el('dl', { class: 'bullet-rows' },
-      rows.map((r) => {
-        const scale = Math.max(r.value, r.avg ?? 0, 1);
-        const bar = el('span', { class: 'bullet-bar' });
-        bar.style.width = `${(r.value / scale) * 100}%`;
-        const tick = r.avg == null ? null : el('span', { class: 'bullet-avg' });
-        if (tick) tick.style.left = `${(r.avg / scale) * 100}%`;
-        return el('div', { class: 'bullet' },
-          el('dt', {}, r.label),
-          el('dd', { class: 'bullet-track' }, bar, tick),
-          el('dd', { class: 'bullet-nums' }, el('strong', {}, fmtNum(r.value)), el('span', {}, ` · moy. ${fmtNum(r.avg)} · ${fmtPct(pctDiff(r.value, r.avg))}`)));
-      })),
   );
 }
 
