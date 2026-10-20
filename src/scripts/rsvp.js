@@ -2,6 +2,7 @@
 // Talks to Supabase's REST API directly (no library), with the public anon key.
 
 import { rpc } from './supabase-rpc.js';
+import { trackCampaign } from './campaign.js';
 
 const box = document.querySelector('[data-rsvp]');
 const tracker = document.querySelector('[data-track-slug]');
@@ -82,6 +83,7 @@ if (box) {
         localStorage.setItem(storeKey, JSON.stringify({ mail: Boolean(email) }));
       } catch {}
       showDone(Boolean(email));
+      trackCampaign('rsvp', slug); // came from a campaign link in this tab: counted for it (nothing if not)
       form.reset();
     } catch (err) {
       msg.textContent = i18n.errors[err.message] || i18n.errors.other;

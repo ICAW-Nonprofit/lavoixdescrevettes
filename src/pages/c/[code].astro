@@ -1,0 +1,89 @@
+---
+// Campaign links /c/<code>/ (QR code or plain link, see /espace/campagnes/): count the visit, then open the campaign's page.
+// Built from src/content/campaigns.json (codes and destinations only, copied by scripts/snapshot-events.mjs).
+// The destination is always one of our own pages. An action that's gone, cancelled or over, or an article that's gone,
+// sends people to the fallback page. French only: visitors switch language from there.
+import Seo from '../../components/Seo.astro';
+import campaigns from '../../content/campaigns.json';
+import events from '../../content/events.json';
+import { url, route, eventPath, postPath } from '../../i18n';
+import { getPosts, postSlug } from '../../lib/content';
+import { fallbackReason } from '../../scripts/espace/calc.js';
+
+export async function getStaticPaths() {
+  const posts = new Set((await getPosts('fr')).map(postSlug));
+  const byId = new Map(events.map((e) => [e.id, e]));
+  // page name stored in the database → our path, or null when the article no longer exists
+  const page = (p: string | null) =>
+    p === 'home' || p === 'agenda' || p === 'report' ? route(p, 'fr')
+    : p?.startsWith('blog/') && posts.has(p.slice(5)) ? postPath(p.slice(5), 'fr')
+    : null;
+  return campaigns.flatMap((c) => {
+    const ev = c.dest_event_id ? byId.get(c.dest_event_id) : undefined;
+    const to = ev ? eventPath(ev.slug, 'fr') : page(c.dest_page);
+    const fallback = page(c.fallback_page) || route('agenda', 'fr');
+    const useFallback = !to || fallbackReason(ev ?? {}) !== null; // gone or cancelled; "over" is checked again in the browser
+    const props = { to: useFallback ? fallback : to, fallback, ends: ev && !useFallback ? ev.ends_at : '' };
+    return [c.code_qr, c.code_link].map((code) => ({ params: { code }, props: { ...props, code } }));
+  });
+}
+
+const { to, fallback, ends, code } = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <Seo
+      lang="fr"
+      title="La Voix des Crevettes"
+      description="Groupe d'actions en France pour les crevettes, êtres sensibles. Actions de rue, campagnes de pression et infos pour mettre fin aux pires pratiques d'élevage."
+      noindex
+    />
+    <link rel="icon" href={url('/favicon.ico')} sizes="48x48" />
+    <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
+    <noscript><meta http-equiv="refresh" content={`0;url=${url(to)}`} /></noscript>
+  </head>
+  <body>
+    <main data-campaign={code} data-to={url(to)} data-fallback={url(fallback)} data-ends={ends}>
+      <a href={url(to)}>Continuer vers le site</a>
+    </main>
+  </body>
+</html>
+
+<script>
+  import { CAMPAIGN_KEY, trackCampaign } from '../../scripts/campaign.js';
+
+  const { campaign: code, to, fallback, ends } = document.querySelector('main').dataset;
+  const human = !navigator.webdriver;
+  try {
+    sessionStorage.setItem(CAMPAIGN_KEY, code);
+    // one visit per tab: scanning again or reloading doesn't count twice
+    if (human && !sessionStorage.getItem(`lvdc-c-${code}`)) {
+      sessionStorage.setItem(`lvdc-c-${code}`, '1');
+      trackCampaign('visit', null, code);
+    }
+  } catch {
+    if (human) trackCampaign('visit', null, code); // storage blocked: counted on each load, like action page views
+  } finally {
+    location.replace(ends && Date.now() > Date.parse(ends) ? fallback : to); // the action ended since the last build
+  }
+</script>
+
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: #9cb3f7;
+    font-family: system-ui, sans-serif;
+  }
+  a {
+    color: #00192e;
+    font-weight: 700;
+  }
+</style>

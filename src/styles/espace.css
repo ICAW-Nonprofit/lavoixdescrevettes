@@ -1000,3 +1000,67 @@ a.kpi:focus-visible {
 .refresh {
   margin-top: -6px;
 }
+
+/* ---------- campaigns ---------- */
+/* second series of a chart (QR scans vs link clicks): dashed, so it never relies on colour */
+.chart-svg .line-2 {
+  stroke-dasharray: 6 4;
+}
+.chart-svg .dot-2 {
+  fill: var(--blanc);
+  stroke: var(--marine);
+}
+.key-line-2 {
+  width: 14px;
+  height: 0;
+  border-top: 2px dashed var(--marine);
+  background: none;
+}
+.camp-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-bottom: 8px;
+}
+.camp-filters select {
+  width: auto;
+  max-width: 100%;
+}
+.camp-flag {
+  margin: 0;
+  font-weight: 700;
+}
+.qr-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--esp-line);
+}
+.qr-img {
+  width: 200px;
+  height: 200px;
+  border: 1px solid var(--esp-line);
+}
+.qr-side {
+  flex: 1 1 240px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+.qr-side p {
+  margin: 0;
+}
+.qr-panel code,
+.camp-links code {
+  word-break: break-all;
+}
+.camp-history {
+  margin: 0 0 12px;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 6px;
+}

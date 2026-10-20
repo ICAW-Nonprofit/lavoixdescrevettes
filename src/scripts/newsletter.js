@@ -2,9 +2,11 @@
 // With JS: submit through Mailchimp's JSONP endpoint, then go to our thank-you page.
 // Without JS: the form posts normally and Mailchimp shows its own confirmation page.
 import { rpc } from './supabase-rpc.js';
+import { trackCampaign } from './campaign.js';
 
 /** Anonymous count of the sign-up: site-wide, and for the last action page seen in this tab (if any). */
 function count(form) {
+  trackCampaign('newsletter'); // and for the campaign link this tab came from (if any)
   const { trackUrl: base, trackKey: key } = form.dataset;
   if (!base) return;
   let slug = null;
