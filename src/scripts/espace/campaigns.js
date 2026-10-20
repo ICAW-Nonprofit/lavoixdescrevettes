@@ -124,7 +124,7 @@ function filters() {
 
 function createForm() {
   const field = (key, label, control, hint) => el('div', { class: 'field' }, el('label', { for: `n-${key}` }, label, hint && el('span', { class: 'opt' }, ` ${hint}`)), control);
-  const name = el('input', { id: 'n-name', maxlength: 80, required: true, autocomplete: 'off', placeholder: 'Ex. : Flyers marché Croix-Rousse' });
+  const name = el('input', { id: 'n-name', type: 'text', maxlength: 80, required: true, autocomplete: 'off', placeholder: 'Ex. : Flyers marché Croix-Rousse' });
   const dest = destSelect('n-dest', events);
   const fallback = fallbackSelect('n-fallback');
   const support = el('div', { class: 'chips', role: 'radiogroup', 'aria-labelledby': 'n-support' },

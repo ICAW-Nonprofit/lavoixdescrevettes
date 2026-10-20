@@ -56,7 +56,7 @@ function numbers(stats) {
 
 function editForm() {
   const field = (key, label, control) => el('div', { class: 'field' }, el('label', { for: `f-${key}` }, label), control);
-  const name = el('input', { id: 'f-name', maxlength: 80, required: true, autocomplete: 'off', value: c.name });
+  const name = el('input', { id: 'f-name', type: 'text', maxlength: 80, required: true, autocomplete: 'off', value: c.name });
   const dest = destSelect('f-dest', events, c);
   const fallback = fallbackSelect('f-fallback', c.fallback_page);
   const btn = el('button', { class: 'btn btn-primary', type: 'submit' }, 'Enregistrer');
