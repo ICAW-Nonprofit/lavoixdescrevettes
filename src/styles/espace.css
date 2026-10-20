@@ -678,9 +678,11 @@ a.kpi:focus-visible {
   touch-action: pan-y;
   cursor: crosshair;
 }
+/* keyboard focus on a chart: a thin navy line only (no yellow ring from the site-wide focus style) */
 .chart-plot:focus-visible {
-  outline: 3px solid var(--marine);
+  outline: 2px solid var(--marine);
   outline-offset: 4px;
+  box-shadow: none;
 }
 .chart-svg {
   display: block;
