@@ -14,6 +14,8 @@ const routes = {
   thanksNewsletter: { fr: '/merci-newsletter/', en: '/en/thanks-newsletter/' },
   legal: { fr: '/mentions-legales/', en: '/en/legal-notice/' },
   privacy: { fr: '/confidentialite/', en: '/en/privacy/' },
+  // private preview of a draft blog post (noindex, kept out of the sitemap, disallowed in robots.txt)
+  preview: { fr: '/apercu/', en: '/en/preview/' },
 } as const;
 export type RouteKey = keyof typeof routes;
 
@@ -99,6 +101,7 @@ export const ui = {
     noUpcoming: "Pas d'action prévue pour l'instant. Inscris-toi à la newsletter pour être prévenu·e de la prochaine.",
     minRead: 'min de lecture',
     by: 'Par',
+    by: 'Par',
     sources: 'Sources',
     related: 'À lire aussi',
     otherLang: 'Read in English',
@@ -168,6 +171,7 @@ export const ui = {
     past: 'Past actions',
     noUpcoming: 'No action planned right now. Sign up to the newsletter to hear about the next one.',
     minRead: 'min read',
+    by: 'By',
     by: 'By',
     sources: 'Sources',
     related: 'Read next',

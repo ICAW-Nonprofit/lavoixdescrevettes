@@ -5,8 +5,9 @@ import { getEvents } from '../lib/content';
 interface Props {
   lang: Lang;
   alternates?: Partial<Record<Lang, string>>;
+  switchHref?: string;
 }
-const { lang, alternates = {} } = Astro.props;
+const { lang, alternates = {}, switchHref: switchTo } = Astro.props;
 const t = ui[lang];
 const other: Lang = lang === 'fr' ? 'en' : 'fr';
 const { next } = await getEvents();
@@ -24,7 +25,7 @@ const links = [
   { href: url(route('contact', lang)), label: t.nav.contact, desktop: false },
 ];
 const isCurrent = (href: string) => here === href || (href !== url(route('home', lang)) && here.startsWith(href));
-const switchHref = url(alternates[other] ?? route('home', other));
+const switchHref = url(alternates[other] ?? switchTo ?? route('home', other));
 ---
 
 <header class="site-header">

@@ -1,7 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { defineCollection } from 'astro:content';
 import { file, glob } from 'astro/loaders';
 import { z } from 'astro/zod';
+import { blocksText } from './lib/blocks.js';
 
 const l10n = z.object({ fr: z.string(), en: z.string() });
 
@@ -85,9 +87,59 @@ const events = defineCollection({
   }),
 });
 
-/** Blog posts live in blog/fr and blog/en; translations share a translationKey. */
+/**
+ * Blog posts: Markdown files in blog/fr and blog/en (written by the team in the repo), plus the posts published from the
+ * organiser space, which scripts/snapshot-events.mjs copies into src/content/posts.json (published versions only).
+ * Translations share a translationKey (for database posts: the French post's id). A database post never replaces a
+ * Markdown post with the same address, and one post that doesn't fit the schema is skipped, never failing the build.
+ */
+const markdownPosts = glob({ pattern: '**/*.md', base: './src/content/blog' });
+const CATEGORIES: Record<string, { fr: string; en: string }> = { science: { fr: 'Science', en: 'Science' }, campagne: { fr: 'Campagne', en: 'Campaign' } };
+const postsFile = resolve('src/content/posts.json');
 const blog = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/blog' }),
+  loader: {
+    name: 'blog',
+    load: async (ctx) => {
+      // shortcut: in `astro dev`, editing a Markdown post re-runs only the glob loader, which drops the database posts
+      // until the dev server restarts; the build always runs this whole function.
+      await markdownPosts.load(ctx);
+      const rows = JSON.parse(readFileSync(postsFile, 'utf8')) as any[];
+      for (const r of rows) {
+        const id = `${r.lang}/${r.slug}`;
+        if (ctx.store.has(id)) {
+          ctx.logger.warn(`posts.json: ${id} has the address of a Markdown post, skipped.`);
+          continue;
+        }
+        const hasCover = typeof r.cover_path === 'string' && existsSync(resolve('src/assets/blog-media', r.cover_path));
+        try {
+          const data = await ctx.parseData({
+            id,
+            filePath: postsFile,
+            data: {
+              title: r.title,
+              description: r.summary,
+              lang: r.lang,
+              translationKey: r.translation_key,
+              date: r.publish_date,
+              updated: r.published_at ?? undefined,
+              author: r.author,
+              category: CATEGORIES[r.category]?.[r.lang as 'fr' | 'en'] ?? 'Blog',
+              // a missing image (Supabase down on a first build, invalid file) falls back to the yellow shrimp drawing
+              cover: hasCover ? `../assets/blog-media/${r.cover_path}` : '../assets/brand/crevette-jaune-transparente.png',
+              coverAlt: hasCover ? r.cover_alt : r.lang === 'fr' ? 'Dessin d’une crevette vivante, jaune' : 'Drawing of a living yellow shrimp',
+              coverStyle: hasCover ? 'photo' : 'drawing',
+              coverCredit: hasCover ? r.cover_credit : undefined,
+              blocks: Array.isArray(r.blocks) ? r.blocks : [],
+            },
+          });
+          // filePath: the covers' paths are relative to posts.json
+          ctx.store.set({ id, data, body: blocksText(r.blocks), filePath: 'src/content/posts.json' });
+        } catch (err) {
+          ctx.logger.warn(`posts.json: ${id} skipped (${(err as Error).message.split('\n')[0]}).`);
+        }
+      }
+    },
+  },
   schema: ({ image }) =>
     z.object({
       title: z.string().max(80),
@@ -102,6 +154,9 @@ const blog = defineCollection({
       coverAlt: z.string().min(5),
       coverStyle: z.enum(['photo', 'drawing']).default('photo'),
       draft: z.boolean().default(false),
+      /** posts from the organiser space: the body as blocks (rendered by src/lib/blocks.js), and the cover's credit */
+      blocks: z.array(z.any()).optional(),
+      coverCredit: z.string().optional(),
     }),
 });
 

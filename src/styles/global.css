@@ -1095,6 +1095,18 @@ select {
   max-height: 380px;
   margin-inline: auto;
 }
+/* images inside posts written in the organiser space (src/lib/blocks.js), framed like the cover */
+.prose .post-image {
+  border: var(--border);
+  box-shadow: var(--shadow);
+  margin: 32px 0;
+  overflow: hidden;
+}
+.prose .post-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 
 .paper {
   background: var(--blanc);

@@ -1,12 +1,12 @@
 // Blog: what a post needs before it can go live. The database checks the same rules in post_publish()
 // (supabase/migrations/20261021120000_blog_and_rights.sql): keep both in step. Used by the editor (to list what's
 // missing before publishing) and by the demo. No DOM here: scripts/verify.mjs tests it.
+import { IMAGE_PATH } from '../../lib/blocks.js';
 
 // Same list as scripts/verify.mjs: retailers are named only on action pages and the report page, never in the blog.
 export const RETAILERS =
   /(?<![a-z])(lidl|carrefour|leclerc|auchan|intermarch[ée]|mousquetaires|monoprix|franprix|aldi|casino|biocoop|grand frais|picard|syst[èe]me u|coop[ée]rative u)(?![a-zà-ÿ])/iu;
 const SHRIMP_EMOJI = /\u{1F990}/u;
-export const IMAGE_PATH = /^[0-9a-f-]{36}\.(jpg|png|webp)$/;
 
 /** Every image block, in document order (nested ones included). */
 export function imageBlocks(blocks) {
