@@ -25,6 +25,7 @@ grant execute on function auth.jwt() to anon, authenticated;
 create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
 create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text);
 alter table storage.objects enable row level security;
+grant select, insert, update, delete on storage.objects to anon, authenticated;
 create table vault.secrets (name text primary key, decrypted_secret text);
 create view vault.decrypted_secrets as select name, decrypted_secret from vault.secrets;
 create table net.calls (id serial, url text, body jsonb, headers jsonb);
@@ -41,10 +42,14 @@ for (const p of migrations) {
   const name = String(p).split('/').pop();
   // live data before the dashboard migration: newsletter sign-ups counted on an action page, to check the backfill
   if (name === '20261019120000_dashboard.sql') await db.exec(`insert into public.event_stats (event_id, day, newsletter) select id, '2026-01-15', 4 from public.events limit 1`);
+  // an account that exists before rights per account: it must keep the Actions right only
+  if (name === '20261021120000_blog_and_rights.sql') await db.exec(`insert into public.invitations (email) values ('ancien@example.com'); insert into auth.users (email) values ('ancien@example.com');`);
   try { await db.exec(strip(readFileSync(p, 'utf8'))); ok(`migration applies: ${name}`, true); }
   catch (e) { ok(`migration applies: ${name}`, false, e.message); process.exit(1); }
 }
 // No grants here: the default privileges above already match Supabase, so the migrations' own revokes and grants are what's tested.
+ok('an account created before rights per account keeps the Actions right only', (await db.query(`select rights from public.profiles where email = 'ancien@example.com'`)).rows[0]?.rights.join() === 'actions');
+await db.exec(`delete from auth.users where email = 'ancien@example.com'; delete from public.invitations where email = 'ancien@example.com';`);
 
 // ---------- helpers ----------
 // aal: 'aal2' = session confirmed with the authenticator-app code, 'aal1' = email link only
@@ -65,7 +70,7 @@ await q(`insert into public.invitations (email, role, display_name) values ('adm
 const admin = (await one(`insert into auth.users (email) values ('Admin@Example.com') returning id`)).id;
 ok('admin profile created with admin role', (await one(`select role from public.profiles where id = $1`, [admin])).role === 'admin');
 
-await as('authenticated', admin, () => q(`insert into public.invitations (email, display_name, city) values ('orga@example.com', 'Orga', 'Lyon')`));
+await as('authenticated', admin, () => q(`insert into public.invitations (email, display_name, city, rights) values ('orga@example.com', 'Orga', 'Lyon', '{actions,campaigns}')`));
 ok('admin can invite an organiser', !!(await one(`select 1 as x from public.invitations where email = 'orga@example.com'`)));
 await throws('admin cannot invite another admin from the app', () => as('authenticated', admin, () => q(`insert into public.invitations (email, role) values ('x@example.com', 'admin')`)), /row-level security/);
 const orga = (await one(`insert into auth.users (email) values ('orga@example.com') returning id`)).id;
@@ -174,14 +179,16 @@ const ov = await as('authenticated', orga, () => q(`select * from public.event_o
 const row = ov.find((r) => r.slug === 'action-test-paris');
 ok('organiser dashboard: counts per action', ov.length === 2 && row.rsvps === 16 && row.views === 2 && row.creator_name === 'Orga Lyon');
 ok('public gets no dashboard', (await as('anon', null, () => q(`select * from public.event_overview()`).catch(() => []))).length === 0);
-ok('sign-ups per day', (await as('authenticated', orga, () => q(`select * from public.rsvps_per_day(30)`))).reduce((a, r) => a + r.count, 0) === 16);
+ok('sign-ups per day (Tableau de bord: admins)', (await as('authenticated', admin, () => q(`select * from public.rsvps_per_day(30)`))).reduce((a, r) => a + r.count, 0) === 16);
+ok('organiser gets no sign-ups per day (Tableau de bord is admin-only)', (await as('authenticated', orga, () => q(`select * from public.rsvps_per_day(30)`))).length === 0);
 
 // site-wide newsletter counter: every sign-up on the site, with or without an action page
 ok('backfill: sign-ups already counted on action pages are in the site counter', (await one(`select newsletter from public.site_stats where day = '2026-01-15'`))?.newsletter === 4);
 await as('anon', null, () => q(`select public.track(null, 'newsletter')`));
 await as('anon', null, () => q(`select public.track('no-such-action', 'newsletter')`));
 await as('anon', null, () => q(`select public.track(null, null)`));
-const today = await as('authenticated', orga, () => one(`select newsletter from public.site_stats where day = (now() at time zone 'Europe/Paris')::date`));
+ok('organiser reads no site counter (Tableau de bord is admin-only)', (await as('authenticated', orga, () => q(`select * from public.site_stats`))).length === 0);
+const today = await as('authenticated', admin, () => one(`select newsletter from public.site_stats where day = (now() at time zone 'Europe/Paris')::date`));
 ok('newsletter sign-ups count site-wide (action page, no page, unknown page)', today.newsletter === 3);
 ok('a sign-up without an action page is not counted for an action', (await one(`select sum(newsletter)::int as n from public.event_stats`)).n === 1);
 await throws('public cannot read the site counter', () => as('anon', null, () => q(`select * from public.site_stats`)), /permission denied/);
@@ -190,15 +197,19 @@ await throws('organiser cannot write the site counter', () => as('authenticated'
 ok('admin without the app code cannot read the site counter', (await as('authenticated', admin, () => q(`select * from public.site_stats`), '{}', 'aal1')).length === 0);
 ok('admin reads the site counter', (await as('authenticated', admin, () => q(`select * from public.site_stats`))).length === 2);
 
-// notes on the dashboard chart
-const [note1] = await as('authenticated', orga, () => q(`insert into public.dashboard_notes (day, label) values ('2026-10-16', 'Passage radio') returning id, created_by`));
-ok('organiser adds a note (signed with their account)', note1.created_by === orga);
-await throws('organiser cannot add a note in someone else\'s name', () => as('authenticated', orga, () => q(`insert into public.dashboard_notes (day, label, created_by) values ('2026-10-16', 'x', '${admin}')`)), /row-level security/);
-await throws('empty note rejected', () => as('authenticated', orga, () => q(`insert into public.dashboard_notes (day, label) values ('2026-10-16', '   ')`)), /check/);
+// notes on the dashboard chart (Tableau de bord: admins only)
+const [note1] = await as('authenticated', admin, () => q(`insert into public.dashboard_notes (day, label) values ('2026-10-16', 'Passage radio') returning id, created_by`));
+ok('admin adds a note (signed with their account)', note1.created_by === admin);
+await throws('admin cannot add a note in someone else\'s name', () => as('authenticated', admin, () => q(`insert into public.dashboard_notes (day, label, created_by) values ('2026-10-16', 'x', '${orga}')`)), /row-level security/);
+await throws('empty note rejected', () => as('authenticated', admin, () => q(`insert into public.dashboard_notes (day, label) values ('2026-10-16', '   ')`)), /check/);
+await throws('organiser cannot add a note', () => as('authenticated', orga, () => q(`insert into public.dashboard_notes (day, label) values ('2026-10-16', 'x')`)), /row-level security/);
 const [note2] = await as('authenticated', admin, () => q(`insert into public.dashboard_notes (day, label) values ('2026-10-17', 'Note admin') returning id`));
-ok('the team reads every note', (await as('authenticated', orga, () => q(`select * from public.dashboard_notes`))).length === 2);
-ok('organiser cannot delete someone else\'s note', (await as('authenticated', orga, () => q(`delete from public.dashboard_notes where id = ${note2.id} returning id`))).length === 0);
-await throws('nobody edits a note (delete and add again)', () => as('authenticated', orga, () => q(`update public.dashboard_notes set label = 'Modifiée' where id = ${note1.id}`)), /permission denied/);
+await q(`insert into public.dashboard_notes (day, label, created_by) values ('2026-10-15', 'Note d’avant', '${orga}')`); // written before notes became admin-only
+ok('admins read every note', (await as('authenticated', admin, () => q(`select * from public.dashboard_notes`))).length === 3);
+ok('organiser reads no note', (await as('authenticated', orga, () => q(`select * from public.dashboard_notes`))).length === 0);
+ok('organiser cannot delete a note, even their own', (await as('authenticated', orga, () => q(`delete from public.dashboard_notes returning id`))).length === 0);
+ok('admin deletes an organiser\'s older note', (await as('authenticated', admin, () => q(`delete from public.dashboard_notes where created_by = '${orga}' returning id`))).length === 1);
+await throws('nobody edits a note (delete and add again)', () => as('authenticated', admin, () => q(`update public.dashboard_notes set label = 'Modifiée' where id = ${note1.id}`)), /permission denied/);
 await throws('public cannot read notes', () => as('anon', null, () => q(`select * from public.dashboard_notes`)), /permission denied/);
 await throws('public cannot add notes', () => as('anon', null, () => q(`insert into public.dashboard_notes (day, label) values ('2026-10-16', 'x')`)), /permission denied/);
 ok('admin without the app code reads no notes', (await as('authenticated', admin, () => q(`select * from public.dashboard_notes`), '{}', 'aal1')).length === 0);
@@ -333,6 +344,246 @@ const hist = await as('authenticated', orga, () => q(`select * from public.campa
 ok('history: created, then each edit with who and which fields', hist[0].action === 'campaign.create' && hist[0].who === 'Orga Lyon' && hist.some((h) => h.action === 'campaign.update' && h.who === 'Admin' && h.fields.includes('fallback_page')));
 ok('history: archived, with who', (await as('authenticated', admin, () => q(`select * from public.campaign_history('${c2.id}')`))).at(-1).action === 'campaign.archive');
 ok('public gets no campaign list or history', (await as('anon', null, () => q(`select * from public.campaign_overview()`).catch(() => []))).length === 0 && (await as('anon', null, () => q(`select * from public.campaign_history('${c1.id}')`).catch(() => []))).length === 0);
+
+// ---------- rights per account: every combination ----------
+const RIGHTS = ['actions', 'campaigns', 'blog'];
+const IMG = () => `${crypto.randomUUID()}.jpg`;
+const tried = async (fn) => { try { const r = await fn(); return Array.isArray(r) ? r.length > 0 : true; } catch { return false; } };
+const people = [];
+for (let m = 1; m < 8; m++) {
+  const r = RIGHTS.filter((_, i) => m & (1 << i));
+  const email = `droits${m}@example.com`;
+  await as('authenticated', admin, () => q(`insert into public.invitations (email, display_name, rights) values ($1, $2, $3)`, [email, `Droits ${m}`, r]));
+  people.push({ id: (await one(`insert into auth.users (email) values ($1) returning id`, [email])).id, r, label: r.join('+') });
+}
+ok('a new account gets the rights ticked on its invitation', (await one(`select rights from public.profiles where id = $1`, [people[6].id])).rights.join() === 'actions,campaigns,blog');
+await throws('an invitation needs at least one right', () => as('authenticated', admin, () => q(`insert into public.invitations (email, rights) values ('vide@example.com', '{}')`)), /check/);
+await throws('an invitation only gives known rights', () => as('authenticated', admin, () => q(`insert into public.invitations (email, rights) values ('x2@example.com', '{admin}')`)), /check/);
+const [fr0] = await as('authenticated', admin, () => q(`insert into public.posts (title) values ('Brouillon témoin') returning id`));
+// what each kind of account can do: [label, uid, aal, expected rights]
+const accounts = [...people.map((p) => [p.label, p.id, 'aal2', p.r]), ['admin', admin, 'aal2', RIGHTS], ['admin sans code', admin, 'aal1', []]];
+const probes = {
+  actions: [
+    (u, a, i) => as('authenticated', u, () => q(`insert into public.events (slug, title, city, summary, starts_at, ends_at) values ('droits-${i}', 'Titre ok', 'Paris', 'Résumé assez long', now() + interval '9 days', now() + interval '9 days 90 minutes') returning id`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`update public.events set access = 'Métro' where id = '${tom.id}' returning id`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`select * from public.event_overview()`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`select * from public.attendees('${tom.id}')`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`select * from public.event_stats`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`insert into storage.objects (bucket_id, name) values ('posters', 'droits.jpg')`), '{}', a).then(() => [1]),
+  ],
+  campaigns: [
+    (u, a, i) => as('authenticated', u, () => q(`insert into public.campaigns (name, support, dest_page) values ('Droits ${i}', 'flyer', 'home') returning id`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`select * from public.campaigns`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`update public.campaigns set fallback_page = 'agenda' where id = '${c1.id}' returning id`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`select * from public.campaign_overview()`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`select * from public.campaign_history('${c1.id}')`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`select * from public.campaign_stats`), '{}', a),
+  ],
+  blog: [
+    (u, a, i) => as('authenticated', u, () => q(`insert into public.posts (title) values ('Droits ${i}') returning id`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`select * from public.posts`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`update public.posts set summary = 'x' where id = '${fr0.id}' returning id`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`select * from public.post_list()`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`select * from public.post_versions`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`select public.post_preview_create('${fr0.id}')`), '{}', a),
+    (u, a) => as('authenticated', u, () => q(`insert into storage.objects (bucket_id, name) values ('blog', '${IMG()}')`), '{}', a).then(() => [1]),
+  ],
+};
+const adminOnly = [
+  (u, a) => as('authenticated', u, () => q(`select * from public.site_stats`), '{}', a),
+  (u, a) => as('authenticated', u, () => q(`select * from public.dashboard_notes`), '{}', a),
+  (u, a) => as('authenticated', u, () => q(`select * from public.rsvps_per_day(366)`), '{}', a),
+  (u, a) => as('authenticated', u, () => q(`select * from public.staff_list()`), '{}', a),
+  (u, a) => as('authenticated', u, () => q(`select * from public.audit_recent()`), '{}', a),
+  (u, a) => as('authenticated', u, () => q(`select public.set_rights('${people[0].id}', '{actions}')`), '{}', a),
+];
+await as('authenticated', admin, () => q(`insert into public.dashboard_notes (day, label) values ('2026-10-18', 'Témoin')`));
+let probe = 0;
+for (const [label, uid, aal, has] of accounts) {
+  for (const right of RIGHTS) {
+    const results = [];
+    for (const p of probes[right]) results.push(await tried(() => p(uid, aal, ++probe)));
+    const want = has.includes(right);
+    ok(`rights [${label}]: ${right} ${want ? 'allowed' : 'refused'} on every table, function and bucket`, results.every((x) => x === want), JSON.stringify(results));
+  }
+  const dash = [];
+  for (const p of adminOnly) dash.push(await tried(() => p(uid, aal)));
+  const wantDash = label === 'admin';
+  ok(`rights [${label}]: Tableau de bord and Paramètres ${wantDash ? 'allowed' : 'refused'}`, dash.every((x) => x === wantDash), JSON.stringify(dash));
+}
+await as('authenticated', admin, () => q(`select public.set_organizer_active('${people[6].id}', false)`));
+const off = [];
+for (const right of RIGHTS) for (const p of probes[right]) off.push(await tried(() => p(people[6].id, 'aal2', ++probe)));
+ok('rights [disabled account with every right]: nothing allowed', off.every((x) => !x), JSON.stringify(off));
+await as('authenticated', admin, () => q(`select public.set_organizer_active('${people[6].id}', true)`));
+const anonTries = [
+  await tried(() => as('anon', null, () => q(`select * from public.posts`))),
+  await tried(() => as('anon', null, () => q(`insert into public.posts (title) values ('x') returning id`))),
+  await tried(() => as('anon', null, () => q(`select * from public.post_versions`))),
+  await tried(() => as('anon', null, () => q(`select * from public.post_previews`))),
+  await tried(() => as('anon', null, () => q(`select * from public.post_list()`))),
+  await tried(() => as('anon', null, () => q(`select public.post_publish('${fr0.id}')`))),
+  await tried(() => as('anon', null, () => q(`insert into storage.objects (bucket_id, name) values ('blog', '${IMG()}')`)).then(() => [1])),
+  await tried(() => as('anon', null, () => q(`select public.set_rights('${people[0].id}', '{blog}')`))),
+];
+ok('rights [public]: no blog table, function or upload', anonTries.every((x) => !x), JSON.stringify(anonTries));
+
+// changing rights (admins only, logged)
+await as('authenticated', admin, () => q(`select public.set_rights('${people[0].id}', '{blog,actions,blog}')`));
+ok('admin changes an account\'s rights (duplicates removed, sorted)', (await one(`select rights from public.profiles where id = $1`, [people[0].id])).rights.join() === 'actions,blog');
+await throws('rights cannot be empty (use Désactiver)', () => as('authenticated', admin, () => q(`select public.set_rights('${people[0].id}', '{}')`)), /rights/);
+await throws('unknown rights refused', () => as('authenticated', admin, () => q(`select public.set_rights('${people[0].id}', '{actions,admin}')`)), /rights/);
+await throws('an admin\'s rights are not changed from the app', () => as('authenticated', admin, () => q(`select public.set_rights('${admin}', '{blog}')`)), /not found/);
+await throws('nobody writes rights directly', () => as('authenticated', people[0].id, () => q(`update public.profiles set rights = '{actions,campaigns,blog}' where id = '${people[0].id}'`)), /permission denied/);
+await as('authenticated', people[0].id, () => q(`update public.profiles set full_name = 'Droits Un' where id = '${people[0].id}'`));
+ok('everyone edits their own full name', (await one(`select full_name from public.profiles where id = $1`, [people[0].id])).full_name === 'Droits Un');
+ok('staff list shows the rights', (await as('authenticated', admin, () => q(`select rights from public.staff_list() where id = '${people[1].id}'`)))[0].rights.join() === 'campaigns');
+
+// ---------- blog ----------
+await as('authenticated', admin, () => q(`insert into public.invitations (email, display_name, rights) values ('plume@example.com', 'Plume', '{blog}'), ('relecture@example.com', 'Relecture', '{blog}')`));
+const writer = (await one(`insert into auth.users (email) values ('plume@example.com') returning id`)).id;
+const editor2 = (await one(`insert into auth.users (email) values ('relecture@example.com') returning id`)).id;
+await as('authenticated', writer, () => q(`update public.profiles set full_name = 'Plume Martin' where id = '${writer}'`));
+const W = (sql, params) => as('authenticated', writer, () => q(sql, params));
+const R = (sql, params) => as('authenticated', editor2, () => q(sql, params));
+const publishErr = async (fn) => { try { await fn(); return null; } catch (e) { return `${e.message}\n${e.detail || ''}`; } };
+const cover = IMG();
+const imgA = IMG();
+const goodBlocks = JSON.stringify([
+  { type: 'heading', props: { level: 2 }, content: [{ type: 'text', text: 'Sources', styles: {} }] },
+  { type: 'paragraph', content: [{ type: 'text', text: 'Les crevettes ressentent la douleur.', styles: { bold: true } }] },
+  { type: 'image', props: { path: imgA, alt: 'Une crevette vivante', credit: '' } },
+]);
+
+d0 = await dispatches();
+const [p1] = await W(`insert into public.posts (title, slug) values ('Pourquoi un blog ?', 'pourquoi-un-blog') returning *`);
+ok('writer creates a draft (signed with their account, Brouillon)', p1.author_id === writer && p1.status === 'brouillon' && p1.lang === 'fr');
+ok('creating a draft makes version 1 (who and when)', (await q(`select saved_by from public.post_versions where post_id = $1`, [p1.id]))[0]?.saved_by === writer);
+await throws('the browser cannot set a status', () => W(`insert into public.posts (title, status) values ('x', 'publie')`), /permission denied/);
+await throws('the browser cannot publish by editing the status', () => W(`update public.posts set status = 'publie' where id = '${p1.id}'`), /permission denied/);
+await throws('the browser cannot choose the live version', () => W(`update public.posts set published_version_id = 1 where id = '${p1.id}'`), /permission denied/);
+await throws('nobody deletes a post', () => as('authenticated', admin, () => q(`delete from public.posts where id = '${p1.id}'`)), /permission denied/);
+await throws('nobody writes versions directly', () => W(`insert into public.post_versions (post_id) values ('${p1.id}')`), /permission denied/);
+await throws('bad slug refused', () => W(`update public.posts set slug = 'Pas Bon' where id = '${p1.id}'`), /check/);
+await throws('a cover is one of our uploads, never a web address', () => W(`update public.posts set cover_path = 'https://example.com/x.jpg' where id = '${p1.id}'`), /check/);
+const [{ updated_at: u1 }] = await W(`update public.posts set summary = 'Un résumé assez long pour passer la règle des cinquante caractères.', category = 'science', blocks = $1 where id = '${p1.id}' returning updated_at`, [goodBlocks]);
+const [{ updated_at: u2 }] = await W(`update public.posts set summary = summary where id = '${p1.id}' returning updated_at`);
+ok('a save without changes adds no version and keeps the date', u2.getTime() === u1.getTime() && (await q(`select count(*)::int as n from public.post_versions where post_id = $1`, [p1.id]))[0].n === 2);
+ok('saving drafts never rebuilds the site', (await dispatches()) === d0);
+
+let err = await publishErr(() => W(`select public.post_publish('${p1.id}')`));
+ok('publishing an incomplete post is refused with the list of what is missing',
+  /incomplete/.test(err) && /Image de couverture/.test(err) && /Image 1 : crédit photo/.test(err) && !/Image 1 : texte alternatif/.test(err) && !/Catégorie/.test(err), err);
+await W(`update public.posts set cover_path = $1, cover_alt = 'Une crevette dans l’eau claire', cover_credit = 'Photo : Test', blocks = $2 where id = '${p1.id}'`,
+  [cover, goodBlocks.replace('"credit":""', '"credit":"Photo : Test"')]);
+await W(`update public.posts set title = 'Le blog de Lidl ?' where id = '${p1.id}'`);
+err = await publishErr(() => W(`select public.post_publish('${p1.id}')`));
+ok('a retailer name is refused in the blog (content rule)', /enseigne/.test(err) && /lidl/.test(err), err);
+await W(`update public.posts set title = 'Pourquoi un blog ? \u{1F990}' where id = '${p1.id}'`);
+ok('the shrimp emoji is refused (content rule)', /emoji crevette/.test(await publishErr(() => W(`select public.post_publish('${p1.id}')`))));
+const [{ updated_at: before }] = await W(`update public.posts set title = 'Pourquoi un blog ?' where id = '${p1.id}' returning updated_at`);
+await R(`update public.posts set summary = 'Un autre résumé, lui aussi assez long pour passer la règle des cinquante.' where id = '${p1.id}'`);
+ok('publishing with a stale copy is refused (someone saved in between)', /conflict/.test(await publishErr(() => W(`select public.post_publish('${p1.id}', $1)`, [before]))));
+ok('the stale save itself matches no row (the editor then offers « Enregistrer quand même »)', (await W(`update public.posts set title = 'Vieux' where id = '${p1.id}' and updated_at = $1 returning id`, [before])).length === 0);
+await W(`select public.post_publish('${p1.id}')`);
+const pub1 = await one(`select status, first_published_at, published_version_id, (select max(id) from public.post_versions where post_id = $1) as latest from public.posts where id = $1`, [p1.id]);
+ok('« Publier » puts the latest version live', pub1.status === 'publie' && pub1.first_published_at && pub1.published_version_id === pub1.latest);
+ok('publishing rebuilds the site once', (await dispatches()) === d0 + 1);
+const live = await as('anon', null, () => q(`select * from public.blog_published()`));
+ok('the build reads the live post: content, author label, translation key, no account ID',
+  live.length === 1 && live[0].slug === 'pourquoi-un-blog' && live[0].title === 'Pourquoi un blog ?' && live[0].author === 'La Voix des Crevettes'
+  && live[0].translation_key === p1.id && !JSON.stringify(live).includes(writer) && live[0].publish_date);
+
+// live post: slug locked, changes wait for « Publier les modifications »
+await W(`update public.posts set slug = 'nouveau-lien', title = 'Pourquoi un blog ? (v2)' where id = '${p1.id}'`);
+ok('a published post keeps its address', (await one(`select slug from public.posts where id = $1`, [p1.id])).slug === 'pourquoi-un-blog');
+ok('saved changes stay off the site until they are published', (await as('anon', null, () => q(`select title from public.blog_published()`)))[0].title === 'Pourquoi un blog ?');
+ok('the Blog tab flags unpublished changes', (await W(`select has_changes from public.post_list() where id = '${p1.id}'`))[0].has_changes === true);
+d0 = await dispatches();
+await W(`select public.post_publish('${p1.id}')`);
+ok('« Publier les modifications » puts them live and rebuilds', (await as('anon', null, () => q(`select title from public.blog_published()`)))[0].title === 'Pourquoi un blog ? (v2)' && (await dispatches()) === d0 + 1);
+
+// author shown
+await throws('only the author can sign with their own name', () => R(`update public.posts set author_display = 'nom' where id = '${p1.id}'`), /author/);
+await W(`update public.posts set author_display = 'nom' where id = '${p1.id}'`);
+await W(`select public.post_publish('${p1.id}')`);
+ok('the author signs with their full name', (await as('anon', null, () => q(`select author from public.blog_published()`)))[0].author === 'Plume Martin');
+await R(`update public.posts set title = 'Relu par une autre personne' where id = '${p1.id}'`);
+ok('someone else can edit a signed post without changing the signature', (await one(`select author_display from public.posts where id = $1`, [p1.id])).author_display === 'nom');
+await R(`update public.posts set author_display = 'collectif' where id = '${p1.id}'`);
+ok('anyone can switch back to « La Voix des Crevettes »', (await one(`select author_display from public.posts where id = $1`, [p1.id])).author_display === 'collectif');
+
+// slugs, English version
+await throws('a slug is unique per language', () => R(`insert into public.posts (title, slug) values ('Autre', 'pourquoi-un-blog')`), /duplicate|unique/);
+const [en1] = await R(`insert into public.posts (lang, translation_of, title, slug) values ('en', '${p1.id}', 'Why a blog?', 'pourquoi-un-blog') returning *`);
+ok('the English version may reuse the slug and links to its French post', en1.lang === 'en' && en1.translation_of === p1.id);
+await throws('one English version per French post', () => R(`insert into public.posts (lang, translation_of, title) values ('en', '${p1.id}', 'Again')`), /duplicate|unique/);
+await throws('an English post needs its French post', () => R(`insert into public.posts (lang, title) values ('en', 'Alone')`), /check/);
+await throws('an English post translates a French post only', () => R(`insert into public.posts (lang, translation_of, title) values ('en', '${en1.id}', 'Of English')`), /translation/);
+await R(`update public.posts set summary = 'A summary that is long enough to pass the fifty character rule.', category = 'science', cover_path = $1, cover_alt = 'A shrimp in clear water', cover_credit = 'Photo: Test' where id = '${en1.id}'`, [cover]);
+const [p2] = await W(`insert into public.posts (title, slug, summary, category, cover_path, cover_alt, cover_credit) values ('Brouillon FR', 'brouillon-fr', 'Un résumé assez long pour passer la règle des cinquante caractères.', 'campagne', $1, 'Une crevette', 'Photo : Test') returning id`, [cover]);
+const [en2] = await W(`insert into public.posts (lang, translation_of, title, slug, summary, category, cover_path, cover_alt, cover_credit) values ('en', '${p2.id}', 'English draft', 'english-draft', 'A summary that is long enough to pass the fifty character rule.', 'campagne', $1, 'A shrimp', 'Photo: Test') returning id`, [cover]);
+ok('an English post cannot go live before its French post', /version française/.test(await publishErr(() => W(`select public.post_publish('${en2.id}')`))));
+await R(`select public.post_publish('${en1.id}')`);
+ok('both languages go live, linked by the French post', (await as('anon', null, () => q(`select lang, translation_key from public.blog_published()`))).filter((r) => r.translation_key === p1.id).length === 2);
+
+// unpublish, restore
+d0 = await dispatches();
+await R(`select public.post_trash('${p1.id}')`);
+const trashed = await q(`select lang, status from public.posts where id in ($1, $2)`, [p1.id, en1.id]);
+ok('« Dépublier » moves the French post and its English version to the Corbeille', trashed.every((r) => r.status === 'corbeille'));
+ok('unpublished posts leave the site (rebuild, gone from the build data)', (await dispatches()) > d0 && (await as('anon', null, () => q(`select * from public.blog_published()`))).length === 0);
+ok('nothing is deleted: the Corbeille keeps everything', (await q(`select count(*)::int as n from public.post_versions where post_id = $1`, [p1.id]))[0].n > 3);
+await R(`select public.post_restore('${p1.id}')`);
+ok('anyone with Blog rights restores: back to Brouillon, English version left in the Corbeille', (await one(`select status from public.posts where id = $1`, [p1.id])).status === 'brouillon' && (await one(`select status from public.posts where id = $1`, [en1.id])).status === 'corbeille');
+await R(`select public.post_trash('${p1.id}')`);
+await R(`select public.post_restore('${p1.id}', true)`);
+ok('restoring with its translation brings both back as drafts', (await q(`select status from public.posts where id in ($1, $2)`, [p1.id, en1.id])).every((r) => r.status === 'brouillon'));
+await R(`select public.post_trash('${p2.id}')`);
+await throws('a post in the Corbeille cannot be published', () => R(`select public.post_publish('${p2.id}')`), /trashed/);
+await R(`select public.post_restore('${p2.id}')`);
+
+// versions
+const hist1 = await W(`select * from public.post_history('${p1.id}')`);
+ok('history: every version, newest first, with who saved it', hist1.length > 4 && hist1[0].id > hist1[1].id && hist1.some((h) => h.who === 'Plume') && hist1.some((h) => h.who === 'Relecture'));
+const firstV = hist1.at(-1);
+const [{ post_restore_version: u3 }] = await W(`select public.post_restore_version(${firstV.id})`);
+const after = await W(`select * from public.post_history('${p1.id}')`);
+ok('restoring a version makes a new version (nothing lost)', after.length === hist1.length + 1 && after[0].restored_from === firstV.id && after[0].restored_from_at && u3);
+ok('the restored content is back, the address stays', (await one(`select title, slug from public.posts where id = $1`, [p1.id])).title === 'Pourquoi un blog ?' && (await one(`select slug from public.posts where id = $1`, [p1.id])).slug === 'pourquoi-un-blog');
+ok('restoring with a stale copy is refused', /conflict/.test(await publishErr(() => W(`select public.post_restore_version(${firstV.id}, '2000-01-01')`))));
+
+// preview links
+const [{ post_preview_create: tok }] = await W(`select public.post_preview_create('${p2.id}')`);
+ok('a preview token is 64 random hex characters', /^[0-9a-f]{64}$/.test(tok));
+const pv = await as('anon', null, () => q(`select * from public.blog_preview($1)`, [tok]));
+ok('the preview link shows that draft to someone logged out', pv.length === 1 && pv[0].title === 'Brouillon FR' && pv[0].author === 'La Voix des Crevettes' && pv[0].expires_at);
+ok('a wrong token shows nothing', (await as('anon', null, () => q(`select * from public.blog_preview($1)`, ['0'.repeat(64)]))).length === 0);
+ok('the preview link gives that one post only', !(await as('anon', null, () => q(`select * from public.blog_preview($1)`, [tok]))).some((r) => r.title === 'English draft'));
+const [{ post_preview_create: tok2 }] = await W(`select public.post_preview_create('${p2.id}')`);
+ok('a new link revokes the old one', (await as('anon', null, () => q(`select * from public.blog_preview($1)`, [tok]))).length === 0 && (await as('anon', null, () => q(`select * from public.blog_preview($1)`, [tok2]))).length === 1);
+await q(`update public.post_previews set expires_at = now() - interval '1 minute' where token = $1`, [tok2]);
+ok('an expired link shows nothing (7 days)', (await as('anon', null, () => q(`select * from public.blog_preview($1)`, [tok2]))).length === 0);
+const [{ post_preview_create: tok3 }] = await W(`select public.post_preview_create('${p2.id}')`);
+ok('a link lasts 7 days', (await one(`select expires_at - created_at = interval '7 days' as ok from public.post_previews where token = $1`, [tok3])).ok === true);
+await W(`select public.post_preview_revoke('${p2.id}')`);
+ok('a revoked link shows nothing', (await as('anon', null, () => q(`select * from public.blog_preview($1)`, [tok3]))).length === 0);
+const [{ post_preview_create: tok4 }] = await W(`select public.post_preview_create('${p2.id}')`);
+await W(`select public.post_trash('${p2.id}')`);
+ok('a post in the Corbeille is not previewable', (await as('anon', null, () => q(`select * from public.blog_preview($1)`, [tok4]))).length === 0);
+await throws('the public cannot read the preview links', () => as('anon', null, () => q(`select token from public.post_previews`)), /permission denied/);
+
+// images
+ok('Blog rights upload an image with a random name', await tried(() => W(`insert into storage.objects (bucket_id, name) values ('blog', '${IMG()}')`).then(() => [1])));
+ok('an upload name that is not ours is refused (no folders, no other types)', !(await tried(() => W(`insert into storage.objects (bucket_id, name) values ('blog', '../x.svg')`).then(() => [1]))));
+ok('the image bucket: public, 2 MB, JPEG/PNG/WebP only (no SVG)', (await one(`select public, file_size_limit, allowed_mime_types from storage.buckets where id = 'blog'`)).allowed_mime_types.join() === 'image/jpeg,image/png,image/webp');
+
+// security log for the blog and rights
+const blogLog = await as('authenticated', admin, () => q(`select * from public.audit_recent(1000)`));
+const logged = (action, target) => blogLog.some((r) => r.action === action && (!target || r.target === target));
+ok('log: publish, unpublish, trash, restore, version restore, preview links', ['post.publish', 'post.unpublish', 'post.trash', 'post.restore', 'post.version_restore', 'post.preview', 'post.preview_revoke'].every((a) => logged(a)) && logged('post.unpublish', 'en/pourquoi-un-blog'));
+ok('log: rights changed, from → to', blogLog.some((r) => r.action === 'account.rights' && r.target === 'droits1@example.com' && r.detail.from.join() === 'actions' && r.detail.to.join() === 'actions,blog'));
+ok('log: invitation with its rights', blogLog.some((r) => r.action === 'invitation.create' && r.target === 'plume@example.com' && r.detail.rights.join() === 'blog'));
 
 // ---------- security log ----------
 await as('authenticated', admin, () => q(`select * from public.attendees('${e1.id}')`)); // second look within the hour
