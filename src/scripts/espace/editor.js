@@ -1,6 +1,6 @@
 // /espace/action/ — create or edit an action, with a live flyer preview.
 import { api, SITE } from './api.js';
-import { el, fill, $, mount, header, link, toast, errorText, requireSession, parisToISO, isoToParis, slugify, fmtDateTime, loading, pageLink, onReturn } from './ui.js';
+import { el, fill, $, mount, header, link, toast, errorText, requireSession, requireRight, parisToISO, isoToParis, slugify, fmtDateTime, loading, pageLink, onReturn } from './ui.js';
 import { addressSearch } from './address.js';
 import { renderPreview, previewToJpeg } from './flyer-preview.js';
 import { defaultTagline, flyerDateLine, flyerPlaceLine } from '../../lib/flyer.js';
@@ -393,7 +393,7 @@ async function loadStats() {
 
 async function main() {
   ctx = await requireSession();
-  if (!ctx) return;
+  if (!ctx || !requireRight(ctx, 'actions', 'edit')) return;
   const main = el('main', { class: 'esp-main' }, loading());
   mount(header(ctx, 'edit'), main);
   if (id) {

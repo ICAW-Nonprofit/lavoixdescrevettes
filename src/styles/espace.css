@@ -502,6 +502,36 @@
   gap: 12px;
   align-items: center;
 }
+/* rights per account (Paramètres): one checkbox per right, 44 px rows */
+.rights-picker {
+  display: grid;
+}
+.field .rights-option,
+.rights-option {
+  min-height: 44px;
+  align-items: center;
+  font-stretch: 100%;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+.rights-option input {
+  margin-top: 0;
+  accent-color: var(--marine);
+}
+.rights-cell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+.rights-cell .rights-picker {
+  flex-basis: 100%;
+}
+.rights-cell .rights-option {
+  white-space: nowrap;
+}
 /* ---------- dashboard & details: flat cards, thin lines, tabular numbers ---------- */
 .esp-dash .paper {
   border: 1px solid var(--esp-line);

@@ -1,7 +1,7 @@
 // /espace/campagnes/ — a short link and a QR code per flyer, poster or post, and what visitors did during that visit.
 // The whole team sees and manages every campaign. Never deleted, only archived: QR codes are printed.
 import { api, SITE } from './api.js';
-import { el, fill, $, mount, header, link, toast, errorText, requireSession, loading, pageLink, onReturn, slugify, fmtDate } from './ui.js';
+import { el, fill, $, mount, header, link, toast, errorText, requireSession, requireRight, loading, pageLink, onReturn, slugify, fmtDate } from './ui.js';
 import { SUPPORTS, destSelect, fallbackSelect, readDest, destLabel, flagText, campaignError } from './campaign-ui.js';
 
 const mainEl = el('main', { class: 'esp-main' }, loading());
@@ -175,7 +175,7 @@ function createForm() {
 
 async function load() {
   try {
-    [rows, events] = await Promise.all([api.campaigns(), api.overview()]);
+    [rows, events] = await Promise.all([api.campaigns(), api.actionsBrief()]);
   } catch (err) {
     return fill(mainEl, el('p', { class: 'paper' }, errorText(err)));
   }
@@ -203,7 +203,7 @@ async function load() {
 
 async function main() {
   const ctx = await requireSession();
-  if (!ctx) return;
+  if (!ctx || !requireRight(ctx, 'campaigns', 'campaigns')) return;
   mount(header(ctx, 'campaigns'), mainEl);
   await load();
   // fresh numbers when coming back to this tab, unless something is being typed or a QR code is open

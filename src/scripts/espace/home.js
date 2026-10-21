@@ -1,6 +1,6 @@
 // /espace/ — login, then the list of actions with their numbers.
 import { api, DEMO, SITE } from './api.js';
-import { el, fill, mount, header, link, toast, errorText, fmtDay, fmtTime, isPast, loading, pageLink, onReturn, secondFactor, statusBadge, creator } from './ui.js';
+import { el, fill, mount, header, link, toast, errorText, fmtDay, fmtTime, isPast, loading, pageLink, onReturn, secondFactor, statusBadge, creator, can, firstTab } from './ui.js';
 
 function loginView() {
   const msg = el('p', { class: 'form-msg', role: 'status' });
@@ -111,6 +111,8 @@ async function dashboard(ctx) {
     fill(main, profileForm(ctx, start));
     return;
   }
+  // the login page lists actions: without that right, go to the first tab this account may open
+  if (!can(ctx, 'actions')) return location.replace(firstTab(ctx));
   await loadList(ctx, main);
   if (!listening) {
     listening = true;
