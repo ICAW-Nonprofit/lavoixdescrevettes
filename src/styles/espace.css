@@ -525,6 +525,16 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 12px;
+  max-width: 130px; /* wraps instead of widening the table (its cells don't wrap) */
+  white-space: normal;
+}
+.rights-cell:has(.rights-picker) {
+  max-width: 200px;
+}
+/* text buttons are white by default (they sit on blue or navy): on white cards and tables they are navy */
+.esp-table .linkish:not(.danger),
+.blog-page .linkish:not(.danger) {
+  color: var(--marine);
 }
 .rights-cell .rights-picker {
   flex-basis: 100%;

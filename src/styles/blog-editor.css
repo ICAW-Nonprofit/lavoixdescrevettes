@@ -225,6 +225,10 @@ img.ProseMirror-separator {
   .blog-page {
     padding-bottom: 240px;
   }
+  /* BlockNote keeps room on the left for its drag handle, which needs a mouse */
+  .blog-body .bn-editor {
+    padding-inline: 16px;
+  }
 }
 
 /* ---------- history ---------- */
@@ -241,6 +245,7 @@ img.ProseMirror-separator {
 }
 .blog-history h2 {
   margin: 0;
+  font-size: 1.8rem;
 }
 .history-list {
   list-style: none;
