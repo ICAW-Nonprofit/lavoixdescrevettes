@@ -353,3 +353,13 @@ img.ProseMirror-separator {
   background: var(--blanc);
   color: var(--marine);
 }
+/* focus in the title and the body: a thin navy border instead of the site's yellow ring (the caret shows where you type) */
+.espace .blog-title:focus-visible,
+.blog-body .bn-editor:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+.espace .blog-title:focus,
+.blog-body:focus-within {
+  border-color: var(--marine);
+}
