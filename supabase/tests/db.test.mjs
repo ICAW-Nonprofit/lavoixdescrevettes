@@ -237,12 +237,15 @@ await q(`delete from public.events where slug in ('action-compte-supprime', 'act
 // ---------- reminders ----------
 await q(`insert into vault.secrets values ('brevo_api_key', 'xkeysib-test'), ('mail_from', 'contact@example.com')`);
 const [tom] = await insertEv(orga, { ...ev, slug: 'action-demain', title: 'Action <demain> & co' }, '1 day');
-await q(`update public.events set starts_at = date_trunc('day', now() at time zone 'Europe/Paris') at time zone 'Europe/Paris' + interval '1 day 11 hours', ends_at = date_trunc('day', now() at time zone 'Europe/Paris') at time zone 'Europe/Paris' + interval '1 day 12 hours 30 minutes' where id = '${tom.id}'`);
+await q(`update public.events set /* tomorrow 11:00 Paris wall-clock time, right even when the clocks change */ starts_at = ((now() at time zone 'Europe/Paris')::date + 1 + time '11:00') at time zone 'Europe/Paris', ends_at = ((now() at time zone 'Europe/Paris')::date + 1 + time '12:30') at time zone 'Europe/Paris' where id = '${tom.id}'`);
 await as('anon', null, () => q(`select public.rsvp('action-demain', 'Léa <b>', 'lea@example.com')`));
 await as('anon', null, () => q(`select public.rsvp('action-demain', 'Sans email')`));
 const n1 = (await one(`select public.send_reminders() as n`)).n;
-const mail = await one(`select body from net.calls where url = 'https://api.brevo.com/v3/smtp/email' order by id desc limit 1`);
-ok('reminder sent only to attendees with an email', n1 === 1);
+// only this action's mail: near midnight, other test actions ("in 2 days") can also fall on tomorrow in Paris
+const mail = await one(`select body from net.calls where url = 'https://api.brevo.com/v3/smtp/email' and body::text like '%lea@example.com%' order by id desc limit 1`);
+const sentTom = await one(`select count(*) filter (where r.email is not null)::int as with_email, count(*) filter (where r.email is null)::int as without
+  from public.rsvps r join public.events e on e.id = r.event_id where e.slug = 'action-demain' and r.reminder_sent_at is not null`);
+ok('reminder sent only to attendees with an email', n1 >= 1 && sentTom.with_email === 1 && sentTom.without === 0);
 ok('reminder escapes titles in HTML', mail.body.htmlContent.includes('Action &lt;demain&gt; &amp; co'));
 ok('reminder never contains the name typed in the public form', !JSON.stringify(mail.body).includes('Léa'));
 ok('reminder has the French date', / à 11 h/.test(mail.body.htmlContent));
