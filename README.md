@@ -1,8 +1,4 @@
 # La Voix des Crevettes
-
-
-Built with [Astro](https://astro.build) (static site, French + English). The roadmap (PLAN.md) is kept locally, outside the repo.
-
 ## Editing content
 
 Everything lives in plain files under `src/content/`:
@@ -20,7 +16,7 @@ Everything lives in plain files under `src/content/`:
 
 ## Organiser space
 
-`/espace/`: organisers log in with an email link, create and edit actions (with a live flyer preview) and see their numbers; admins also invite organisers and see attendees and the dashboard. Until Supabase is set up it runs in demo mode (`/espace/?demo`). Setup: [SETUP.md](SETUP.md).
+`/espace/`: organisers log in with an email link, create and edit actions (with a live flyer preview) and see their numbers, admins also invite organisers and see attendees and the dashboard
 
 ## Running it locally
 
@@ -35,4 +31,3 @@ npm run dev
 ## Deploying
 
 Every push to `main` builds and deploys to GitHub Pages (`.github/workflows/deploy.yml`)
-To move to the real domain later: in `astro.config.mjs` set `site` to `https://lavoixdescrevettes.org` and remove `base`.
