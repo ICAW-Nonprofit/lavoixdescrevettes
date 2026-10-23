@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import { fileURLToPath } from 'node:url';
 
 // Prototype lives on GitHub Pages under /lavoixdescrevettes-prototype.
 // When the real domain arrives: set `site` to https://lavoixdescrevettes.org and remove `base`.
@@ -8,6 +9,15 @@ export default defineConfig({
   site: 'https://nicolas-cozzarin.github.io',
   base: '/lavoixdescrevettes-prototype',
   trailingSlash: 'always',
+  vite: {
+    resolve: {
+      // the blog editor's emoji picker is off: don't ship its data (it includes the shrimp emoji)
+      alias: {
+        '@emoji-mart/data': fileURLToPath(new URL('./src/scripts/espace/no-emoji.js', import.meta.url)),
+        'emoji-mart': fileURLToPath(new URL('./src/scripts/espace/no-emoji.js', import.meta.url)),
+      },
+    },
+  },
   integrations: [
     sitemap({
       // noindex pages stay out: thank-you pages, 404, private previews, organiser space, campaign links
