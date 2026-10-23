@@ -1095,6 +1095,15 @@ select {
   max-height: 380px;
   margin-inline: auto;
 }
+/* private preview of a draft post (views/PostPreview.astro) */
+.preview-banner {
+  background: var(--jaune);
+  color: var(--marine);
+  border-bottom: var(--border);
+  padding: 12px var(--gutter);
+  font-weight: 700;
+  text-align: center;
+}
 /* images inside posts written in the organiser space (src/lib/blocks.js), framed like the cover */
 .prose .post-image {
   border: var(--border);

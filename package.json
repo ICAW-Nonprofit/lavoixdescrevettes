@@ -15,10 +15,15 @@
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.4",
+    "@blocknote/ariakit": "0.55.0",
+    "@blocknote/core": "0.55.0",
+    "@blocknote/react": "0.55.0",
     "@resvg/resvg-js": "^2.6.2",
     "@supabase/supabase-js": "^2.118.0",
     "astro": "^7.4.0",
     "maplibre-gl": "^6.14.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "satori": "^0.62.0",
     "sharp": "^0.35.5",
     "uqr": "^0.1.3"

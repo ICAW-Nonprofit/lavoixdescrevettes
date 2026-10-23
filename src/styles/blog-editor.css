@@ -1,0 +1,350 @@
+/* Blog editor (/espace/blog/article/ only). */
+
+/* Tiptap's base styles: Tiptap normally injects them as a <style> tag, which the CSP blocks (injectCSS: false). */
+.ProseMirror {
+  position: relative;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  white-space: break-spaces;
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0;
+}
+.ProseMirror [contenteditable='false'] {
+  white-space: normal;
+}
+.ProseMirror [contenteditable='false'] [contenteditable='true'] {
+  white-space: pre-wrap;
+}
+img.ProseMirror-separator {
+  display: inline !important;
+  border: none !important;
+  margin: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.ProseMirror-gapcursor {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+  margin: 0;
+}
+.ProseMirror-gapcursor:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: -2px;
+  width: 20px;
+  border-top: 1px solid black;
+}
+.ProseMirror-hideselection *::selection {
+  background: transparent;
+}
+.ProseMirror-hideselection * {
+  caret-color: transparent;
+}
+.ProseMirror-focused .ProseMirror-gapcursor {
+  display: block;
+}
+
+/* ---------- page: title and body on the left, settings on the right (phone: title, settings, body) ---------- */
+.blog-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-areas: 'title' 'side' 'body';
+}
+.blog-main {
+  display: contents;
+}
+@media (min-width: 900px) {
+  .blog-grid {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-areas: 'title side' 'body side';
+    grid-template-rows: auto 1fr;
+    align-items: start;
+  }
+  .blog-side {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+  .blog-settings-wrap > summary {
+    display: none;
+  }
+}
+.espace textarea.blog-title {
+  grid-area: title;
+  display: block;
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  resize: none;
+  overflow: hidden;
+  border: 1px solid var(--esp-line);
+  background: var(--blanc);
+  padding: 20px clamp(16px, 3vw, 32px);
+  font-stretch: 75%;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: clamp(1.9rem, 5vw, 2.8rem);
+  line-height: 1.02;
+}
+.blog-title::placeholder {
+  color: var(--esp-muted);
+}
+.blog-body {
+  grid-area: body;
+  min-width: 0;
+  min-height: 55vh;
+  border: 1px solid var(--esp-line);
+  background: var(--blanc);
+  padding: 20px 0 40px;
+}
+.is-viewing .blog-body,
+.is-viewing .blog-title {
+  background: var(--bleu-pale);
+}
+.blog-side {
+  grid-area: side;
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  min-width: 0;
+}
+.blog-settings-wrap {
+  display: grid;
+  gap: 16px;
+}
+.blog-settings-wrap > summary {
+  justify-self: start;
+  cursor: pointer;
+  font-stretch: 75%;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 1.2rem;
+  background: var(--jaune);
+  border: var(--border);
+  padding: 0.3em 0.7em 0.2em;
+  min-height: 44px;
+}
+.blog-settings {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+.blog-card,
+.blog-actions {
+  background: var(--blanc);
+  border: 1px solid var(--esp-line);
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.blog-card h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+.blog-card p {
+  margin: 0;
+}
+.blog-card .field label,
+.blog-card .field .label {
+  font-size: 0.95rem;
+}
+.field-hint {
+  margin: 0;
+  color: var(--esp-muted);
+  overflow-wrap: anywhere;
+}
+.blog-status {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.blog-cover {
+  width: 100%;
+  aspect-ratio: 16 / 8;
+  object-fit: cover;
+  border: 1px solid var(--esp-line);
+}
+.blog-preview-url {
+  overflow-wrap: anywhere;
+  font-size: 0.85rem;
+}
+.blog-fullname summary {
+  cursor: pointer;
+  font-weight: 700;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.blog-fullname[open] {
+  display: grid;
+  gap: 10px;
+}
+.blog-alerts:not(:empty) {
+  margin-bottom: 16px;
+}
+.blog-alert {
+  border: var(--border);
+  background: var(--jaune);
+  box-shadow: none;
+  padding: 16px 20px;
+  display: grid;
+  gap: 8px;
+}
+.blog-alert p,
+.blog-alert ul {
+  margin: 0;
+}
+.blog-alert.is-version {
+  background: var(--blanc);
+}
+/* phone: the actions stay at the bottom of the screen */
+@media (max-width: 899px) {
+  .blog-actions {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    border: 0;
+    border-top: var(--border);
+    padding: 10px var(--gutter) calc(10px + env(safe-area-inset-bottom));
+    gap: 6px;
+  }
+  .blog-actions .esp-card-actions {
+    margin: 0;
+  }
+  .blog-page {
+    padding-bottom: 240px;
+  }
+}
+
+/* ---------- history ---------- */
+.blog-history {
+  width: min(640px, calc(100vw - 32px));
+  max-height: 85vh;
+  border: var(--border);
+  padding: 20px;
+  background: var(--blanc);
+  color: var(--marine);
+}
+.blog-history::backdrop {
+  background: rgb(0 25 46 / 0.55);
+}
+.blog-history h2 {
+  margin: 0;
+}
+.history-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.history-item {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--esp-line);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.history-item:hover,
+.history-item:focus-visible {
+  background: var(--bleu-pale);
+}
+
+/* ---------- BlockNote in the site's font and colours ---------- */
+.espace .bn-root {
+  --bn-font-family: var(--font);
+  --bn-colors-editor-text: var(--marine);
+  --bn-colors-editor-background: var(--blanc);
+  --bn-colors-menu-text: var(--marine);
+  --bn-colors-menu-background: var(--blanc);
+  --bn-colors-hovered-background: var(--bleu-pale);
+  --bn-colors-selected-background: var(--marine);
+  --bn-colors-selected-text: var(--jaune);
+  --bn-colors-side-menu: var(--esp-muted);
+  --bn-colors-border: var(--esp-line);
+  --bn-border-radius: 0;
+  --bn-border-radius-small: 0;
+  --bn-border-radius-large: 0;
+}
+.blog-body .bn-editor {
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+/* BlockNote writes Inter directly on its text, not only through the variable */
+.espace .bn-default-styles {
+  font-family: var(--font);
+}
+.blog-body [data-content-type='heading'] .bn-inline-content {
+  font-stretch: 75%;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+.blog-body [data-content-type='quote'] {
+  border-left: 4px solid var(--jaune);
+}
+.bn-post-image {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  border: 1px dashed var(--esp-faint);
+}
+.bn-post-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.bn-post-image-field {
+  display: grid;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.bn-post-image-field em {
+  font-style: normal;
+  color: #a3121f;
+}
+.bn-post-image-state,
+.bn-post-image-missing {
+  margin: 0;
+}
+/* BlockNote's menus: the site's navy and yellow instead of its blue */
+.espace .bn-ak-menu-item[data-active-item],
+.espace .bn-ak-menu-item[aria-selected='true'],
+.espace .bn-ak-menu-item:hover,
+.espace .bn-ak-select-item[data-active-item] {
+  background-color: var(--marine);
+  color: var(--jaune);
+}
+/* the date field, like the other fields (global.css styles text fields only) */
+.blog-card input[type='date'] {
+  font: inherit;
+  font-size: 1.1rem;
+  width: 100%;
+  min-height: 52px;
+  padding: 0.55em 0.75em;
+  border: var(--border);
+  border-radius: 0;
+  background: var(--blanc);
+  color: var(--marine);
+}
