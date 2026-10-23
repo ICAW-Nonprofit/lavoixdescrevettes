@@ -23,6 +23,8 @@ let draft; // the form's values
 let others = []; // post_list(): names, translations, taken addresses
 let editor; // { getBlocks, setBlocks, setEditable, focus }
 let dirty = false;
+let fieldsDirty = false; // a setting changed since the last save
+let baseline = ''; // the blocks as last saved or loaded (the editor also reports changes when content is reloaded)
 let silent = false; // blocks being replaced by the page, not typed
 let viewing = null; // an old version open read-only: { row, saved }
 let slugTouched = false;
@@ -43,10 +45,24 @@ const isAuthor = () => !post.author_id || post.author_id === ctx.user.id;
 const row = () => others.find((r) => r.id === post.id);
 const translation = () => (post.lang === 'fr' ? others.find((r) => r.translation_of === post.id) : others.find((r) => r.id === post.translation_of));
 
+/** A setting or the title changed. */
 function markDirty() {
   if (silent || viewing) return;
-  dirty = true;
+  fieldsDirty = dirty = true;
   renderBar();
+}
+
+/** The editor says the body changed: dirty only if it differs from what was last saved or loaded. */
+function bodyChanged() {
+  if (silent || viewing) return;
+  const was = dirty;
+  dirty = fieldsDirty || JSON.stringify(editor.getBlocks()) !== baseline;
+  if (dirty !== was) renderBar();
+}
+
+function markClean(blocks = editor.getBlocks()) {
+  baseline = JSON.stringify(blocks);
+  dirty = fieldsDirty = false;
 }
 
 function setBlocks(blocks) {
@@ -156,7 +172,7 @@ async function save({ force = false } = {}) {
       post = await api.savePost(post.id, f, force ? null : post.updated_at);
     }
     others = await api.posts();
-    dirty = false;
+    markClean(f.blocks);
     fill(alertBox);
     toast('Enregistré.');
     renderSide();
@@ -304,7 +320,7 @@ async function restoreVersion() {
     fromPost();
     setBlocks(post.blocks);
     editor.setEditable(true);
-    dirty = false;
+    markClean();
     fill(alertBox);
     toast('Version restaurée.');
     renderSide();
@@ -556,11 +572,12 @@ async function main() {
   renderSide();
   editor = await import('./blog-blocknote.js').then((m) => m.mountEditor(bodyBox, {
     blocks: post.blocks,
-    onChange: markDirty,
+    onChange: bodyChanged,
     upload: uploadImage,
     imageUrl: (path) => api.blogImageUrl(path),
     imageError,
   }));
+  markClean();
   if (!id) title.focus();
 }
 
