@@ -1,6 +1,6 @@
 // /espace/campagnes/details/?id= — one campaign: visits per day (QR code / link), its numbers, edit, history, archive.
 import { api, SITE } from './api.js';
-import { el, fill, mount, header, link, toast, errorText, requireSession, loading, table, fmtDate, fmtDay, fmtDateTime } from './ui.js';
+import { el, fill, mount, header, link, toast, errorText, requireSession, requireRight, loading, table, fmtDate, fmtDay, fmtDateTime } from './ui.js';
 import { days, parisDay, pctOf, fmtNum } from './calc.js';
 import { timeChart } from './charts.js';
 import { SUPPORTS, destSelect, fallbackSelect, readDest, destLabel, flagText, campaignError } from './campaign-ui.js';
@@ -115,11 +115,11 @@ function history(rows) {
 
 async function main() {
   const ctx = await requireSession();
-  if (!ctx) return;
+  if (!ctx || !requireRight(ctx, 'campaigns', 'campaign')) return;
   mount(header(ctx, 'campaign'), mainEl);
   let stats, hist;
   try {
-    const [rows, list] = await Promise.all([api.campaigns(), api.overview()]);
+    const [rows, list] = await Promise.all([api.campaigns(), api.actionsBrief()]);
     events = list;
     c = rows.find((r) => r.id === id);
     if (!c) return fill(mainEl, el('p', { class: 'paper' }, 'Campagne introuvable. ', el('a', { href: link('/espace/campagnes/') }, 'Retour')));

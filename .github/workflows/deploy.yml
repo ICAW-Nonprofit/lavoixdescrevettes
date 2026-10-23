@@ -24,17 +24,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # `npm run build` first copies the actions and campaign links from Supabase into src/content/events.json and campaigns.json
+      # `npm run build` first copies the actions, campaign links and published blog posts from Supabase into
+      # src/content/events.json, campaigns.json and posts.json, and the posts' cleaned images into src/assets/blog-media/
       - uses: withastro/action@v4
         with:
           node-version: 24
-      - name: Keep the backup copy of the actions and campaign links
+      - name: Keep the backup copy of the actions, campaign links and blog posts
         if: github.event_name != 'push'
         run: |
-          if git diff --quiet -- src/content/events.json src/content/campaigns.json; then echo "No change."; exit 0; fi
+          BACKUP="src/content/events.json src/content/campaigns.json src/content/posts.json src/assets/blog-media"
+          if [ -z "$(git status --porcelain -- $BACKUP)" ]; then echo "No change."; exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/content/events.json src/content/campaigns.json
+          git add -A -- $BACKUP
           git commit -m "Backup copy of the actions from Supabase"
           git pull --rebase --autostash && git push || echo "::warning::Could not push the backup copy (will retry next build)."
 

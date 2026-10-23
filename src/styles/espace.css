@@ -502,6 +502,46 @@
   gap: 12px;
   align-items: center;
 }
+/* rights per account (Paramètres): one checkbox per right, 44 px rows */
+.rights-picker {
+  display: grid;
+}
+.field .rights-option,
+.rights-option {
+  min-height: 44px;
+  align-items: center;
+  font-stretch: 100%;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+.rights-option input {
+  margin-top: 0;
+  accent-color: var(--marine);
+}
+.rights-cell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  max-width: 130px; /* wraps instead of widening the table (its cells don't wrap) */
+  white-space: normal;
+}
+.rights-cell:has(.rights-picker) {
+  max-width: 200px;
+}
+/* text buttons are white by default (they sit on blue or navy): on white cards and tables they are navy */
+.esp-table .linkish:not(.danger),
+.blog-page .linkish:not(.danger) {
+  color: var(--marine);
+}
+.rights-cell .rights-picker {
+  flex-basis: 100%;
+}
+.rights-cell .rights-option {
+  white-space: nowrap;
+}
 /* ---------- dashboard & details: flat cards, thin lines, tabular numbers ---------- */
 .esp-dash .paper {
   border: 1px solid var(--esp-line);

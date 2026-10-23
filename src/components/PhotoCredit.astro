@@ -1,6 +1,8 @@
 ---
-/** Small white "@handle" over a photo of people. The parent must be position: relative (class "credited"). Plain text, not a link: it sits inside card links. */
+/** Small white "@handle" over a photo of people. The parent must be position: relative (class "credited"). Plain text, not a link: it sits inside card links. Blog posts from the organiser space pass their own credit. */
 import { site } from '../config';
+
+const { credit } = Astro.props as { credit?: string };
 ---
 
-<span class="photo-credit">@{site.photographer.handle}</span>
+<span class="photo-credit">{credit || `@${site.photographer.handle}`}</span>

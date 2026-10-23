@@ -1,6 +1,7 @@
 ---
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import { render } from 'astro:content';
+import { renderBlocks, blockImages } from '../lib/blocks.js';
 import Base from '../layouts/Base.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import PostCard from '../components/PostCard.astro';
@@ -18,8 +19,25 @@ const { post } = Astro.props;
 const lang = post.data.lang as Lang;
 const t = ui[lang];
 const d = post.data;
-const { Content } = await render(post);
+const sizes = '(min-width: 800px) 760px, 100vw';
+// Markdown posts render as before; posts from the organiser space are blocks, turned into HTML through an allowlist
+const Content = d.blocks ? null : (await render(post)).Content;
+let bodyHtml = '';
+if (d.blocks) {
+  const media = import.meta.glob<{ default: ImageMetadata }>('../assets/blog-media/*.{jpg,png,webp}', { eager: true });
+  const images: Record<string, { src: string; srcset: string; sizes: string; width: number; height: number }> = {};
+  for (const path of blockImages(d.blocks)) {
+    const meta = media[`../assets/blog-media/${path}`]?.default;
+    if (!meta) continue; // not downloaded (invalid file): the post builds without it
+    const img = await getImage({ src: meta, widths: [700, 1100, 1500], sizes });
+    images[path] = { src: img.src, srcset: img.srcSet.attribute, sizes, width: meta.width, height: meta.height };
+  }
+  bodyHtml = renderBlocks(d.blocks, { image: (path: string) => images[path], site: new URL(url('/'), Astro.site).href });
+}
+// a person signed it (posts from the organiser space only); otherwise it stays as before, without a byline
+const person = d.author !== site.name;
 const other = await translationOf(post);
+const otherLang: Lang = lang === 'fr' ? 'en' : 'fr';
 const alternates: Partial<Record<Lang, string>> = { [lang]: postPath(postSlug(post), lang) };
 if (other) alternates[other.data.lang as Lang] = postPath(postSlug(other), other.data.lang as Lang);
 const related = (await getPosts(lang)).filter((p) => p.id !== post.id).slice(0, 2);
@@ -39,7 +57,7 @@ const jsonLd = [
     dateModified: (d.updated ?? d.date).toISOString(),
     inLanguage: lang,
     mainEntityOfPage: pageAbs,
-    author: { '@type': 'Organization', name: d.author },
+    author: { '@type': person ? 'Person' : 'Organization', name: d.author },
     publisher: { '@type': 'Organization', name: site.name },
   },
 ];
@@ -57,13 +75,14 @@ const drawing = d.coverStyle === 'drawing';
   published={d.date}
   jsonLd={jsonLd}
   crumbs={crumbs}
+  switchHref={other ? undefined : route('blog', otherLang)}
 >
   <article>
     <div class="narrow page-head">
       <Breadcrumbs crumbs={crumbs} label={lang === 'fr' ? "Fil d'Ariane" : 'Breadcrumb'} />
       <p class="meta u-mt20">
         {d.category} · <time datetime={d.date.toISOString()}>{formatDate(d.date, lang)}</time> · {readingTime(post.body)}
-        {t.minRead}
+        {t.minRead}{person && ` · ${t.by} ${d.author}`}
       </p>
       <h1 class="h1-article">{d.title}</h1>
       <p class="intro">{d.description}</p>
@@ -76,11 +95,11 @@ const drawing = d.coverStyle === 'drawing';
 
     <div class="narrow">
       <figure class:list={['article-cover', drawing ? 'drawing' : 'duotone credited']}>
-        <Image src={d.cover} alt={d.coverAlt} widths={[700, 1100, 1500]} sizes="(min-width: 800px) 760px, 100vw" loading="eager" />
-        {!drawing && <PhotoCredit />}
+        <Image src={d.cover} alt={d.coverAlt} widths={[700, 1100, 1500]} sizes={sizes} loading="eager" />
+        {!drawing && <PhotoCredit credit={d.coverCredit} />}
       </figure>
       <div class="prose">
-        <Content />
+        {Content ? <Content /> : <Fragment set:html={bodyHtml} />}
       </div>
       <div class="u-mt40">
         <Share lang={lang} title={d.title} />

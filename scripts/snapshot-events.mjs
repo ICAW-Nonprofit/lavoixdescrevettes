@@ -1,7 +1,9 @@
-// Before each build: copy the actions from Supabase into src/content/events.json, and the campaign links
-// (codes and destinations, no names) into src/content/campaigns.json.
+// Before each build: copy the actions from Supabase into src/content/events.json, the campaign links
+// (codes and destinations, no names) into src/content/campaigns.json, and the published blog posts into
+// src/content/posts.json with their images, cleaned, in src/assets/blog-media/ (scripts/blog-media.mjs).
 // Those files are also the backup: if Supabase is unreachable, the site builds from the last copy.
 import { readFileSync, writeFileSync } from 'node:fs';
+import { syncBlogMedia } from './blog-media.mjs';
 
 const cfg = JSON.parse(readFileSync(new URL('../src/supabase.json', import.meta.url), 'utf8'));
 const url = process.env.PUBLIC_SUPABASE_URL || cfg.url;
@@ -31,12 +33,17 @@ async function copy(path, file, what) {
     if (!Array.isArray(rows)) throw new Error('unexpected response');
     writeFileSync(new URL(`../src/content/${file}`, import.meta.url), JSON.stringify(rows, null, 2) + '\n');
     console.log(`[snapshot] ${rows.length} ${what} copied from Supabase.`);
+    return rows;
   } catch (err) {
     // never break the build because of the database: keep the last copy
     console.warn(`[snapshot] Supabase unreachable (${err.message}). Using the last copy of src/content/${file}.`);
+    return null;
   }
 }
 
 await copy(`events?select=${COLUMNS.join(',')}&order=starts_at.asc`, 'events.json', 'action(s)');
 // archived campaigns included: printed QR codes keep working
 await copy('rpc/campaign_redirects', 'campaigns.json', 'campaign link(s)');
+// published versions only (drafts and the Corbeille never leave the database)
+const posts = await copy('rpc/blog_published', 'posts.json', 'blog post(s)');
+if (posts) await syncBlogMedia(posts, url);

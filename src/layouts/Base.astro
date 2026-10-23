@@ -29,9 +29,13 @@ interface Props {
   /** breadcrumb trail → BreadcrumbList JSON-LD (the visible trail is rendered by the page) */
   crumbs?: Crumb[];
   sticky?: boolean;
+  /** language switch target when the page has no translation (a post without its English version: the English blog) */
+  switchHref?: string;
+  /** preview links carry a private token: never send it to other sites */
+  referrer?: string;
 }
 
-const { lang, crumbs, sticky = true, jsonLd = [], ...seo } = Astro.props;
+const { lang, crumbs, sticky = true, jsonLd = [], switchHref, referrer = 'strict-origin-when-cross-origin', ...seo } = Astro.props;
 const t = ui[lang];
 const ld = [...jsonLd];
 if (crumbs?.length) {
@@ -53,7 +57,7 @@ if (crumbs?.length) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="referrer" content={referrer} />
     <Seo lang={lang} jsonLd={ld} {...seo} />
     <meta name="theme-color" content="#9cb3f7" />
     <link rel="icon" href={url('/favicon.ico')} sizes="48x48" />
@@ -66,7 +70,7 @@ if (crumbs?.length) {
   </head>
   <body>
     <a class="skip" href="#contenu">{t.skip}</a>
-    <Header lang={lang} alternates={seo.alternates} />
+    <Header lang={lang} alternates={seo.alternates} switchHref={switchHref} />
     <main id="contenu">
       <slot />
     </main>

@@ -1,0 +1,19 @@
+---
+import { getCollection } from 'astro:content';
+import Espace from '../../../layouts/Espace.astro';
+import { postSlug, translationOf } from '../../../lib/content';
+
+// The Markdown posts (written in the repo, read-only here) and the addresses already taken. Passed as data (an
+// attribute), not as a script, so the CSP has nothing to allow.
+const files = await getCollection('blog', (p) => !p.data.blocks && !p.data.draft);
+const posts = await Promise.all(
+  files.map(async (p) => ({ slug: postSlug(p), lang: p.data.lang, title: p.data.title, date: p.data.date.toISOString(), translated: Boolean(await translationOf(p)) })),
+);
+---
+
+<Espace title="Blog · Espace organisation">
+  <div id="build-posts" hidden data-posts={JSON.stringify(posts)}></div>
+  <script>
+    import '../../../scripts/espace/blog.js';
+  </script>
+</Espace>

@@ -1,7 +1,7 @@
 // /espace/details/?id= — one action: participants (list + CSV), its numbers vs past actions, the bilan.
 // First names for the whole team; emails only reach admins (the database leaves them out for everyone else).
 import { api, SITE } from './api.js';
-import { el, fill, $, mount, header, link, toast, errorText, requireSession, fmtDay, fmtDate, fmtTime, fmtDateTime, isPast, loading, pageLink, onReturn, table, statusBadge, creator } from './ui.js';
+import { el, fill, $, mount, header, link, toast, errorText, requireSession, requireRight, fmtDay, fmtDate, fmtTime, fmtDateTime, isPast, loading, pageLink, onReturn, table, statusBadge, creator } from './ui.js';
 import { avgPast, csvCell, days, fmtNum, fmtPct, parisDay, pctDiff, tookPlace } from './calc.js';
 import { timeChart } from './charts.js';
 
@@ -128,7 +128,7 @@ function bilanForm() {
 
 async function main() {
   ctx = await requireSession();
-  if (!ctx) return;
+  if (!ctx || !requireRight(ctx, 'actions', 'details')) return;
   const mainEl = el('main', { class: 'esp-main esp-dash' }, loading());
   mount(header(ctx, 'details'), mainEl);
   let rows;

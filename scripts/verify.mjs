@@ -10,6 +10,9 @@ import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 import { md } from '../src/lib/md.ts';
 import * as calc from '../src/scripts/espace/calc.js';
+import { renderBlocks, blocksText, blockImages } from '../src/lib/blocks.js';
+import { postProblems } from '../src/scripts/espace/blog-rules.js';
+import { cleanImage } from './blog-media.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const read = (p) => readFileSync(join(root, p), 'utf8');
@@ -123,6 +126,63 @@ for (const e of events) {
 const mdOut = md('<script>x</script> [a](javascript:alert(1)) [b](https://x.org/"onclick=y)');
 if (/<script|href="javascript:|"onclick/i.test(mdOut)) fail(`src/lib/md.ts: organiser text is no longer made safe (got: ${mdOut}).`);
 
+// Blog posts from the organiser space: blocks → HTML through an allowlist (src/lib/blocks.js), never raw HTML
+{
+  const t = (text, styles = {}) => ({ type: 'text', text, styles });
+  const link = (href, text = 'x') => ({ type: 'link', href, content: [t(text)] });
+  const IMG = '11111111-1111-4111-8111-111111111111.jpg';
+  const html = renderBlocks([
+    { type: 'paragraph', content: [t('<script>alert(1)</script> "q" \u{1F990}', { bold: true, color: 'red' }), link('javascript:alert(1)', 'js'), link('data:text/html,x', 'data'), link('//evil.example', 'sans protocole'), link('/agenda/', 'relatif'), link('https://x.org/"onmouseover="y', 'piège'), link('https://ok.example/', 'ok'), link('mailto:a@b.org', 'mail'), link('https://site.example/agenda/', 'site')] },
+    { type: 'heading', props: { level: 1 }, content: [t('Titre')] },
+    { type: 'image', props: { path: IMG, alt: '"><img src=x onerror=alert(1)>', credit: '<b>c</b>' } },
+    { type: 'image', props: { path: '../../etc/passwd', alt: 'x', credit: 'x' } },
+    { type: 'table', content: { rows: [] }, children: [{ type: 'paragraph', content: [t('caché')] }] },
+    { type: 'codeBlock', content: [t('<b>code</b>')] },
+    { type: 'html', props: { html: '<script>x</script>' } },
+    { type: 'bulletListItem', content: [t('a')], children: [{ type: 'bulletListItem', content: [t('b')] }] },
+    { type: 'divider' },
+  ], { image: (p) => ({ src: `/img/${p}`, width: 10, height: 10 }), site: 'https://site.example/' });
+  const checks = [
+    ['escapes text', html.includes('&lt;script&gt;alert(1)&lt;/script&gt; &quot;q&quot;') && !/<script/i.test(html)],
+    ['drops the shrimp emoji', !/\u{1F990}/u.test(html)],
+    ['keeps bold, drops other styles', html.includes('<strong>') && !/style=|color/.test(html)],
+    ['turns javascript:, data:, //, relative and broken links into text',
+      !/href="(javascript:|data:|\/\/|\/agenda)/.test(html) && !html.includes('onmouseover') && ['js', 'data', 'sans protocole', 'relatif', 'piège'].every((w) => html.includes(w))],
+    ['opens other sites in a new tab with noopener noreferrer', html.includes('<a href="https://ok.example/" target="_blank" rel="noopener noreferrer">ok</a>')],
+    ['keeps mailto: and our own links in the same tab', html.includes('<a href="mailto:a@b.org">mail</a>') && html.includes('<a href="https://site.example/agenda/">site</a>')],
+    ['escapes alt text and credits', html.includes('alt="&quot;&gt;&lt;img src=x onerror=alert(1)&gt;"') && html.includes('&lt;b&gt;c&lt;/b&gt;') && !/<img src=x/.test(html)],
+    ['drops an image path that is not ours', !html.includes('passwd')],
+    ['drops unknown blocks with their children', !/caché|code|<table|<pre/.test(html)],
+    ['nests lists, keeps dividers, h1 becomes h3', html.includes('<ul><li>a<ul><li>b</li></ul></li></ul>') && html.includes('<hr>') && html.includes('<h3>Titre</h3>')],
+    ['counts words and finds images', blocksText([{ type: 'paragraph', content: [t('un deux'), link('https://x.org', 'trois')] }]) === 'un deux trois' && blockImages([{ type: 'image', props: { path: IMG } }, { type: 'image', props: { path: 'x.svg' } }]).join() === IMG],
+  ];
+  for (const [name, pass] of checks) if (!pass) fail(`src/lib/blocks.js: ${name} is broken.`);
+  const ok = { title: 'Un titre', slug: 'un-titre', summary: 'x'.repeat(60), category: 'science', cover_path: IMG, cover_alt: 'Une crevette', cover_credit: 'Photo', author_display: 'collectif', lang: 'fr', blocks: [] };
+  const rules = [
+    ['a complete post is publishable', postProblems(ok, { today: '2026-10-21' }).length === 0],
+    ['an image needs its alt text and credit', postProblems({ ...ok, blocks: [{ type: 'image', props: { path: IMG, alt: '', credit: '' } }] }).join().includes('Image 1 : crédit photo')],
+    ['the shrimp emoji is refused', postProblems({ ...ok, title: 'Crevette \u{1F990}' }).some((p) => /emoji/.test(p))],
+    ['retailer names are refused in the blog', postProblems({ ...ok, blocks: [{ type: 'paragraph', content: [t('chez Lidl')] }] }).some((p) => /lidl/.test(p))],
+    ['an English post needs its French post live', postProblems({ ...ok, lang: 'en' }, { frPublished: false }).some((p) => /française/.test(p))],
+  ];
+  for (const [name, pass] of rules) if (!pass) fail(`src/scripts/espace/blog-rules.js: ${name} (rule broken).`);
+}
+
+// Blog images: the build keeps JPEG, PNG and WebP only (checked by content) and removes EXIF and GPS
+try {
+  const sharp = (await import('sharp')).default;
+  const gps = { IFD0: { Make: 'TestCam' }, IFD3: { GPSLatitudeRef: 'N', GPSLatitude: '48/1 51/1 2400/100' } };
+  const photo = await sharp({ create: { width: 40, height: 30, channels: 3, background: '#9cb3f7' } }).jpeg().withExif(gps).toBuffer();
+  const clean = await cleanImage(photo);
+  const meta = clean && (await sharp(clean.buffer).metadata());
+  if (!clean || meta.exif || clean.buffer.includes(Buffer.from('TestCam'))) fail('scripts/blog-media.mjs: EXIF / GPS data is no longer removed from blog images.');
+  if (await cleanImage(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'))) fail('scripts/blog-media.mjs: an SVG is accepted as a blog image.');
+  const png = await sharp({ create: { width: 4, height: 4, channels: 4, background: '#ffc907' } }).png().toBuffer();
+  if ((await cleanImage(png))?.ext !== 'png') fail('scripts/blog-media.mjs: a PNG is not recognised by its content.');
+} catch (e) {
+  warn(`Blog image checks skipped (${e.message}).`);
+}
+
 // Numbers of the organiser dashboard (src/scripts/espace/calc.js)
 {
   const now = Date.parse('2026-11-10T12:00:00Z');
@@ -198,23 +258,12 @@ if (routes.length < 20) fail('src/i18n.ts: could not read the routes (format cha
 const REQUIRED = [
   ...routes,
   '/404.html', '/en/404/', '/espace/', '/espace/action/', '/espace/admin/', '/espace/details/', '/espace/parametres/',
-  '/espace/campagnes/', '/espace/campagnes/details/',
+  '/espace/campagnes/', '/espace/campagnes/details/', '/espace/blog/', '/espace/blog/article/',
   '/rss.xml', '/en/rss.xml', '/agenda.ics', '/en/events.ics', '/robots.txt', '/sitemap-index.xml', '/site.webmanifest',
   '/favicon.ico', '/favicon.svg', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png', '/logo.png',
   '/logo.svg', '/logo-navy.svg', '/logo-bleu.svg',
 ];
 for (const p of REQUIRED) if (!exists(p)) fail(`Missing in the build: ${p}`);
-
-// Blog posts: one page per published post, in its language
-for (const lang of ['fr', 'en']) {
-  const dir = `src/content/blog/${lang}`;
-  if (!existsSync(join(root, dir))) continue;
-  for (const name of readdirSync(join(root, dir)).filter((n) => n.endsWith('.md'))) {
-    if (/^draft:\s*true/m.test(read(`${dir}/${name}`))) continue;
-    const page = `${lang === 'fr' ? '' : '/en'}/blog/${name.replace(/\.md$/, '')}/`;
-    if (!exists(page)) fail(`Missing blog page: ${page}`);
-  }
-}
 
 // Actions: FR + EN pages, calendar files and a real flyer for each
 let sharp = null;
@@ -318,6 +367,56 @@ for (const f of [...built].filter((f) => /^sitemap-\d+\.xml$/.test(f))) {
       const p = path.replace(/^\//, '') + (path.endsWith('/') ? 'index.html' : '');
       if (noindexPages.has(p)) fail(`${f}: ${loc} is noindex and shouldn't be in the sitemap (filter in astro.config.mjs).`);
     }
+  }
+}
+
+// Blog: every post (Markdown and organiser space) has its page, is in its language's RSS feed and in the sitemap
+{
+  let dbPosts = [];
+  try {
+    dbPosts = JSON.parse(read('src/content/posts.json'));
+    if (!Array.isArray(dbPosts)) throw new Error('not a list');
+  } catch (e) {
+    fail(`src/content/posts.json: unreadable (${e.message}).`);
+  }
+  const posts = [
+    ...['fr', 'en'].flatMap((lang) => (existsSync(join(root, `src/content/blog/${lang}`)) ? readdirSync(join(root, `src/content/blog/${lang}`)) : [])
+      .filter((n) => n.endsWith('.md') && !/^draft:\s*true/m.test(read(`src/content/blog/${lang}/${n}`)))
+      .map((n) => ({ lang, slug: n.replace(/\.md$/, ''), md: true }))),
+    ...dbPosts.map((p) => ({ lang: p.lang, slug: p.slug })),
+  ];
+  const rss = { fr: built.has('rss.xml') ? readFileSync(join(dist, 'rss.xml'), 'utf8') : '', en: built.has('en/rss.xml') ? readFileSync(join(dist, 'en/rss.xml'), 'utf8') : '' };
+  const sitemap = [...built].filter((f) => /^sitemap-\d+\.xml$/.test(f)).map((f) => readFileSync(join(dist, f), 'utf8')).join('');
+  for (const p of posts) {
+    const path = `${p.lang === 'fr' ? '' : '/en'}/blog/${p.slug}/`;
+    // a database post the build skipped (its address is a Markdown post's, or it doesn't fit the schema): see the build log
+    if (!exists(path)) (p.md ? fail : warn)(`Missing blog page: ${path}${p.md ? '' : ' (from posts.json: skipped by the build, see "[blog]" in its log)'}`);
+    else {
+      if (!rss[p.lang].includes(`<link>${SITE}${BASE}${path}</link>`)) fail(`${p.lang === 'fr' ? 'rss.xml' : 'en/rss.xml'}: ${path} is missing.`);
+      if (!sitemap.includes(`<loc>${SITE}${BASE}${path}</loc>`)) fail(`Sitemap: ${path} is missing.`);
+    }
+  }
+  if (!/^<\?xml/.test(rss.fr) || !/<rss[\s>]/.test(rss.en)) fail('rss.xml / en/rss.xml: not an RSS feed.');
+}
+
+// The blog editor (BlockNote, React) is loaded only by /espace/blog/article/: no other page references its code,
+// directly or through the scripts it imports.
+{
+  const js = new Map([...built].filter((f) => f.startsWith('_astro/') && f.endsWith('.js')).map((f) => [f, readFileSync(join(dist, f), 'utf8')]));
+  const editorCode = new Set([...js].filter(([, code]) => code.includes('bn-block-content')).map(([f]) => f));
+  if (!editorCode.size) fail('No blog editor code found in dist/_astro/: update the marker in scripts/verify.mjs.');
+  const staticImports = (f, seen = new Set()) => {
+    if (seen.has(f)) return seen;
+    seen.add(f);
+    for (const [, rel] of (js.get(f) || '').matchAll(/(?:import|from)\s*["']\.\/([^"']+\.js)["']/g)) staticImports(`_astro/${rel}`, seen);
+    return seen;
+  };
+  for (const file of [...built].filter((f) => f.endsWith('.html') && f !== 'espace/blog/article/index.html')) {
+    const html = readFileSync(join(dist, file), 'utf8');
+    const loaded = new Set();
+    for (const [, src] of html.matchAll(/(?:src|href)="[^"]*\/(_astro\/[^"]+\.js)"/g)) staticImports(src, loaded);
+    const hit = [...loaded].find((f) => editorCode.has(f));
+    if (hit) fail(`dist/${file}: loads the blog editor's code (${hit}). Only /espace/blog/article/ may.`);
   }
 }
 

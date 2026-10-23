@@ -1,6 +1,6 @@
 // /espace/admin/ — Tableau de bord: key numbers, newsletter chart with notes, « J'y vais » per day, tables. Whole team.
 import { api } from './api.js';
-import { el, fill, mount, header, link, toast, errorText, requireSession, fmtDate, isPast, loading, table, statusBadge, creator } from './ui.js';
+import { el, fill, mount, header, link, toast, errorText, requireSession, requireRight, fmtDate, isPast, loading, table, statusBadge, creator } from './ui.js';
 import { avgPast, creatorLabel, cumulative, days, daysLeft, fmtNum, groupBy, monthsBack, nextAction, parisDay, presentInMonth } from './calc.js';
 import { timeChart, sparkline, miniBars, noteKey } from './charts.js';
 
@@ -159,7 +159,7 @@ function rsvpChart(rows, perDay, today) {
 
 async function main() {
   const ctx = await requireSession();
-  if (!ctx) return;
+  if (!ctx || !requireRight(ctx, 'admin', 'admin')) return;
   const mainEl = el('main', { class: 'esp-main esp-dash' }, loading());
   mount(header(ctx, 'admin'), mainEl);
 

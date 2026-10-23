@@ -1,0 +1,60 @@
+---
+// Private preview of a draft blog post: /apercu/?t=… and /en/preview/?t=… (the token comes from the organiser space).
+// Same markup and classes as views/Post.astro, filled by scripts/preview.js from blog_preview(); nothing is built
+// in. Hidden from search engines (noindex, sitemap, robots.txt) and the token never leaves the page (no referrer).
+import Base from '../layouts/Base.astro';
+import { route, type Lang } from '../i18n';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const fr = lang === 'fr';
+const c = fr
+  ? {
+      title: 'Aperçu privé d’un article',
+      description: 'Aperçu d’un article pas encore publié.',
+      banner: 'Aperçu privé : cet article n’est pas encore publié.',
+      until: 'Lien valable jusqu’au',
+      loading: 'Chargement de l’aperçu…',
+      gone: 'Ce lien d’aperçu n’est plus valide',
+      goneText: 'Il a expiré, a été révoqué ou l’article n’est plus en brouillon. Demande un nouveau lien à la personne qui te l’a envoyé.',
+    }
+  : {
+      title: 'Private preview of a post',
+      description: 'Preview of a post that is not published yet.',
+      banner: 'Private preview: this post is not published yet.',
+      until: 'Link valid until',
+      loading: 'Loading the preview…',
+      gone: 'This preview link is no longer valid',
+      goneText: 'It has expired, been revoked, or the post is no longer a draft. Ask the person who sent it for a new link.',
+    };
+---
+
+<Base lang={lang} title={c.title} description={c.description} noindex referrer="no-referrer" sticky={false} switchHref={route('blog', fr ? 'en' : 'fr')}>
+  <div id="preview" data-lang={lang} data-banner={c.banner} data-until={c.until}>
+    <div class="preview-banner" id="pv-banner" role="status">{c.loading}</div>
+    <article id="pv-article" hidden>
+      <div class="narrow page-head">
+        <p class="meta u-mt20" id="pv-meta"></p>
+        <h1 class="h1-article" id="pv-title"></h1>
+        <p class="intro" id="pv-intro"></p>
+      </div>
+      <div class="narrow">
+        <figure class="article-cover duotone credited" id="pv-cover" hidden>
+          <img id="pv-cover-img" alt="" width="1500" height="750" />
+          <span class="photo-credit" id="pv-credit"></span>
+        </figure>
+        <div class="prose" id="pv-body"></div>
+      </div>
+    </article>
+    <div class="narrow page-head u-pb" id="pv-gone" hidden>
+      <h1>{c.gone}</h1>
+      <p class="intro">{c.goneText}</p>
+    </div>
+  </div>
+  <div class="u-spacer"></div>
+  <script>
+    import '../scripts/preview.js';
+  </script>
+</Base>

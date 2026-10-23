@@ -145,19 +145,37 @@ export const creator = (r) =>
     ? el('span', { class: 'is-muted' }, creatorLabel(r), r.creator_status === 'disabled' && ' (désactivé·e)')
     : creatorLabel(r);
 
-/** Header of every organiser page: the tabs. Sub-pages (action details and editor, campaign details) keep their tab lit. */
+/**
+ * What an account may do: 'actions', 'campaigns', 'blog' (ticked by an admin), or 'admin' (Tableau de bord, Paramètres).
+ * Admins have everything. The database checks the same rights: this only decides what to show.
+ */
+export const can = (ctx, right) => {
+  const p = ctx?.profile;
+  if (p?.role === 'admin') return true;
+  return p?.role === 'organizer' && right !== 'admin' && (p.rights || []).includes(right);
+};
+
+// the tabs, in order: [key, right, path, label, sub-pages that keep it lit]
+const TABS = [
+  ['admin', 'admin', '/espace/admin/', 'Tableau de bord', ['admin']],
+  ['home', 'actions', '/espace/', 'Actions', ['home', 'edit', 'details']],
+  ['campaigns', 'campaigns', '/espace/campagnes/', 'Campagnes', ['campaigns', 'campaign']],
+  ['blog', 'blog', '/espace/blog/', 'Blog', ['blog', 'post']],
+  ['settings', 'admin', '/espace/parametres/', 'Paramètres', ['settings']],
+];
+const allowedTabs = (ctx) => TABS.filter(([, right]) => can(ctx, right));
+
+/** Where someone lands after logging in: their first tab (Actions for most). */
+export const firstTab = (ctx) => link(allowedTabs(ctx).find(([key]) => key !== 'admin')?.[2] || '/espace/parametres/');
+
+/** Header of every organiser page: the tabs this account may open. Sub-pages keep their tab lit. */
 export function header(ctx, current) {
   const admin = ctx?.profile?.role === 'admin';
-  const staff = admin || ctx?.profile?.role === 'organizer';
-  const tab = (key, href, label, lit = [key]) =>
-    el('a', { class: 'esp-tab', href: link(href), 'aria-current': current === key ? 'page' : lit.includes(current) ? 'true' : null }, label);
   const nav = el(
     'nav',
     { class: 'esp-nav', 'aria-label': 'Espace organisation' },
-    staff && tab('admin', '/espace/admin/', 'Tableau de bord'),
-    tab('home', '/espace/', 'Actions', ['home', 'edit', 'details']),
-    staff && tab('campaigns', '/espace/campagnes/', 'Campagnes', ['campaigns', 'campaign']),
-    admin && tab('settings', '/espace/parametres/', 'Paramètres'),
+    allowedTabs(ctx).map(([key, , href, label, lit]) =>
+      el('a', { class: 'esp-tab', href: link(href), 'aria-current': current === key ? 'page' : lit.includes(current) ? 'true' : null }, label)),
     el('span', { class: 'esp-nav-end' },
       el('a', { href: link('/') }, 'Voir le site ↗'),
       ctx &&
@@ -199,6 +217,20 @@ export async function requireSession() {
   }
   if (!(await secondFactor(ctx))) return null;
   return ctx;
+}
+
+/**
+ * A page needs a right (typed URL included): without it, show why and the tabs this account may open.
+ * The data stays protected either way: the database refuses it.
+ */
+export function requireRight(ctx, right, current) {
+  if (can(ctx, right)) return true;
+  const tabs = allowedTabs(ctx);
+  mount(header(ctx, current), el('main', { class: 'esp-main' }, el('div', { class: 'paper' },
+    el('h1', {}, 'Tu n’as pas accès à cette page'),
+    el('p', {}, 'Ton compte n’a pas ce droit. Un·e admin peut te le donner dans Paramètres.'),
+    tabs.length > 0 && el('p', {}, 'Tu peux aller sur : ', tabs.map(([, , href, label], i) => [i ? ' · ' : '', el('a', { href: link(href) }, label)])))));
+  return false;
 }
 
 /** Form asking for the 6-digit code of the authenticator app. A correct code upgrades the session; then the page reloads. */

@@ -1,0 +1,15 @@
+---
+import Espace from '../../../../layouts/Espace.astro';
+import { getCollection } from 'astro:content';
+import { postSlug } from '../../../../lib/content';
+
+// Addresses already taken by the Markdown posts (a new post can't reuse them). Passed as data, not as a script.
+const posts = (await getCollection('blog', (p) => !p.data.blocks)).map((p) => ({ slug: postSlug(p), lang: p.data.lang, title: p.data.title }));
+---
+
+<Espace title="Article · Blog · Espace organisation">
+  <div id="build-posts" hidden data-posts={JSON.stringify(posts)}></div>
+  <script>
+    import '../../../../scripts/espace/blog-editor.js';
+  </script>
+</Espace>
