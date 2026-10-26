@@ -23,10 +23,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # `npm run build` first copies the actions, campaign links and published blog posts from Supabase into
       # src/content/events.json, campaigns.json and posts.json, and the posts' cleaned images into src/assets/blog-media/
-      - uses: withastro/action@v4
+      - uses: withastro/action@v6
         with:
           node-version: 24
       - name: Keep the backup copy of the actions, campaign links and blog posts
@@ -48,4 +48,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
