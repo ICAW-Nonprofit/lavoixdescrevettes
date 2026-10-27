@@ -44,8 +44,8 @@ Until this is done, `/espace/` runs in demo mode and the site works as before.
 In Supabase → **Authentication**:
 
 1. **URL Configuration**
-   - Site URL: `https://nicolas-cozzarin.github.io/lavoixdescrevettes-prototype/espace/`
-   - Redirect URLs, add: `https://nicolas-cozzarin.github.io/lavoixdescrevettes-prototype/espace/` and `http://localhost:4321/lavoixdescrevettes-prototype/espace/`
+   - Site URL: `https://icaw-nonprofit.github.io/lavoixdescrevettes/espace/`
+   - Redirect URLs, add: `https://icaw-nonprofit.github.io/lavoixdescrevettes/espace/` and `http://localhost:4321/lavoixdescrevettes/espace/`
 2. **Sign In / Providers → Email**: enabled. Leave **Allow new users to sign up** ON: only emails invited from the admin page can actually create an account (the database refuses the others).
 3. **Emails → SMTP Settings** → enable custom SMTP:
    - Sender email: the address verified in Brevo · Sender name: `La Voix des Crevettes`
@@ -65,7 +65,7 @@ In Supabase → **Authentication**:
 
 1. GitHub → your avatar → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
 2. Name `lvdc-publish`, expiration **1 year** (put a reminder in your calendar to renew it).
-3. **Repository access → Only select repositories** → `lavoixdescrevettes-prototype`.
+3. **Repository access → Only select repositories** → `lavoixdescrevettes`.
 4. **Permissions → Repository permissions → Actions: Read and write**. Nothing else.
 5. **Generate token** and copy it (it's shown only once). Keep it for step 6.
 
@@ -87,7 +87,7 @@ The secrets are stored encrypted in Supabase Vault; the query history may keep t
 
 ## 7. First login
 
-Open `https://nicolas-cozzarin.github.io/lavoixdescrevettes-prototype/espace/`, enter your email, and click the link you receive.
+Open `https://icaw-nonprofit.github.io/lavoixdescrevettes/espace/`, enter your email, and click the link you receive.
 You're the admin. The first time, the space asks you to set up **two-factor login** (see below); then invite organisers from **Tableau de bord**.
 
 ## 8. Two-factor login for admins

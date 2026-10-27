@@ -3,11 +3,11 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import { fileURLToPath } from 'node:url';
 
-// Prototype lives on GitHub Pages under /lavoixdescrevettes-prototype.
+// Prototype lives on GitHub Pages under /lavoixdescrevettes.
 // When the real domain arrives: set `site` to https://lavoixdescrevettes.org and remove `base`.
 export default defineConfig({
-  site: 'https://nicolas-cozzarin.github.io',
-  base: '/lavoixdescrevettes-prototype',
+  site: 'https://icaw-nonprofit.github.io',
+  base: '/lavoixdescrevettes',
   trailingSlash: 'always',
   vite: {
     resolve: {
