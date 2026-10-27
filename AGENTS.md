@@ -43,8 +43,8 @@ What the site has to do:
 
 | | |
 |---|---|
-| Live prototype | https://nicolas-cozzarin.github.io/lavoixdescrevettes-prototype/ |
-| Repo | https://github.com/nicolas-cozzarin/lavoixdescrevettes-prototype (public) |
+| Live prototype | https://icaw-nonprofit.github.io/lavoixdescrevettes/ |
+| Repo | https://github.com/ICAW-Nonprofit/lavoixdescrevettes (public) |
 | Future domain | `lavoixdescrevettes.org` (not connected yet: see section 13) |
 | Instagram | https://www.instagram.com/lavoixdescrevettes/ |
 | Look | Canva poster style: blue `#9CB3F7`, navy `#00192E`, yellow `#FFC907`, Bricolage Grotesque, riso grain, hard shadows, tape |
@@ -162,7 +162,7 @@ A fresh clone doesn't have them, and doesn't need them to build.
 ## 5. Pages and routes
 
 All internal links must go through `url()` (adds the base path) and `route(key, lang)` / `eventPath()` / `postPath()` from `src/i18n.ts`.
-**Never hard-code `/lavoixdescrevettes-prototype`** or write a bare `/path` in a link: it breaks when the domain changes, and `npm run verify` flags it.
+**Never hard-code `/lavoixdescrevettes`** or write a bare `/path` in a link: it breaks when the domain changes, and `npm run verify` flags it.
 
 | Page | French | English | Template |
 |---|---|---|---|
@@ -240,7 +240,7 @@ A campaign (tab Campagnes) is a short link and a QR code for a flyer, a poster o
 - **Fallback:** an action that's deleted, cancelled or over, or an article that's gone, sends people to the fallback page (Agenda if that's gone too). `fallbackReason()` in `calc.js` decides it, for the build and for the flag on the organiser's row; the page re-checks "over" in the browser between builds. The database refuses a cancelled or ended action as a new destination.
 - **The flow:** inserting a campaign, or changing its destination or fallback, rebuilds the site (`campaigns_publish` trigger). `snapshot-events.mjs` copies `campaign_redirects()` (codes and destinations, never names) into `src/content/campaigns.json`, the deploy bot backs it up like `events.json`, and `pages/c/[code].astro` makes one static page per code. A new link works 2–3 minutes after it's created; a redirect works even when Supabase is down.
 - **Counting, same visit only:** the `/c/` page stores the code in sessionStorage (`lvdc-campaign`), counts one visit per tab (`lvdc-c-<code>`), then `location.replace()`s. Later in that tab, `trackCampaign()` (`scripts/campaign.js`) counts « J'y vais » (only for the destination action), share taps, completed shares (phones only) and newsletter sign-ups. It never throws or waits: if counting fails, nothing changes for the visitor. Nothing is sent to Mailchimp.
-- **Domain switch:** printed QR codes contain the github.io address. GitHub Pages redirects `…github.io/lavoixdescrevettes-prototype/c/<code>/` to `<domain>/c/<code>/` once the domain is set on this repository: check one after the switch (section 14).
+- **Domain switch:** printed QR codes contain the github.io address. GitHub Pages redirects `…github.io/lavoixdescrevettes/c/<code>/` to `<domain>/c/<code>/` once the domain is set on this repository: check one after the switch (section 14).
 
 ### Blog posts from the organiser space
 
@@ -507,8 +507,8 @@ Supabase dispatches `deploy.yml` on **`main`**: organiser saves always publish w
 ### Set up
 
 ```bash
-git clone https://github.com/nicolas-cozzarin/lavoixdescrevettes-prototype.git
-cd lavoixdescrevettes-prototype
+git clone https://github.com/ICAW-Nonprofit/lavoixdescrevettes.git
+cd lavoixdescrevettes
 npm ci
 git switch -c feature/<short-name>
 ```
@@ -580,8 +580,8 @@ For any visible change, run `npm run preview` (or `npm run dev`) and check in a 
 Every time you finish a change, end your report with a short **"To test by hand"** list:
 
 - One line per thing to check: what to do and what should happen. Keep it to the essentials.
-- Give the full clickable URL of every page the change touched, in FR and EN (e.g. `https://nicolas-cozzarin.github.io/lavoixdescrevettes-prototype/en/report/`).
-  - Use the live URL once it's merged and deployed. Before that, give the local preview URL (`http://localhost:4321/lavoixdescrevettes-prototype/…`).
+- Give the full clickable URL of every page the change touched, in FR and EN (e.g. `https://icaw-nonprofit.github.io/lavoixdescrevettes/en/report/`).
+  - Use the live URL once it's merged and deployed. Before that, give the local preview URL (`http://localhost:4321/lavoixdescrevettes/…`).
 - Say which width to check (phone, desktop or both).
 
 ---
@@ -627,13 +627,13 @@ Every time you finish a change, end your report with a short **"To test by hand"
 6. GitHub Pages: custom domain + HTTPS.
 7. Update the URLs in `README.md`, `SETUP.md` and this file.
 8. `npm run verify` checks the base path and the manifest.
-9. Scan a QR code printed before the switch: `…github.io/lavoixdescrevettes-prototype/c/<code>/` must land on `lavoixdescrevettes.org/c/<code>/` and then on its page (GitHub Pages redirects old addresses, keeping the path).
+9. Scan a QR code printed before the switch: `…github.io/lavoixdescrevettes/c/<code>/` must land on `lavoixdescrevettes.org/c/<code>/` and then on its page (GitHub Pages redirects old addresses, keeping the path).
 
 ---
 
 ## 15. Known gotchas
 
-- **The base path** (`/lavoixdescrevettes-prototype`) is everywhere at runtime. Use `url()` in Astro, and `BASE` / `link()` in `/espace/` scripts.
+- **The base path** (`/lavoixdescrevettes`) is everywhere at runtime. Use `url()` in Astro, and `BASE` / `link()` in `/espace/` scripts.
 - **trailingSlash: 'always'**: page links end with `/`, file links don't (`.ics`, `.jpg`, `.xml`).
 - **`[hidden]` vs `display` rules:** it's already forced globally; don't fight it.
 - **`replaceChildren` with `cond && el()`** prints "false". Use `fill()` in `/espace/`.
